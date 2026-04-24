@@ -2,6 +2,9 @@
 import { Command } from "commander";
 import { AxlClient } from "@polis/axl-client";
 import { runInit } from "./commands/init.js";
+import { runKeygenAxl } from "./commands/keygen-axl.js";
+import { runFaucet } from "./commands/faucet.js";
+import { runBalance } from "./commands/balance.js";
 import type { Network } from "./config.js";
 
 const program = new Command();
@@ -47,10 +50,25 @@ program
   });
 
 program
+  .command("keygen-axl")
+  .description("Generate the AXL node's ed25519 keypair (requires openssl)")
+  .option("-f, --force", "overwrite existing private.pem", false)
+  .action((opts: { force: boolean }) => {
+    runKeygenAxl({ force: opts.force });
+  });
+
+program
+  .command("faucet")
+  .description("Request testnet USDC from the Gensyn testnet faucet")
+  .action(async () => {
+    await runFaucet();
+  });
+
+program
   .command("balance")
-  .description("Show on-chain wallet balances")
-  .action(() => {
-    console.log("TODO: read ETH + USDC balances from Gensyn testnet");
+  .description("Show ETH + USDC balances for the configured wallet")
+  .action(async () => {
+    await runBalance();
   });
 
 program
