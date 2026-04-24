@@ -14,6 +14,8 @@ export interface PolisConfig {
   chainId: number;
   rpcUrl: string;
   usdc: `0x${string}`;
+  /** AgentRegistry deployment address (written by `polis register`). */
+  registryAddress?: `0x${string}`;
   axl: {
     keyPath: string;
     nodeConfigPath: string;

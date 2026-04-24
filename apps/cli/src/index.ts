@@ -5,6 +5,7 @@ import { runInit } from "./commands/init.js";
 import { runKeygenAxl } from "./commands/keygen-axl.js";
 import { runFaucet } from "./commands/faucet.js";
 import { runBalance } from "./commands/balance.js";
+import { runRegister } from "./commands/register.js";
 import type { Network } from "./config.js";
 
 const program = new Command();
@@ -69,6 +70,21 @@ program
   .description("Show ETH + USDC balances for the configured wallet")
   .action(async () => {
     await runBalance();
+  });
+
+program
+  .command("register")
+  .description("Register this agent on-chain in AgentRegistry")
+  .option("-r, --registry <addr>", "AgentRegistry contract address (saved to config on success)")
+  .option("-m, --metadata <uri>", "metadata URI (defaults to polis://agent/<peerId>)")
+  .action(async (opts: { registry?: string; metadata?: string }) => {
+    if (opts.registry && !opts.registry.startsWith("0x")) {
+      throw new Error("--registry must be a 0x-prefixed address");
+    }
+    await runRegister({
+      registry: opts.registry as `0x${string}` | undefined,
+      metadata: opts.metadata,
+    });
   });
 
 program
