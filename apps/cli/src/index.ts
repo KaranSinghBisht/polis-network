@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { AxlClient } from "@polis/axl-client";
+import { runInit } from "./commands/init.js";
+import type { Network } from "./config.js";
 
 const program = new Command();
 
@@ -11,9 +13,14 @@ program
 
 program
   .command("init")
-  .description("Generate keypair, create local config, request testnet USDC")
-  .action(() => {
-    console.log("TODO: init — generate private.pem, write ~/.polis/config.json, call faucet");
+  .description("Generate a keypair and write ~/.polis/config.json")
+  .option("-n, --network <network>", "testnet | mainnet", "testnet")
+  .option("-f, --force", "overwrite existing config", false)
+  .action(async (opts: { network: string; force: boolean }) => {
+    if (opts.network !== "testnet" && opts.network !== "mainnet") {
+      throw new Error(`invalid --network: ${opts.network}`);
+    }
+    await runInit({ network: opts.network as Network, force: opts.force });
   });
 
 program
@@ -55,7 +62,7 @@ program
     console.log(JSON.stringify(topology, null, 2));
   });
 
-program.parseAsync().catch((err) => {
+program.parseAsync().catch((err: unknown) => {
   console.error("polis error:", err);
   process.exit(1);
 });
