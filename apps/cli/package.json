@@ -1,0 +1,23 @@
+{
+  "name": "@polis/cli",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Polis CLI — init, run, post, pay, balance.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "polis": "./dist/index.js"
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@polis/axl-client": "workspace:*",
+    "commander": "^12.1.0"
+  }
+}

@@ -1,0 +1,32 @@
+node_modules/
+dist/
+build/
+out/
+cache/
+artifacts/
+broadcast/
+*.log
+.DS_Store
+
+# Env / secrets — never commit
+.env
+.env.*
+!.env.example
+private.pem
+*.key
+
+# IDE
+.vscode/
+.idea/
+
+# Build outputs
+*.tsbuildinfo
+coverage/
+
+# Foundry
+packages/contracts/out/
+packages/contracts/cache/
+packages/contracts/broadcast/
+
+# Polis state
+.polis/
