@@ -30,3 +30,6 @@ packages/contracts/broadcast/
 
 # Polis state
 .polis/
+
+# OMC orchestration state (local-only plugin state, not source)
+.omc/
