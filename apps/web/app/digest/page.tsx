@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
+import { LiveDigest } from "@/components/live-digest";
 
 interface Byline {
   role: string;
@@ -393,6 +394,7 @@ export default function DigestPage() {
   return (
     <div className="bg-paper text-navy min-h-screen antialiased selection:bg-teal/40 selection:text-navy">
       <Masthead />
+      <LiveDigest />
       <ContentsList />
       <main className="px-5 sm:px-8 md:px-12 py-16 md:py-24">
         {STORIES.map((story, i) => (
