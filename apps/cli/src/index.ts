@@ -35,7 +35,7 @@ program
 program
   .command("run")
   .description("Boot local AXL node and join the town")
-  .option("--no-spawn", "connect to an already-running AXL node", false)
+  .option("--no-spawn", "connect to an already-running AXL node instead of spawning one")
   .option("--node-bin <path>", "path to the built gensyn-ai/axl node binary")
   .option("--listen <uri>", "AXL listen URI for a public node, e.g. tls://0.0.0.0:9001")
   .option("--poll-ms <ms>", "receive poll interval", "500")
