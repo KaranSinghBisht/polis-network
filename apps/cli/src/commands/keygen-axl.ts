@@ -1,6 +1,7 @@
-import { existsSync } from "node:fs";
+import { chmodSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { readConfig, ensurePolisDir } from "../config.js";
+import { ensureAxlNodeConfig } from "../axl-node.js";
 
 export interface KeygenAxlOptions {
   force: boolean;
@@ -12,7 +13,9 @@ export function runKeygenAxl(opts: KeygenAxlOptions): void {
   const out = cfg.axl.keyPath;
 
   if (existsSync(out) && !opts.force) {
+    const wroteConfig = ensureAxlNodeConfig(cfg);
     console.log(`AXL key already exists at ${out}`);
+    if (wroteConfig) console.log(`AXL node config written to ${cfg.axl.nodeConfigPath}`);
     console.log("re-run with --force to overwrite.");
     return;
   }
@@ -30,6 +33,9 @@ export function runKeygenAxl(opts: KeygenAxlOptions): void {
     throw new Error(`openssl exited with status ${result.status ?? "unknown"}`);
   }
 
+  chmodSync(out, 0o600);
+  ensureAxlNodeConfig(cfg, { force: true });
   console.log(`AXL ed25519 keypair written to ${out}`);
-  console.log("next: polis faucet   # request testnet USDC");
+  console.log(`AXL node config written to ${cfg.axl.nodeConfigPath}`);
+  console.log("next: polis run      # boot local AXL and listen for town messages");
 }

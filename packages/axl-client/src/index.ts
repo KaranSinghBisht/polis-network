@@ -5,8 +5,10 @@ export interface AxlClientOptions {
 }
 
 export interface Peer {
-  peer_id: string;
-  ipv6: string;
+  uri: string;
+  up: boolean;
+  inbound: boolean;
+  public_key: string;
   [key: string]: unknown;
 }
 
@@ -46,6 +48,7 @@ export class AxlClient {
    * Returns the number of bytes the node reported as sent.
    */
   async send(destPeerId: string, body: Uint8Array | string): Promise<number> {
+    if (!destPeerId) throw new Error("send requires a destination peer id");
     const bytes =
       typeof body === "string" ? new TextEncoder().encode(body) : body;
     const res = await request(`${this.baseUrl}/send`, {

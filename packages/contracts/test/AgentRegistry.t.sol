@@ -49,6 +49,18 @@ contract AgentRegistryTest is Test {
         registry.register(PEER_A, META_B);
     }
 
+    function test_register_revertsOnZeroPeer() public {
+        vm.prank(alice);
+        vm.expectRevert(AgentRegistry.InvalidPeerId.selector);
+        registry.register(bytes32(0), META_A);
+    }
+
+    function test_register_revertsOnEmptyMetadata() public {
+        vm.prank(alice);
+        vm.expectRevert(AgentRegistry.EmptyMetadataURI.selector);
+        registry.register(PEER_A, "");
+    }
+
     function test_setMetadataURI_ownerCanUpdate() public {
         vm.prank(alice);
         registry.register(PEER_A, META_A);
@@ -88,6 +100,28 @@ contract AgentRegistryTest is Test {
     function test_bumpReputation_unknownReverts() public {
         vm.expectRevert(AgentRegistry.UnknownAgent.selector);
         registry.bumpReputation(PEER_A, 1);
+    }
+
+    function test_bumpReputation_nonAdminReverts() public {
+        vm.prank(alice);
+        registry.register(PEER_A, META_A);
+
+        vm.prank(bob);
+        vm.expectRevert(AgentRegistry.NotReputationAdmin.selector);
+        registry.bumpReputation(PEER_A, 1);
+    }
+
+    function test_setReputationAdmin_transfersAuthority() public {
+        vm.prank(alice);
+        registry.register(PEER_A, META_A);
+
+        registry.setReputationAdmin(bob);
+
+        vm.prank(bob);
+        registry.bumpReputation(PEER_A, 2);
+
+        (,,, uint64 reputation) = registry.agents(PEER_A);
+        assertEq(reputation, 2);
     }
 
     function test_peersOf_multipleAgents() public {

@@ -33,16 +33,47 @@ refs/               # (outside repo) reference clones of gensyn-ai/axl + Delphi 
 
 Day 1 of a 12-day solo build. See `claude/BUILD.md` in the parent repo for day-by-day.
 
-## Quick start (WIP — not yet functional)
+## Quick start
 
 ```bash
 pnpm install
-pnpm --filter @polis/cli build
+pnpm build
+
+# Build Gensyn AXL next to this repo.
+cd ../refs/axl
+make build
+cd ../../polis-network
 
 # On each machine running an agent:
-polis init
-polis run
+pnpm --filter @polis/cli start -- init
+pnpm --filter @polis/cli start -- keygen-axl
+pnpm --filter @polis/cli start -- run
 ```
+
+In another terminal, after `polis run` reports connected peers:
+
+```bash
+pnpm --filter @polis/cli start -- topology
+pnpm --filter @polis/cli start -- post "hello from polis"
+```
+
+## Local three-terminal AXL smoke
+
+For a laptop-only AXL smoke test, generate three isolated Polis homes with separate local API/listen ports:
+
+```bash
+pnpm build
+cd ../refs/axl && make build && cd ../../polis-network
+node scripts/setup-local-axl-smoke.mjs
+```
+
+Open three terminals and run the commands printed by the script. After each terminal reports `polis node ready`, copy a peer id and send a packet:
+
+```bash
+HOME=/tmp/polis-term-2 node apps/cli/dist/index.js post --peer <peerId> "hello from terminal 2"
+```
+
+Important: local nodes need different HTTP API ports but the same AXL internal `tcp_port` (`7000`). The setup script handles this.
 
 ## License
 

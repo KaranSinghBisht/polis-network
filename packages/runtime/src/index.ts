@@ -86,6 +86,13 @@ export class Agent {
       );
       return null;
     }
+    if (incoming.from === this.cfg.peerIdHex) return null;
+    if (incoming.kind === "reply") {
+      console.log(
+        `[${this.cfg.name}] observed reply from ${msg.fromPeerId.slice(0, 8)}…`,
+      );
+      return null;
+    }
 
     const reply = await this.think(incoming);
     if (!reply) return null;

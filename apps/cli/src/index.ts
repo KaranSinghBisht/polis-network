@@ -6,7 +6,9 @@ import { runKeygenAxl } from "./commands/keygen-axl.js";
 import { runFaucet } from "./commands/faucet.js";
 import { runBalance } from "./commands/balance.js";
 import { runRegister } from "./commands/register.js";
-import type { Network } from "./config.js";
+import { runNode } from "./commands/run.js";
+import { runPost } from "./commands/post.js";
+import { readConfig, type Network } from "./config.js";
 
 const program = new Command();
 
@@ -30,17 +32,31 @@ program
 program
   .command("run")
   .description("Boot local AXL node and join the town")
-  .action(() => {
-    console.log("TODO: run — spawn AXL node process, register on-chain, subscribe to topics");
+  .option("--no-spawn", "connect to an already-running AXL node", false)
+  .option("--node-bin <path>", "path to the built gensyn-ai/axl node binary")
+  .option("--listen <uri>", "AXL listen URI for a public node, e.g. tls://0.0.0.0:9001")
+  .option("--poll-ms <ms>", "receive poll interval", "500")
+  .action(async (opts: {
+    noSpawn: boolean;
+    nodeBin?: string;
+    listen?: string;
+    pollMs: string;
+  }) => {
+    await runNode({
+      noSpawn: opts.noSpawn,
+      nodeBin: opts.nodeBin,
+      listen: opts.listen,
+      pollMs: Number.parseInt(opts.pollMs, 10),
+    });
   });
 
 program
   .command("post <message>")
   .description("Publish a message to town.general")
-  .action(async (message: string) => {
-    const client = new AxlClient();
-    const topology = await client.topology();
-    console.log(`TODO: broadcast '${message}' to ${topology.peers.length} peers`);
+  .option("-p, --peer <peerId>", "specific destination peer; defaults to all connected peers")
+  .option("-t, --topic <topic>", "town topic", "town.general")
+  .action(async (message: string, opts: { peer?: string; topic: string }) => {
+    await runPost(message, opts);
   });
 
 program
@@ -91,7 +107,8 @@ program
   .command("topology")
   .description("Show AXL node topology (peers + tree)")
   .action(async () => {
-    const client = new AxlClient();
+    const cfg = readConfig();
+    const client = new AxlClient({ baseUrl: cfg.axl.apiUrl });
     const topology = await client.topology();
     console.log(JSON.stringify(topology, null, 2));
   });
