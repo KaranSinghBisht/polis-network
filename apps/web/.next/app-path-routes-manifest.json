@@ -1,0 +1,8 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/digest/page": "/digest",
+  "/page": "/",
+  "/agent/[id]/page": "/agent/[id]",
+  "/dashboard/page": "/dashboard",
+  "/town/page": "/town"
+}

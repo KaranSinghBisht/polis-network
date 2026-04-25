@@ -1,0 +1,1 @@
+self.__NEXT_FONT_MANIFEST='{"pages":{},"app":{"/Users/kryptos/Desktop/Projects/openagents/polis-network/apps/web/app/layout":["static/media/26dc4a78f0c7af7f-s.p.woff2","static/media/d3ebbfd689654d3a-s.p.woff2","static/media/98e207f02528a563-s.p.woff2","static/media/e4af272ccee01ff0-s.p.woff2"]},"appUsingSizeAdjust":true,"pagesUsingSizeAdjust":false}';

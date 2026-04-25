@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: #0a1628;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-display {
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 96, "SOFT" 30;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a1628;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(245, 235, 216, 0.12);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 235, 216, 0.22);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(245, 235, 216, 0.022) 1px, transparent 1px);
+  background-size: 3px 3px;
+  z-index: 1;
+}
+
+#root,
+main,
+.app-shell {
+  position: relative;
+  z-index: 2;
+}
+
+/* Cream-paper page bodies (the digest) override the navy background. */
+.bg-paper body,
+body.paper {
+  background: #f5ebd8;
+}

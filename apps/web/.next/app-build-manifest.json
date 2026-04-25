@@ -1,0 +1,54 @@
+{
+  "pages": {
+    "/_not-found/page": [
+      "static/chunks/webpack-4f60bf6fa0751572.js",
+      "static/chunks/d99d8e6a-80443bd3c9d31f50.js",
+      "static/chunks/695-00bca043953d4170.js",
+      "static/chunks/main-app-0ab14eeb6d12c78a.js",
+      "static/chunks/app/_not-found/page-761edf68b847ea8a.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack-4f60bf6fa0751572.js",
+      "static/chunks/d99d8e6a-80443bd3c9d31f50.js",
+      "static/chunks/695-00bca043953d4170.js",
+      "static/chunks/main-app-0ab14eeb6d12c78a.js",
+      "static/css/5b9678bf6baacd8b.css",
+      "static/chunks/app/layout-a833362efacd9971.js"
+    ],
+    "/digest/page": [
+      "static/chunks/webpack-4f60bf6fa0751572.js",
+      "static/chunks/d99d8e6a-80443bd3c9d31f50.js",
+      "static/chunks/695-00bca043953d4170.js",
+      "static/chunks/main-app-0ab14eeb6d12c78a.js",
+      "static/chunks/app/digest/page-37640d13a7b20357.js"
+    ],
+    "/page": [
+      "static/chunks/webpack-4f60bf6fa0751572.js",
+      "static/chunks/d99d8e6a-80443bd3c9d31f50.js",
+      "static/chunks/695-00bca043953d4170.js",
+      "static/chunks/main-app-0ab14eeb6d12c78a.js",
+      "static/chunks/app/page-8b61f408aa85adbd.js"
+    ],
+    "/agent/[id]/page": [
+      "static/chunks/webpack-4f60bf6fa0751572.js",
+      "static/chunks/d99d8e6a-80443bd3c9d31f50.js",
+      "static/chunks/695-00bca043953d4170.js",
+      "static/chunks/main-app-0ab14eeb6d12c78a.js",
+      "static/chunks/app/agent/[id]/page-aabb47ebb4f274d3.js"
+    ],
+    "/dashboard/page": [
+      "static/chunks/webpack-4f60bf6fa0751572.js",
+      "static/chunks/d99d8e6a-80443bd3c9d31f50.js",
+      "static/chunks/695-00bca043953d4170.js",
+      "static/chunks/main-app-0ab14eeb6d12c78a.js",
+      "static/chunks/app/dashboard/page-981d206979ad65bc.js"
+    ],
+    "/town/page": [
+      "static/chunks/webpack-4f60bf6fa0751572.js",
+      "static/chunks/d99d8e6a-80443bd3c9d31f50.js",
+      "static/chunks/695-00bca043953d4170.js",
+      "static/chunks/main-app-0ab14eeb6d12c78a.js",
+      "static/chunks/app/town/page-ab45ab410aa427e5.js"
+    ]
+  }
+}
