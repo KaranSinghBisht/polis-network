@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.0",
-    "@polis/axl-client": "workspace:*"
+    "@polis/axl-client": "workspace:*",
+    "openai": "^4.95.0"
   }
 }

@@ -1,12 +1,7 @@
 import { createHash } from "node:crypto";
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-} from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
-import type Anthropic from "@anthropic-ai/sdk";
+import type { LlmClient, LlmRequest, LlmResponse } from "./llm.js";
 
 export type ReplayMode = "live" | "record" | "replay";
 
@@ -16,21 +11,12 @@ export interface ReplayConfig {
   transcriptPath: string;
 }
 
-/**
- * Structural subset of Anthropic that the Agent runtime actually uses.
- * Keeps the replay wrapper free to implement only what's needed.
- */
-export interface AnthropicMessages {
-  messages: {
-    create: Anthropic["messages"]["create"];
-  };
-}
-
 interface TranscriptEntry {
   v: 1;
   hash: string;
+  provider: string;
   model: string;
-  output: Anthropic.Message;
+  output: LlmResponse;
 }
 
 export class ReplayMissError extends Error {
@@ -43,61 +29,53 @@ export class ReplayMissError extends Error {
 }
 
 /**
- * Wrap a real Anthropic client (or any AnthropicMessages-shaped object) with
- * record/replay behaviour. When mode === "live", returns the real client
- * unchanged. Otherwise returns a wrapper whose `messages.create` either
- * appends each (request → response) pair to a JSONL transcript or replays
- * the cached response keyed by a deterministic hash of the request.
+ * Wrap an LlmClient with record/replay behaviour. Live mode is a passthrough.
+ * Record mode appends each (request → response) pair to a JSONL transcript
+ * keyed by sha256 of the canonical request. Replay mode looks up the cached
+ * response or throws ReplayMissError.
  */
-export function createMessageClient(
-  real: AnthropicMessages,
-  cfg?: ReplayConfig,
-): AnthropicMessages {
-  if (!cfg || cfg.mode === "live") return real;
+export function wrapWithReplay(client: LlmClient, cfg?: ReplayConfig): LlmClient {
+  if (!cfg || cfg.mode === "live") return client;
 
-  const cache = cfg.mode === "replay" ? loadTranscript(cfg.transcriptPath) : new Map<string, Anthropic.Message>();
-
-  const create = async (
-    params: Parameters<Anthropic["messages"]["create"]>[0],
-  ): Promise<Anthropic.Message> => {
-    const hash = hashRequest(params);
-    if (cfg.mode === "replay") {
-      const cached = cache.get(hash);
-      if (!cached) throw new ReplayMissError(hash);
-      return cached;
-    }
-    const response = (await real.messages.create(params)) as Anthropic.Message;
-    appendTranscript(cfg.transcriptPath, hash, params, response);
-    cache.set(hash, response);
-    return response;
-  };
+  const cache =
+    cfg.mode === "replay" ? loadTranscript(cfg.transcriptPath) : new Map<string, LlmResponse>();
 
   return {
-    messages: { create: create as Anthropic["messages"]["create"] },
+    provider: client.provider,
+    defaultModel: client.defaultModel,
+    async complete(req: LlmRequest): Promise<LlmResponse> {
+      const hash = hashRequest(client.provider, req);
+      if (cfg.mode === "replay") {
+        const cached = cache.get(hash);
+        if (!cached) throw new ReplayMissError(hash);
+        return cached;
+      }
+      const response = await client.complete(req);
+      appendTranscript(cfg.transcriptPath, hash, client.provider, req, response);
+      cache.set(hash, response);
+      return response;
+    },
   };
 }
 
 /**
- * Resolve the replay configuration from env, or undefined (= live mode).
- * POLIS_MODE controls behaviour; POLIS_REPLAY_TRANSCRIPT overrides the path.
- * Defaults to ~/.polis/replay/transcript.jsonl which is fine for solo runs.
+ * Resolve replay configuration from env. Returns undefined for live mode.
+ *   POLIS_MODE         = live | record | replay (default: live)
+ *   POLIS_REPLAY_TRANSCRIPT = override transcript path
  */
-export function replayConfigFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): ReplayConfig | undefined {
+export function replayConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ReplayConfig | undefined {
   const mode = env.POLIS_MODE;
   if (!mode || mode === "live") return undefined;
   if (mode !== "record" && mode !== "replay") {
     throw new Error(`POLIS_MODE must be live, record, or replay (got '${mode}')`);
   }
   const transcriptPath =
-    env.POLIS_REPLAY_TRANSCRIPT ??
-    `${env.HOME ?? "."}/.polis/replay/transcript.jsonl`;
+    env.POLIS_REPLAY_TRANSCRIPT ?? `${env.HOME ?? "."}/.polis/replay/transcript.jsonl`;
   return { mode, transcriptPath };
 }
 
-function loadTranscript(path: string): Map<string, Anthropic.Message> {
-  const cache = new Map<string, Anthropic.Message>();
+function loadTranscript(path: string): Map<string, LlmResponse> {
+  const cache = new Map<string, LlmResponse>();
   if (!existsSync(path)) return cache;
   for (const raw of readFileSync(path, "utf8").split("\n")) {
     const line = raw.trim();
@@ -112,36 +90,28 @@ function loadTranscript(path: string): Map<string, Anthropic.Message> {
 function appendTranscript(
   path: string,
   hash: string,
-  params: Parameters<Anthropic["messages"]["create"]>[0],
-  output: Anthropic.Message,
+  provider: string,
+  req: LlmRequest,
+  output: LlmResponse,
 ): void {
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
   const entry: TranscriptEntry = {
     v: 1,
     hash,
-    model: typeof params.model === "string" ? params.model : String(params.model),
+    provider,
+    model: req.model,
     output,
   };
   appendFileSync(path, `${JSON.stringify(entry)}\n`, { mode: 0o600 });
 }
 
-/**
- * Deterministic hash of the parts of an Anthropic message-create request
- * that influence the response. Skips streaming / metadata fields and
- * normalises object key order to keep hashes stable across runs.
- */
-function hashRequest(
-  params: Parameters<Anthropic["messages"]["create"]>[0],
-): string {
+function hashRequest(provider: string, req: LlmRequest): string {
   const subset = {
-    model: params.model,
-    max_tokens: params.max_tokens,
-    system: params.system,
-    messages: params.messages,
-    temperature: params.temperature,
-    top_p: params.top_p,
-    top_k: params.top_k,
-    stop_sequences: params.stop_sequences,
+    provider,
+    model: req.model,
+    maxTokens: req.maxTokens,
+    system: req.system,
+    userMessage: req.userMessage,
   };
   return createHash("sha256").update(stableJson(subset)).digest("hex");
 }
@@ -156,5 +126,5 @@ function sortValue(value: unknown): unknown {
   const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
     a.localeCompare(b),
   );
-  return Object.fromEntries(entries.map(([key, item]) => [key, sortValue(item)]));
+  return Object.fromEntries(entries.map(([k, v]) => [k, sortValue(v)]));
 }

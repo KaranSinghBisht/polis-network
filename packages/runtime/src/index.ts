@@ -1,12 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { AxlClient } from "@polis/axl-client";
 import { encodeMessage, parseMessage, type TownMessage } from "./message.js";
-import {
-  createMessageClient,
-  replayConfigFromEnv,
-  type AnthropicMessages,
-  type ReplayConfig,
-} from "./replay.js";
+import { createLlmClient, type LlmClient } from "./llm.js";
+import { replayConfigFromEnv, wrapWithReplay, type ReplayConfig } from "./replay.js";
 
 export type AgentRole =
   | "scout"
@@ -25,7 +20,7 @@ export interface AgentConfig {
   persona: string;
   /** This agent's own AXL peerId hex (used in outbound TownMessages). */
   peerIdHex: string;
-  /** Haiku by default; Opus only for Editor agents. */
+  /** Override the LlmClient's default model. */
   model?: string;
   /** Hard cap on reply length to keep costs bounded. */
   maxTokens?: number;
@@ -35,8 +30,8 @@ export interface AgentConfig {
 
 export interface AgentDeps {
   axl?: AxlClient;
-  /** Real Anthropic client (or any structurally-compatible wrapper). */
-  anthropic?: AnthropicMessages;
+  /** Inject a specific LlmClient. If omitted, one is built from env. */
+  llm?: LlmClient;
   /**
    * Optional replay configuration. If omitted, falls back to
    * `replayConfigFromEnv()` so POLIS_MODE/POLIS_REPLAY_TRANSCRIPT
@@ -48,40 +43,49 @@ export interface AgentDeps {
 export type { TownMessage };
 export { encodeMessage, parseMessage, isTownMessage } from "./message.js";
 export {
-  createMessageClient,
+  createLlmClient,
+  AnthropicLlmClient,
+  GroqLlmClient,
+  type LlmClient,
+  type LlmProvider,
+  type LlmRequest,
+  type LlmResponse,
+} from "./llm.js";
+export {
+  wrapWithReplay,
   replayConfigFromEnv,
   ReplayMissError,
-  type AnthropicMessages,
   type ReplayConfig,
   type ReplayMode,
 } from "./replay.js";
 
 /**
- * Agent runtime — polls AXL `/recv`, asks Claude whether to reply,
+ * Agent runtime — polls AXL `/recv`, asks the LLM whether to reply,
  * and emits replies back over `/send`.
  *
- * System prompt is cached ephemerally so the persona + role block hits
- * the cache on every subsequent call (~5 min TTL). Practically this
- * means the 200-400 token persona only gets fully billed once per
- * cache window regardless of how many messages the agent handles.
+ * Provider-agnostic via LlmClient. Anthropic and Groq are both supported;
+ * the runtime auto-detects from env (GROQ_API_KEY beats ANTHROPIC_API_KEY
+ * unless POLIS_LLM_PROVIDER overrides).
  */
 export class Agent {
   private readonly cfg: AgentConfig;
   private readonly axl: AxlClient;
-  private readonly anthropic: AnthropicMessages;
+  private readonly llm: LlmClient;
   private running = false;
 
   constructor(cfg: AgentConfig, deps: AgentDeps = {}) {
     this.cfg = cfg;
     this.axl = deps.axl ?? new AxlClient();
-    const real: AnthropicMessages = deps.anthropic ?? new Anthropic();
+    const baseLlm = deps.llm ?? createLlmClient();
     const replayCfg = deps.replay ?? replayConfigFromEnv();
-    this.anthropic = createMessageClient(real, replayCfg);
+    this.llm = wrapWithReplay(baseLlm, replayCfg);
   }
 
   async start(): Promise<void> {
     this.running = true;
-    console.log(`[${this.cfg.name}] runtime started as ${this.cfg.role}`);
+    console.log(
+      `[${this.cfg.name}] runtime started as ${this.cfg.role} (llm=${this.llm.provider}/${this.cfg.model ?? this.llm.defaultModel})`,
+    );
     while (this.running) {
       const msg = await this.axl.recv();
       if (!msg) {
@@ -100,11 +104,8 @@ export class Agent {
     this.running = false;
   }
 
-  /** Exposed for tests — lets callers drive a single message without a live AXL. */
-  async handle(msg: {
-    fromPeerId: string;
-    body: Uint8Array;
-  }): Promise<TownMessage | null> {
+  /** Exposed for tests — drives a single message without a live AXL. */
+  async handle(msg: { fromPeerId: string; body: Uint8Array }): Promise<TownMessage | null> {
     const incoming = parseMessage(msg.body);
     if (!incoming) {
       console.log(
@@ -134,29 +135,15 @@ export class Agent {
   }
 
   private async think(incoming: TownMessage): Promise<TownMessage | null> {
-    const response = await this.anthropic.messages.create({
-      model: this.cfg.model ?? "claude-haiku-4-5-20251001",
-      max_tokens: this.cfg.maxTokens ?? 400,
-      system: [
-        {
-          type: "text",
-          text: systemPrompt(this.cfg),
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      messages: [
-        {
-          role: "user",
-          content:
-            `[topic: ${incoming.topic}] ${incoming.from.slice(0, 8)}… says:\n\n` +
-            incoming.content,
-        },
-      ],
+    const response = await this.llm.complete({
+      model: this.cfg.model ?? this.llm.defaultModel,
+      maxTokens: this.cfg.maxTokens ?? 400,
+      system: systemPrompt(this.cfg),
+      userMessage:
+        `[topic: ${incoming.topic}] ${incoming.from.slice(0, 8)}… says:\n\n` + incoming.content,
     });
-
-    const text = extractText(response);
-    if (!text) return null;
-
+    const text = response.text.trim();
+    if (!text || text === "<<IGNORE>>") return null;
     return {
       v: 1,
       kind: "reply",
@@ -180,16 +167,6 @@ function systemPrompt(cfg: AgentConfig): string {
     "- Never give personalised financial, legal, or tax advice.",
     "- Assume your reply will be seen by other agents and may be cited in a published digest.",
   ].join("\n");
-}
-
-function extractText(
-  response: Anthropic.Message,
-): string | null {
-  const block = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
-  if (!block) return null;
-  const text = block.text.trim();
-  if (!text || text === "<<IGNORE>>") return null;
-  return text;
 }
 
 function truncate(s: string, n: number): string {
