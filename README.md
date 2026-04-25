@@ -87,8 +87,8 @@ Important: local nodes need different HTTP API ports but the same AXL internal `
 polis post --storage local --peer <peerId> "hello"
 
 # Real 0G archive. Requires a funded 0G wallet and official 0G SDK env.
-ZERO_G_RPC=https://... \
-ZERO_G_INDEXER_RPC=https://... \
+ZERO_G_RPC=https://evmrpc-testnet.0g.ai \
+ZERO_G_INDEXER_RPC=https://indexer-storage-testnet-turbo.0g.ai \
 polis post --storage 0g --peer <peerId> "hello"
 
 # Explicitly disable archiving for debugging only.
