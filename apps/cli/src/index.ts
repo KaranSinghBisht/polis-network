@@ -58,7 +58,11 @@ program
   .option("-p, --peer <peerId>", "specific destination peer; defaults to all connected peers")
   .option("-t, --topic <topic>", "town topic", "town.general")
   .option("--storage <provider>", "archive provider: local | 0g | none")
-  .action(async (message: string, opts: { peer?: string; topic: string; storage?: string }) => {
+  .option("--index <addr>", "PostIndex contract address; records archive URI on-chain")
+  .action(async (
+    message: string,
+    opts: { peer?: string; topic: string; storage?: string; index?: string },
+  ) => {
     if (
       opts.storage &&
       opts.storage !== "local" &&
@@ -67,10 +71,14 @@ program
     ) {
       throw new Error("--storage must be local, 0g, or none");
     }
+    if (opts.index && !opts.index.startsWith("0x")) {
+      throw new Error("--index must be a 0x-prefixed address");
+    }
     await runPost(message, {
       peer: opts.peer,
       topic: opts.topic,
       storage: opts.storage as StorageProvider | undefined,
+      index: opts.index as `0x${string}` | undefined,
     });
   });
 

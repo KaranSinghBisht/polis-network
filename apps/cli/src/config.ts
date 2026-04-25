@@ -18,6 +18,8 @@ export interface PolisConfig {
   registryAddress?: `0x${string}`;
   /** PaymentRouter deployment address (written by future deploy/pay flows). */
   paymentRouterAddress?: `0x${string}`;
+  /** PostIndex deployment address for on-chain archive provenance events. */
+  postIndexAddress?: `0x${string}`;
   axl: {
     keyPath: string;
     nodeConfigPath: string;

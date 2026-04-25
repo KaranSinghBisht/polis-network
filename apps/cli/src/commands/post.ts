@@ -1,13 +1,31 @@
 import { AxlClient } from "@polis/axl-client";
 import { putJson, type StorageProvider } from "@polis/storage";
-import { readConfig } from "../config.js";
+import { keccak256, stringToHex } from "viem";
+import { readConfig, writeConfig, type PolisConfig } from "../config.js";
+import { buildClients } from "../viem.js";
 import { shortenPeer } from "../axl-node.js";
 import { encodeMessage, type TownMessage } from "../town-message.js";
+
+const POST_INDEX_ABI = [
+  {
+    name: "recordPost",
+    type: "function",
+    inputs: [
+      { name: "peerId", type: "bytes32" },
+      { name: "topic", type: "string" },
+      { name: "archiveURI", type: "string" },
+      { name: "contentHash", type: "bytes32" },
+    ],
+    outputs: [{ name: "postId", type: "uint256" }],
+    stateMutability: "nonpayable",
+  },
+] as const;
 
 export interface PostOptions {
   peer?: string;
   topic: string;
   storage?: StorageProvider;
+  index?: `0x${string}`;
 }
 
 export async function runPost(message: string, opts: PostOptions): Promise<void> {
@@ -47,6 +65,7 @@ export async function runPost(message: string, opts: PostOptions): Promise<void>
     packet.archiveUri = archive.uri;
     if (archive.txHash) packet.archiveTxHash = archive.txHash;
     console.log(`archived post: ${archive.uri}${archive.txHash ? ` tx=${archive.txHash}` : ""}`);
+    await recordArchiveOnChain(cfg, packet, archive.uri, opts.index);
   }
 
   const body = encodeMessage(packet);
@@ -55,4 +74,47 @@ export async function runPost(message: string, opts: PostOptions): Promise<void>
     const sent = await client.send(peer, body);
     console.log(`sent ${sent} bytes to ${shortenPeer(peer)}`);
   }
+}
+
+async function recordArchiveOnChain(
+  cfg: PolisConfig,
+  packet: TownMessage,
+  archiveUri: string,
+  explicitIndex?: `0x${string}`,
+): Promise<void> {
+  const postIndex = explicitIndex ?? cfg.postIndexAddress;
+  if (!postIndex) return;
+
+  const peerId = normalizePeerId(packet.from);
+  const contentHash = keccak256(stringToHex(packet.content));
+  const { publicClient, walletClient } = buildClients(cfg);
+
+  console.log(`recording archive on-chain: ${postIndex}`);
+  const hash = await walletClient.writeContract({
+    address: postIndex,
+    abi: POST_INDEX_ABI,
+    functionName: "recordPost",
+    args: [peerId, packet.topic, archiveUri, contentHash],
+  });
+  console.log(`post index tx: ${hash}`);
+
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status === "reverted") throw new Error("post index tx reverted");
+  console.log(`indexed archive in block ${receipt.blockNumber}.`);
+
+  persistPostIndex(cfg, postIndex);
+}
+
+function normalizePeerId(peerId: string): `0x${string}` {
+  const hex = peerId.startsWith("0x") ? peerId.slice(2) : peerId;
+  if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+    throw new Error("peerId must be a 64-character hex AXL public key");
+  }
+  return `0x${hex}`;
+}
+
+function persistPostIndex(cfg: PolisConfig, addr: `0x${string}`): void {
+  if (cfg.postIndexAddress === addr) return;
+  writeConfig({ ...cfg, postIndexAddress: addr });
+  console.log("saved PostIndex address to ~/.polis/config.json");
 }

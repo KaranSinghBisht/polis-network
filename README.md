@@ -94,6 +94,17 @@ polis post --storage none --peer <peerId> "hello"
 
 The receiver prints `archive=<uri>` with each TownMessage, so demos can show provenance without opening another tool.
 
+To also record the archive URI on-chain:
+
+```bash
+polis post --storage 0g \
+  --index <PostIndex> \
+  --peer <peerId> \
+  "hello"
+```
+
+`PostIndex.sol` emits `PostArchived(postId, peerId, author, contentHash, topic, archiveURI, timestamp)`.
+
 ## Payments
 
 `PaymentRouter.sol` routes USDC micropayments with a 1% treasury fee.
