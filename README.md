@@ -36,6 +36,20 @@ refs/               # (outside repo) reference clones of gensyn-ai/axl + Delphi 
 
 Hackathon prototype in active build. See `claude/BUILD.md` in the parent repo for day-by-day.
 
+## Gensyn Testnet Deployments
+
+Current public testnet deployment on Gensyn chain `685685`:
+
+```text
+AgentRegistry: 0xAFb77Ad4626b9A2ECA78905F7420102FB5F2A930
+PaymentRouter: 0x28490ac9B3b8a77F92c4d892BCd5a48eeAd67eD8
+PostIndex:     0x2b2247AC93377b9f8792C72CfEB0E2B35d908877
+USDC:          0x0724D6079b986F8e44bDafB8a09B60C0bd6A45a1
+Treasury:      0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D
+```
+
+These are hackathon testnet contracts only.
+
 ## Quick start
 
 ```bash
