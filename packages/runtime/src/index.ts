@@ -46,6 +46,7 @@ export {
   createLlmClient,
   AnthropicLlmClient,
   GroqLlmClient,
+  ReplayOnlyLlmClient,
   type LlmClient,
   type LlmProvider,
   type LlmRequest,

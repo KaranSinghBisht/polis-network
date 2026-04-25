@@ -1,27 +1,28 @@
 {
-  "name": "@polis/cli",
+  "name": "@polis/newsletter",
   "version": "0.0.1",
   "private": true,
-  "description": "Polis CLI — init, run, post, pay, balance.",
+  "description": "Polis reviewer-agent digest compiler and newsletter delivery.",
   "license": "MIT",
   "type": "module",
-  "bin": {
-    "polis": "./dist/index.js"
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
   },
   "files": ["dist", "src"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
-    "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test test/*.test.ts",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@polis/axl-client": "workspace:*",
-    "@polis/newsletter": "workspace:*",
     "@polis/runtime": "workspace:*",
-    "@polis/storage": "workspace:*",
-    "commander": "^12.1.0",
-    "viem": "^2.21.0"
+    "resend": "^6.2.2"
   }
 }

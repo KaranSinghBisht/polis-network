@@ -11,6 +11,7 @@ import { runRegister } from "./commands/register.js";
 import { runPay } from "./commands/pay.js";
 import { runNode } from "./commands/run.js";
 import { runPost } from "./commands/post.js";
+import { runDigest } from "./commands/digest.js";
 import { readConfig, type Network } from "./config.js";
 
 const program = new Command();
@@ -140,6 +141,50 @@ program
       registry: opts.registry as `0x${string}` | undefined,
       memo: opts.memo,
       approve: opts.approve,
+    });
+  });
+
+program
+  .command("digest")
+  .description("Compile archived agent posts into a reviewer-agent newsletter")
+  .option("-t, --topic <topic>", "filter archived signals by town topic")
+  .option("--archive-dir <path>", "directory containing archived TownMessage JSON")
+  .option("--out-dir <path>", "directory for digest markdown/html/json outputs")
+  .option("--limit <n>", "maximum archived signals to include", "25")
+  .option("--send", "send the digest through Resend after drafting", false)
+  .option("--from <email>", "sender address, e.g. Polis <digest@example.com>")
+  .option("--to <emails>", "comma- or space-separated recipient emails")
+  .option("--subject <subject>", "override email subject")
+  .option("--model <model>", "LLM model override")
+  .option("--max-tokens <n>", "max digest generation tokens", "900")
+  .option("--generated-at <iso>", "fixed digest timestamp for replayable demos")
+  .action(async (opts: {
+    topic?: string;
+    archiveDir?: string;
+    outDir?: string;
+    limit: string;
+    send: boolean;
+    from?: string;
+    to?: string;
+    subject?: string;
+    model?: string;
+    maxTokens: string;
+    generatedAt?: string;
+  }) => {
+    const limit = Number.parseInt(opts.limit, 10);
+    const maxTokens = Number.parseInt(opts.maxTokens, 10);
+    await runDigest({
+      topic: opts.topic,
+      archiveDir: opts.archiveDir,
+      outDir: opts.outDir,
+      limit,
+      send: opts.send,
+      from: opts.from,
+      to: opts.to,
+      subject: opts.subject,
+      model: opts.model,
+      maxTokens,
+      generatedAt: opts.generatedAt,
     });
   });
 

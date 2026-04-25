@@ -3,6 +3,9 @@ import OpenAI from "openai";
 
 export type LlmProvider = "anthropic" | "groq";
 
+export const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
+export const DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
+
 /**
  * Provider-agnostic completion request. All providers receive the same shape;
  * adapters translate to the underlying SDK call.
@@ -47,11 +50,13 @@ export interface CreateLlmClientOptions {
  */
 export function createLlmClient(opts: CreateLlmClientOptions = {}): LlmClient {
   const env = opts.env ?? process.env;
-  const explicit = (opts.provider ?? (env.POLIS_LLM_PROVIDER as LlmProvider | undefined)) || undefined;
+  const explicit = parseProvider(opts.provider ?? env.POLIS_LLM_PROVIDER);
+  const replayOnly = env.POLIS_MODE === "replay";
 
   const wantGroq = explicit === "groq" || (!explicit && env.GROQ_API_KEY);
   if (wantGroq) {
     if (!env.GROQ_API_KEY) {
+      if (replayOnly) return new ReplayOnlyLlmClient("groq", env.GROQ_MODEL);
       throw new Error("POLIS_LLM_PROVIDER=groq but GROQ_API_KEY is not set");
     }
     return new GroqLlmClient(env.GROQ_API_KEY, env.GROQ_MODEL);
@@ -60,14 +65,23 @@ export function createLlmClient(opts: CreateLlmClientOptions = {}): LlmClient {
   const wantAnthropic = explicit === "anthropic" || env.ANTHROPIC_API_KEY;
   if (wantAnthropic) {
     if (!env.ANTHROPIC_API_KEY) {
+      if (replayOnly) return new ReplayOnlyLlmClient("anthropic", env.ANTHROPIC_MODEL);
       throw new Error("POLIS_LLM_PROVIDER=anthropic but ANTHROPIC_API_KEY is not set");
     }
     return new AnthropicLlmClient(env.ANTHROPIC_API_KEY, env.ANTHROPIC_MODEL);
   }
 
+  if (replayOnly) return new ReplayOnlyLlmClient("groq", env.GROQ_MODEL);
+
   throw new Error(
     "no LLM provider configured — set GROQ_API_KEY or ANTHROPIC_API_KEY (see .env.example)",
   );
+}
+
+function parseProvider(value: string | undefined): LlmProvider | undefined {
+  if (!value) return undefined;
+  if (value === "groq" || value === "anthropic") return value;
+  throw new Error(`POLIS_LLM_PROVIDER must be groq or anthropic (got '${value}')`);
 }
 
 // ─── Anthropic adapter ─────────────────────────────────────────────────
@@ -79,7 +93,7 @@ export class AnthropicLlmClient implements LlmClient {
 
   constructor(apiKey: string, defaultModel?: string) {
     this.client = new Anthropic({ apiKey });
-    this.defaultModel = defaultModel || "claude-haiku-4-5-20251001";
+    this.defaultModel = defaultModel || DEFAULT_ANTHROPIC_MODEL;
   }
 
   async complete(req: LlmRequest): Promise<LlmResponse> {
@@ -116,7 +130,7 @@ export class GroqLlmClient implements LlmClient {
       apiKey,
       baseURL: "https://api.groq.com/openai/v1",
     });
-    this.defaultModel = defaultModel || "llama-3.3-70b-versatile";
+    this.defaultModel = defaultModel || DEFAULT_GROQ_MODEL;
   }
 
   async complete(req: LlmRequest): Promise<LlmResponse> {
@@ -138,5 +152,24 @@ export class GroqLlmClient implements LlmClient {
           }
         : undefined,
     };
+  }
+}
+
+// ─── Replay-only adapter ───────────────────────────────────────────────
+
+export class ReplayOnlyLlmClient implements LlmClient {
+  readonly provider: LlmProvider;
+  readonly defaultModel: string;
+
+  constructor(provider: LlmProvider, defaultModel?: string) {
+    this.provider = provider;
+    this.defaultModel =
+      defaultModel ?? (provider === "groq" ? DEFAULT_GROQ_MODEL : DEFAULT_ANTHROPIC_MODEL);
+  }
+
+  async complete(): Promise<LlmResponse> {
+    throw new Error(
+      "replay-only LLM client cannot call a live provider; record a transcript or set an API key",
+    );
   }
 }

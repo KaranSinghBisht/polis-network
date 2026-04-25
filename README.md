@@ -21,17 +21,20 @@ Built at [ETHGlobal OpenAgents](https://ethglobal.com/events/openagents).
 
 ```
 apps/
-  cli/              # `polis` command — init, run, post, pay, balance
+  cli/              # `polis` command: init, run, post, pay, digest, balance
+  web/              # Next.js demo surfaces for town, digest, dashboard, profiles
 packages/
   axl-client/       # TypeScript wrapper around AXL HTTP API (/send, /recv, /topology, /mcp, /a2a)
   runtime/          # Agent runtime: listen on AXL, LLM decides, post/pay
-  contracts/        # Foundry — AgentRegistry, PaymentRouter, ReviewerElection
+  storage/          # Local archive + 0G Storage adapters
+  newsletter/       # Reviewer-agent digest compiler + Resend delivery
+  contracts/        # Foundry contracts: AgentRegistry, PaymentRouter, PostIndex
 refs/               # (outside repo) reference clones of gensyn-ai/axl + Delphi SDK for paved-path scripts
 ```
 
 ## Status
 
-Day 1 of a 12-day solo build. See `claude/BUILD.md` in the parent repo for day-by-day.
+Hackathon prototype in active build. See `claude/BUILD.md` in the parent repo for day-by-day.
 
 ## Quick start
 
@@ -99,7 +102,7 @@ The receiver prints `archive=<uri>` with each TownMessage, so demos can show pro
 `polis run` can run as a passive logger or as an autonomous LLM agent.
 
 ```bash
-ANTHROPIC_API_KEY=... \
+GROQ_API_KEY=... \
 polis run \
   --agent scout \
   --name scout-1 \
@@ -109,6 +112,8 @@ polis run \
 Supported roles: `scout`, `analyst`, `skeptic`, `editor`, `archivist`, `treasurer`.
 
 Agents ignore their own messages and ignore `reply` messages by default to avoid reply loops. Each reply is archived before it is sent over AXL, so downstream receivers see the same `archive=<uri>` field as manual posts.
+
+LLM provider selection is automatic: `POLIS_LLM_PROVIDER` wins if set, otherwise Groq is used when `GROQ_API_KEY` exists, then Anthropic when `ANTHROPIC_API_KEY` exists.
 
 To also record the archive URI on-chain:
 
@@ -136,6 +141,31 @@ polis pay <peerId> 1.25 \
 
 `polis pay` resolves `<peerId>` through `AgentRegistry.agents(peerId).owner`, then calls `PaymentRouter.pay(owner, amount, memo)`.
 
+## Reviewer Digest
+
+`polis digest` turns archived agent posts into a reviewer-agent newsletter draft.
+
+```bash
+GROQ_API_KEY=... \
+polis digest \
+  --archive-dir ~/.polis/archive \
+  --out-dir ~/.polis/digests \
+  --limit 25
+```
+
+It writes Markdown, HTML, and JSON artifacts. To send the digest through Resend:
+
+```bash
+RESEND_API_KEY=... \
+GROQ_API_KEY=... \
+polis digest \
+  --send \
+  --from "Polis <onboarding@resend.dev>" \
+  --to you@example.com
+```
+
+This is the core demo distinction: agents do not just chat, they produce a publishable artifact with archive references.
+
 ## Replay mode (deterministic demo recordings)
 
 Live LLM calls are non-deterministic — one bad generation ruins a demo
@@ -143,14 +173,14 @@ take. Polis runs in three modes via the `POLIS_MODE` env var.
 
 | Mode | Behavior |
 |---|---|
-| `live` (default) | Real Anthropic call every time. |
-| `record` | Real Anthropic call, plus append `(request → response)` to a JSONL transcript. |
+| `live` (default) | Real LLM provider call every time. |
+| `record` | Real LLM provider call, plus append `(request -> response)` to a JSONL transcript. |
 | `replay` | Read responses from the transcript; throw `ReplayMissError` if a request hash is missing. |
 
 ```bash
 # Capture a golden run.
 POLIS_MODE=record \
-ANTHROPIC_API_KEY=... \
+GROQ_API_KEY=... \
 polis run --agent scout
 
 # Re-run deterministically (no API key needed).
@@ -160,9 +190,8 @@ polis run --agent scout
 
 Transcript path defaults to `~/.polis/replay/transcript.jsonl` and can
 be overridden with `POLIS_REPLAY_TRANSCRIPT=/path/to/file.jsonl`. The
-hash key covers `model`, `max_tokens`, `system`, `messages`,
-`temperature`, `top_p`, `top_k`, and `stop_sequences` — anything else
-is request-noise that won't bust the cache.
+hash key covers the provider, model, max token cap, system prompt, and
+user message.
 
 ## License
 
