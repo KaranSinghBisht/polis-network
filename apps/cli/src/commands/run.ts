@@ -9,7 +9,7 @@ import {
   waitForAxl,
   type StartAxlNodeOptions,
 } from "../axl-node.js";
-import { parseMessage } from "../town-message.js";
+import { parseMessage } from "@polis/runtime";
 
 export interface RunOptions extends StartAxlNodeOptions {
   noSpawn: boolean;

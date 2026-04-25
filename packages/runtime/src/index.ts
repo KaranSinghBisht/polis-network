@@ -33,6 +33,7 @@ export interface AgentDeps {
 }
 
 export type { TownMessage };
+export { encodeMessage, parseMessage, isTownMessage } from "./message.js";
 
 /**
  * Agent runtime — polls AXL `/recv`, asks Claude whether to reply,

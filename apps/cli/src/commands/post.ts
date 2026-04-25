@@ -4,7 +4,7 @@ import { keccak256, stringToHex } from "viem";
 import { readConfig, writeConfig, type PolisConfig } from "../config.js";
 import { buildClients } from "../viem.js";
 import { shortenPeer } from "../axl-node.js";
-import { encodeMessage, type TownMessage } from "../town-message.js";
+import { encodeMessage, type TownMessage } from "@polis/runtime";
 
 const POST_INDEX_ABI = [
   {
