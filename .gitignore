@@ -5,6 +5,7 @@ out/
 cache/
 artifacts/
 broadcast/
+.next/
 *.log
 .DS_Store
 
