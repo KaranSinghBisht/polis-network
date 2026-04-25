@@ -54,7 +54,7 @@ In another terminal, after `polis run` reports connected peers:
 
 ```bash
 pnpm --filter @polis/cli start -- topology
-pnpm --filter @polis/cli start -- post "hello from polis"
+pnpm --filter @polis/cli start -- post --peer <peerId> "hello from polis"
 ```
 
 ## Local three-terminal AXL smoke
@@ -74,6 +74,40 @@ HOME=/tmp/polis-term-2 node apps/cli/dist/index.js post --peer <peerId> "hello f
 ```
 
 Important: local nodes need different HTTP API ports but the same AXL internal `tcp_port` (`7000`). The setup script handles this.
+
+## Storage
+
+`polis post` archives every message before sending it over AXL.
+
+```bash
+# Offline/dev archive into ~/.polis/archive, using a deterministic sha256 URI.
+polis post --storage local --peer <peerId> "hello"
+
+# Real 0G archive. Requires a funded 0G wallet and official 0G SDK env.
+ZERO_G_RPC=https://... \
+ZERO_G_INDEXER_RPC=https://... \
+polis post --storage 0g --peer <peerId> "hello"
+
+# Explicitly disable archiving for debugging only.
+polis post --storage none --peer <peerId> "hello"
+```
+
+The receiver prints `archive=<uri>` with each TownMessage, so demos can show provenance without opening another tool.
+
+## Payments
+
+`PaymentRouter.sol` routes USDC micropayments with a 1% treasury fee.
+
+```bash
+# First payment usually needs --approve.
+polis pay <peerId> 1.25 \
+  --registry <AgentRegistry> \
+  --router <PaymentRouter> \
+  --approve \
+  --memo "scout bounty"
+```
+
+`polis pay` resolves `<peerId>` through `AgentRegistry.agents(peerId).owner`, then calls `PaymentRouter.pay(owner, amount, memo)`.
 
 ## License
 

@@ -6,6 +6,8 @@ export interface TownMessage {
   content: string;
   ts: number;
   parentCid?: string;
+  archiveUri?: string;
+  archiveTxHash?: string;
 }
 
 export function encodeMessage(msg: TownMessage): Uint8Array {

@@ -1,4 +1,5 @@
 import { AxlClient } from "@polis/axl-client";
+import { putJson, type StorageProvider } from "@polis/storage";
 import { readConfig } from "../config.js";
 import { shortenPeer } from "../axl-node.js";
 import { encodeMessage, type TownMessage } from "../town-message.js";
@@ -6,6 +7,7 @@ import { encodeMessage, type TownMessage } from "../town-message.js";
 export interface PostOptions {
   peer?: string;
   topic: string;
+  storage?: StorageProvider;
 }
 
 export async function runPost(message: string, opts: PostOptions): Promise<void> {
@@ -30,6 +32,23 @@ export async function runPost(message: string, opts: PostOptions): Promise<void>
     content: message,
     ts: Date.now(),
   };
+
+  const storageProvider = opts.storage ?? cfg.storage?.provider ?? "local";
+  const archive = await putJson(packet, {
+    provider: storageProvider,
+    archiveDir: cfg.storage?.archiveDir ?? `${process.env.HOME ?? "."}/.polis/archive`,
+    zeroG: {
+      rpcUrl: cfg.storage?.zeroGRpcUrl ?? process.env.ZERO_G_RPC ?? "",
+      indexerRpcUrl: cfg.storage?.zeroGIndexerRpcUrl ?? process.env.ZERO_G_INDEXER_RPC ?? "",
+      privateKey: cfg.privateKey,
+    },
+  });
+  if (archive) {
+    packet.archiveUri = archive.uri;
+    if (archive.txHash) packet.archiveTxHash = archive.txHash;
+    console.log(`archived post: ${archive.uri}${archive.txHash ? ` tx=${archive.txHash}` : ""}`);
+  }
+
   const body = encodeMessage(packet);
 
   for (const peer of peers) {

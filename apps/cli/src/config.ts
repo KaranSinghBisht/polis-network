@@ -16,10 +16,18 @@ export interface PolisConfig {
   usdc: `0x${string}`;
   /** AgentRegistry deployment address (written by `polis register`). */
   registryAddress?: `0x${string}`;
+  /** PaymentRouter deployment address (written by future deploy/pay flows). */
+  paymentRouterAddress?: `0x${string}`;
   axl: {
     keyPath: string;
     nodeConfigPath: string;
     apiUrl: string;
+  };
+  storage?: {
+    provider: "local" | "0g" | "none";
+    archiveDir: string;
+    zeroGRpcUrl?: string;
+    zeroGIndexerRpcUrl?: string;
   };
 }
 
@@ -54,6 +62,10 @@ export function ensurePolisDir(): string {
   const dir = polisDir();
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true, mode: 0o700 });
   return dir;
+}
+
+export function defaultArchiveDir(): string {
+  return join(polisDir(), "archive");
 }
 
 export function configExists(): boolean {

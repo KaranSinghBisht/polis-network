@@ -1,0 +1,27 @@
+{
+  "name": "@polis/storage",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Polis archive storage providers: local dev + 0G Storage.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@0glabs/0g-ts-sdk": "^0.3.1",
+    "ethers": "6.13.1"
+  }
+}

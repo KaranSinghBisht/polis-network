@@ -45,8 +45,9 @@ export async function runNode(opts: RunOptions): Promise<void> {
 
     const town = parseMessage(msg.body);
     if (town) {
+      const archive = town.archiveUri ? ` archive=${town.archiveUri}` : "";
       console.log(
-        `[${town.topic}] ${town.kind} from ${shortenPeer(town.from)}: ${town.content}`,
+        `[${town.topic}] ${town.kind} from ${shortenPeer(town.from)}: ${town.content}${archive}`,
       );
     } else {
       console.log(

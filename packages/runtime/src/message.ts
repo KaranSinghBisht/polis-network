@@ -10,6 +10,8 @@ export interface TownMessage {
   content: string;
   ts: number;
   parentCid?: string; // ref to a prior post on 0G, once we wire 0G storage
+  archiveUri?: string;
+  archiveTxHash?: string;
 }
 
 export function encodeMessage(msg: TownMessage): Uint8Array {

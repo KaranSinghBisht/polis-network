@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { AxlClient } from "@polis/axl-client";
+import type { StorageProvider } from "@polis/storage";
 import { runInit } from "./commands/init.js";
 import { runKeygenAxl } from "./commands/keygen-axl.js";
 import { runFaucet } from "./commands/faucet.js";
 import { runBalance } from "./commands/balance.js";
 import { runRegister } from "./commands/register.js";
+import { runPay } from "./commands/pay.js";
 import { runNode } from "./commands/run.js";
 import { runPost } from "./commands/post.js";
 import { readConfig, type Network } from "./config.js";
@@ -55,15 +57,47 @@ program
   .description("Publish a message to town.general")
   .option("-p, --peer <peerId>", "specific destination peer; defaults to all connected peers")
   .option("-t, --topic <topic>", "town topic", "town.general")
-  .action(async (message: string, opts: { peer?: string; topic: string }) => {
-    await runPost(message, opts);
+  .option("--storage <provider>", "archive provider: local | 0g | none")
+  .action(async (message: string, opts: { peer?: string; topic: string; storage?: string }) => {
+    if (
+      opts.storage &&
+      opts.storage !== "local" &&
+      opts.storage !== "0g" &&
+      opts.storage !== "none"
+    ) {
+      throw new Error("--storage must be local, 0g, or none");
+    }
+    await runPost(message, {
+      peer: opts.peer,
+      topic: opts.topic,
+      storage: opts.storage as StorageProvider | undefined,
+    });
   });
 
 program
   .command("pay <peerId> <amount>")
   .description("Send USDC to another agent via PaymentRouter")
-  .action((peerId: string, amount: string) => {
-    console.log(`TODO: pay ${peerId} ${amount} USDC via PaymentRouter`);
+  .option("--router <addr>", "PaymentRouter contract address (saved on success)")
+  .option("--registry <addr>", "AgentRegistry contract address")
+  .option("--memo <memo>", "payment memo")
+  .option("--approve", "approve PaymentRouter to spend this amount first", false)
+  .action(async (
+    peerId: string,
+    amount: string,
+    opts: { router?: string; registry?: string; memo?: string; approve: boolean },
+  ) => {
+    if (opts.router && !opts.router.startsWith("0x")) {
+      throw new Error("--router must be a 0x-prefixed address");
+    }
+    if (opts.registry && !opts.registry.startsWith("0x")) {
+      throw new Error("--registry must be a 0x-prefixed address");
+    }
+    await runPay(peerId, amount, {
+      router: opts.router as `0x${string}` | undefined,
+      registry: opts.registry as `0x${string}` | undefined,
+      memo: opts.memo,
+      approve: opts.approve,
+    });
   });
 
 program

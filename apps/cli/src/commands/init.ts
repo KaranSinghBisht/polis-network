@@ -5,6 +5,7 @@ import {
   NETWORKS,
   configExists,
   configPath,
+  defaultArchiveDir,
   polisDir,
   readConfig,
   writeConfig,
@@ -44,6 +45,12 @@ export async function runInit(opts: InitOptions): Promise<void> {
       keyPath: join(polisDir(), "private.pem"),
       nodeConfigPath: join(polisDir(), "node-config.json"),
       apiUrl: "http://127.0.0.1:9002",
+    },
+    storage: {
+      provider: "local",
+      archiveDir: defaultArchiveDir(),
+      zeroGRpcUrl: process.env.ZERO_G_RPC,
+      zeroGIndexerRpcUrl: process.env.ZERO_G_INDEXER_RPC,
     },
   };
 
