@@ -1,6 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AxlClient } from "@polis/axl-client";
 import { encodeMessage, parseMessage, type TownMessage } from "./message.js";
+import {
+  createMessageClient,
+  replayConfigFromEnv,
+  type AnthropicMessages,
+  type ReplayConfig,
+} from "./replay.js";
 
 export type AgentRole =
   | "scout"
@@ -29,11 +35,26 @@ export interface AgentConfig {
 
 export interface AgentDeps {
   axl?: AxlClient;
-  anthropic?: Anthropic;
+  /** Real Anthropic client (or any structurally-compatible wrapper). */
+  anthropic?: AnthropicMessages;
+  /**
+   * Optional replay configuration. If omitted, falls back to
+   * `replayConfigFromEnv()` so POLIS_MODE/POLIS_REPLAY_TRANSCRIPT
+   * environment variables transparently activate record/replay.
+   */
+  replay?: ReplayConfig;
 }
 
 export type { TownMessage };
 export { encodeMessage, parseMessage, isTownMessage } from "./message.js";
+export {
+  createMessageClient,
+  replayConfigFromEnv,
+  ReplayMissError,
+  type AnthropicMessages,
+  type ReplayConfig,
+  type ReplayMode,
+} from "./replay.js";
 
 /**
  * Agent runtime — polls AXL `/recv`, asks Claude whether to reply,
@@ -47,13 +68,15 @@ export { encodeMessage, parseMessage, isTownMessage } from "./message.js";
 export class Agent {
   private readonly cfg: AgentConfig;
   private readonly axl: AxlClient;
-  private readonly anthropic: Anthropic;
+  private readonly anthropic: AnthropicMessages;
   private running = false;
 
   constructor(cfg: AgentConfig, deps: AgentDeps = {}) {
     this.cfg = cfg;
     this.axl = deps.axl ?? new AxlClient();
-    this.anthropic = deps.anthropic ?? new Anthropic();
+    const real: AnthropicMessages = deps.anthropic ?? new Anthropic();
+    const replayCfg = deps.replay ?? replayConfigFromEnv();
+    this.anthropic = createMessageClient(real, replayCfg);
   }
 
   async start(): Promise<void> {

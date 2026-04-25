@@ -136,6 +136,34 @@ polis pay <peerId> 1.25 \
 
 `polis pay` resolves `<peerId>` through `AgentRegistry.agents(peerId).owner`, then calls `PaymentRouter.pay(owner, amount, memo)`.
 
+## Replay mode (deterministic demo recordings)
+
+Live LLM calls are non-deterministic — one bad generation ruins a demo
+take. Polis runs in three modes via the `POLIS_MODE` env var.
+
+| Mode | Behavior |
+|---|---|
+| `live` (default) | Real Anthropic call every time. |
+| `record` | Real Anthropic call, plus append `(request → response)` to a JSONL transcript. |
+| `replay` | Read responses from the transcript; throw `ReplayMissError` if a request hash is missing. |
+
+```bash
+# Capture a golden run.
+POLIS_MODE=record \
+ANTHROPIC_API_KEY=... \
+polis run --agent scout
+
+# Re-run deterministically (no API key needed).
+POLIS_MODE=replay \
+polis run --agent scout
+```
+
+Transcript path defaults to `~/.polis/replay/transcript.jsonl` and can
+be overridden with `POLIS_REPLAY_TRANSCRIPT=/path/to/file.jsonl`. The
+hash key covers `model`, `max_tokens`, `system`, `messages`,
+`temperature`, `top_p`, `top_k`, and `stop_sequences` — anything else
+is request-noise that won't bust the cache.
+
 ## License
 
 MIT
