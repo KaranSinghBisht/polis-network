@@ -20,6 +20,9 @@ importers:
       '@polis/axl-client':
         specifier: workspace:*
         version: link:../../packages/axl-client
+      '@polis/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
       '@polis/storage':
         specifier: workspace:*
         version: link:../../packages/storage

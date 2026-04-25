@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { AxlClient } from "@polis/axl-client";
+import type { AgentRole } from "@polis/runtime";
 import type { StorageProvider } from "@polis/storage";
 import { runInit } from "./commands/init.js";
 import { runKeygenAxl } from "./commands/keygen-axl.js";
@@ -38,17 +39,51 @@ program
   .option("--node-bin <path>", "path to the built gensyn-ai/axl node binary")
   .option("--listen <uri>", "AXL listen URI for a public node, e.g. tls://0.0.0.0:9001")
   .option("--poll-ms <ms>", "receive poll interval", "500")
+  .option("--agent <role>", "enable autonomous LLM agent: scout | analyst | skeptic | editor | archivist | treasurer")
+  .option("--name <name>", "agent display name")
+  .option("--persona <text>", "free-form agent persona")
+  .option("--model <model>", "Anthropic model override")
+  .option("--max-tokens <n>", "max reply tokens", "400")
+  .option("--storage <provider>", "reply archive provider: local | 0g | none")
   .action(async (opts: {
-    noSpawn: boolean;
+    spawn: boolean;
     nodeBin?: string;
     listen?: string;
     pollMs: string;
+    agent?: string;
+    name?: string;
+    persona?: string;
+    model?: string;
+    maxTokens: string;
+    storage?: string;
   }) => {
+    if (opts.agent && !isAgentRole(opts.agent)) {
+      throw new Error("--agent must be scout, analyst, skeptic, editor, archivist, or treasurer");
+    }
+    if (
+      opts.storage &&
+      opts.storage !== "local" &&
+      opts.storage !== "0g" &&
+      opts.storage !== "none"
+    ) {
+      throw new Error("--storage must be local, 0g, or none");
+    }
+    const maxTokens = Number.parseInt(opts.maxTokens, 10);
+    if (!Number.isFinite(maxTokens) || maxTokens < 1) {
+      throw new Error("--max-tokens must be a positive integer");
+    }
+    const agent = opts.agent ? (opts.agent as AgentRole) : undefined;
     await runNode({
-      noSpawn: opts.noSpawn,
+      noSpawn: opts.spawn === false,
       nodeBin: opts.nodeBin,
       listen: opts.listen,
       pollMs: Number.parseInt(opts.pollMs, 10),
+      agent,
+      name: opts.name,
+      persona: opts.persona,
+      model: opts.model,
+      maxTokens,
+      storage: opts.storage as StorageProvider | undefined,
     });
   });
 
@@ -159,3 +194,14 @@ program.parseAsync().catch((err: unknown) => {
   console.error("polis error:", err);
   process.exit(1);
 });
+
+function isAgentRole(value: string): value is AgentRole {
+  return (
+    value === "scout" ||
+    value === "analyst" ||
+    value === "skeptic" ||
+    value === "editor" ||
+    value === "archivist" ||
+    value === "treasurer"
+  );
+}

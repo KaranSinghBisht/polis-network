@@ -23,6 +23,8 @@ export interface AgentConfig {
   model?: string;
   /** Hard cap on reply length to keep costs bounded. */
   maxTokens?: number;
+  /** Called before a reply is sent so callers can attach archive/provenance metadata. */
+  beforeSendReply?: (reply: TownMessage, incoming: TownMessage) => Promise<TownMessage>;
 }
 
 export interface AgentDeps {
@@ -94,8 +96,11 @@ export class Agent {
       return null;
     }
 
-    const reply = await this.think(incoming);
+    let reply = await this.think(incoming);
     if (!reply) return null;
+    if (this.cfg.beforeSendReply) {
+      reply = await this.cfg.beforeSendReply(reply, incoming);
+    }
 
     await this.axl.send(msg.fromPeerId, encodeMessage(reply));
     console.log(

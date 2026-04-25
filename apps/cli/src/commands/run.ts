@@ -1,4 +1,6 @@
 import { AxlClient } from "@polis/axl-client";
+import { Agent, type AgentRole, type TownMessage } from "@polis/runtime";
+import { putJson, type StorageProvider } from "@polis/storage";
 import { readConfig } from "../config.js";
 import {
   shortenPeer,
@@ -12,11 +14,20 @@ import { parseMessage } from "../town-message.js";
 export interface RunOptions extends StartAxlNodeOptions {
   noSpawn: boolean;
   pollMs: number;
+  agent?: AgentRole;
+  name?: string;
+  persona?: string;
+  model?: string;
+  maxTokens?: number;
+  storage?: StorageProvider;
 }
 
 export async function runNode(opts: RunOptions): Promise<void> {
   if (!Number.isFinite(opts.pollMs) || opts.pollMs < 100) {
     throw new Error("--poll-ms must be a number >= 100");
+  }
+  if (opts.agent && !process.env.ANTHROPIC_API_KEY) {
+    throw new Error("--agent requires ANTHROPIC_API_KEY in the environment");
   }
 
   const cfg = readConfig();
@@ -34,6 +45,26 @@ export async function runNode(opts: RunOptions): Promise<void> {
   const topology = await client.topology();
   console.log(`polis node ready: ${shortenPeer(topology.our_public_key)}`);
   console.log(`AXL API: ${cfg.axl.apiUrl}`);
+
+  if (opts.agent) {
+    const agent = new Agent(
+      {
+        name: opts.name ?? `${opts.agent}-${shortenPeer(topology.our_public_key)}`,
+        role: opts.agent,
+        persona: opts.persona ?? defaultPersona(opts.agent),
+        peerIdHex: topology.our_public_key,
+        model: opts.model,
+        maxTokens: opts.maxTokens,
+        beforeSendReply: async (reply) => archiveReply(reply, opts.storage),
+      },
+      { axl: client },
+    );
+    console.log(`agent mode: ${opts.agent}`);
+    console.log("LLM replies are enabled. Ctrl-C to stop.");
+    await agent.start();
+    return;
+  }
+
   console.log("listening for TownMessage v1 packets. Ctrl-C to stop.");
 
   for (;;) {
@@ -54,5 +85,46 @@ export async function runNode(opts: RunOptions): Promise<void> {
         `[raw] ${msg.body.byteLength} bytes from ${shortenPeer(msg.fromPeerId)}`,
       );
     }
+  }
+}
+
+async function archiveReply(
+  reply: TownMessage,
+  explicitStorage?: StorageProvider,
+): Promise<TownMessage> {
+  const cfg = readConfig();
+  const storageProvider = explicitStorage ?? cfg.storage?.provider ?? "local";
+  const archive = await putJson(reply, {
+    provider: storageProvider,
+    archiveDir: cfg.storage?.archiveDir ?? `${process.env.HOME ?? "."}/.polis/archive`,
+    zeroG: {
+      rpcUrl: cfg.storage?.zeroGRpcUrl ?? process.env.ZERO_G_RPC ?? "",
+      indexerRpcUrl: cfg.storage?.zeroGIndexerRpcUrl ?? process.env.ZERO_G_INDEXER_RPC ?? "",
+      privateKey: cfg.privateKey,
+    },
+  });
+  if (!archive) return reply;
+  console.log(`archived reply: ${archive.uri}${archive.txHash ? ` tx=${archive.txHash}` : ""}`);
+  return {
+    ...reply,
+    archiveUri: archive.uri,
+    archiveTxHash: archive.txHash,
+  };
+}
+
+function defaultPersona(role: AgentRole): string {
+  switch (role) {
+    case "scout":
+      return "You find useful raw signals and summarize why they may matter.";
+    case "analyst":
+      return "You turn raw signals into concise implications, tradeoffs, and next actions.";
+    case "skeptic":
+      return "You attack weak claims, missing evidence, and hallucinated assumptions.";
+    case "editor":
+      return "You decide what is worth publishing and ask for sharper evidence.";
+    case "archivist":
+      return "You preserve provenance, source trails, and archive quality.";
+    case "treasurer":
+      return "You care about budgets, payments, fees, and sustainable incentives.";
   }
 }

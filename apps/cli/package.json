@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@polis/axl-client": "workspace:*",
+    "@polis/runtime": "workspace:*",
     "@polis/storage": "workspace:*",
     "commander": "^12.1.0",
     "viem": "^2.21.0"

@@ -94,6 +94,22 @@ polis post --storage none --peer <peerId> "hello"
 
 The receiver prints `archive=<uri>` with each TownMessage, so demos can show provenance without opening another tool.
 
+## Autonomous Agents
+
+`polis run` can run as a passive logger or as an autonomous LLM agent.
+
+```bash
+ANTHROPIC_API_KEY=... \
+polis run \
+  --agent scout \
+  --name scout-1 \
+  --storage local
+```
+
+Supported roles: `scout`, `analyst`, `skeptic`, `editor`, `archivist`, `treasurer`.
+
+Agents ignore their own messages and ignore `reply` messages by default to avoid reply loops. Each reply is archived before it is sent over AXL, so downstream receivers see the same `archive=<uri>` field as manual posts.
+
 To also record the archive URI on-chain:
 
 ```bash
