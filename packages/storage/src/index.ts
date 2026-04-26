@@ -36,10 +36,8 @@ export async function putJson(value: unknown, opts: PutOptions): Promise<PutResu
 }
 
 function putLocal(payload: string, archiveDir: string): PutResult {
-  mkdirSync(archiveDir, { recursive: true, mode: 0o700 });
   const cid = sha256Hex(payload);
-  const path = join(archiveDir, `${cid}.json`);
-  writeFileSync(path, payload, { mode: 0o600 });
+  const path = writeArchiveFile(archiveDir, cid, payload);
   return {
     provider: "local",
     cid,
@@ -55,7 +53,6 @@ async function putZeroG(payload: string, opts: PutOptions): Promise<PutResult> {
     );
   }
 
-  mkdirSync(opts.archiveDir, { recursive: true, mode: 0o700 });
   const cid = sha256Hex(payload);
   const path = join(tmpdir(), `polis-0g-${cid}.json`);
   writeFileSync(path, payload, { mode: 0o600 });
@@ -70,7 +67,7 @@ async function putZeroG(payload: string, opts: PutOptions): Promise<PutResult> {
     const provider = new JsonRpcProvider(opts.zeroG.rpcUrl);
     const signer = new Wallet(opts.zeroG.privateKey, provider);
     const indexer = new Indexer(opts.zeroG.indexerRpcUrl);
-    const [tx, uploadErr] = await indexer.upload(
+    const [upload, uploadErr] = await indexer.upload(
       file,
       opts.zeroG.rpcUrl,
       signer as never,
@@ -79,17 +76,50 @@ async function putZeroG(payload: string, opts: PutOptions): Promise<PutResult> {
       throw new Error(`0G upload failed: ${String(uploadErr)}`);
     }
 
-    const rootHash = String(tree.rootHash());
+    const txHash = extractUploadTxHash(upload);
+    const rootHash = extractUploadRootHash(upload) ?? String(tree.rootHash());
+    const archivePath = writeArchiveFile(opts.archiveDir, safeFileStem(rootHash), payload);
     return {
       provider: "0g",
       cid: rootHash,
       uri: `0g://${rootHash}`,
-      txHash: String(tx),
-      path,
+      txHash,
+      path: archivePath,
     };
   } finally {
     await file.close();
   }
+}
+
+function writeArchiveFile(archiveDir: string, fileStem: string, payload: string): string {
+  mkdirSync(archiveDir, { recursive: true, mode: 0o700 });
+  const path = join(archiveDir, `${fileStem}.json`);
+  writeFileSync(path, payload, { mode: 0o600 });
+  return path;
+}
+
+function safeFileStem(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+function extractUploadTxHash(upload: unknown): string {
+  if (typeof upload === "string" && upload.length > 0) return upload;
+  if (typeof upload === "object" && upload !== null) {
+    for (const key of ["txHash", "transactionHash", "hash"]) {
+      const value = (upload as Record<string, unknown>)[key];
+      if (typeof value === "string" && value.length > 0) return value;
+    }
+  }
+  throw new Error(`0G upload returned no transaction hash: ${JSON.stringify(upload)}`);
+}
+
+function extractUploadRootHash(upload: unknown): string | undefined {
+  if (typeof upload !== "object" || upload === null) return undefined;
+  for (const key of ["rootHash", "root", "merkleRoot"]) {
+    const value = (upload as Record<string, unknown>)[key];
+    if (typeof value === "string" && value.length > 0) return value;
+  }
+  return undefined;
 }
 
 function stableJson(value: unknown): string {
