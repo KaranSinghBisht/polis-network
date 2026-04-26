@@ -17,7 +17,10 @@ contract Deploy is Script {
     address internal constant GENSYN_TESTNET_USDC = 0x0724D6079b986F8e44bDafB8a09B60C0bd6A45a1;
     address internal constant GENSYN_MAINNET_USDC = 0x5b32c997211621d55a89Cc5abAF1cC21F3A6ddF5;
 
-    function run() external returns (AgentRegistry registry, PaymentRouter router, PostIndex postIndex) {
+    function run()
+        external
+        returns (AgentRegistry registry, PaymentRouter router, PostIndex postIndex)
+    {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(privateKey);
         address usdc = vm.envOr("USDC", defaultUsdc(block.chainid));
@@ -26,7 +29,7 @@ contract Deploy is Script {
         vm.startBroadcast(privateKey);
         registry = new AgentRegistry();
         router = new PaymentRouter(usdc, treasury);
-        postIndex = new PostIndex();
+        postIndex = new PostIndex(address(registry));
         vm.stopBroadcast();
 
         console2.log("AgentRegistry deployed at:", address(registry));

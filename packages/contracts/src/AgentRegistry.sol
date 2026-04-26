@@ -59,6 +59,7 @@ contract AgentRegistry {
         Agent storage a = agents[peerId];
         if (a.owner == address(0)) revert UnknownAgent();
         if (a.owner != msg.sender) revert NotOwner();
+        if (bytes(metadataURI).length == 0) revert EmptyMetadataURI();
         a.metadataURI = metadataURI;
         emit AgentMetadataUpdated(peerId, metadataURI);
     }

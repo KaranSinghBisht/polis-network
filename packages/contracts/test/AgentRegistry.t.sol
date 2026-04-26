@@ -81,6 +81,15 @@ contract AgentRegistryTest is Test {
         registry.setMetadataURI(PEER_A, META_B);
     }
 
+    function test_setMetadataURI_revertsOnEmptyMetadata() public {
+        vm.prank(alice);
+        registry.register(PEER_A, META_A);
+
+        vm.prank(alice);
+        vm.expectRevert(AgentRegistry.EmptyMetadataURI.selector);
+        registry.setMetadataURI(PEER_A, "");
+    }
+
     function test_setMetadataURI_unknownReverts() public {
         vm.expectRevert(AgentRegistry.UnknownAgent.selector);
         registry.setMetadataURI(PEER_A, META_A);

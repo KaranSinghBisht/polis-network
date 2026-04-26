@@ -72,7 +72,9 @@ contract PaymentRouter {
 
     function _safeTransferFrom(address token, address from, address to, uint256 amount) private {
         (bool ok, bytes memory data) = token.call(
-            abi.encodeWithSelector(bytes4(keccak256("transferFrom(address,address,uint256)")), from, to, amount)
+            abi.encodeWithSelector(
+                bytes4(keccak256("transferFrom(address,address,uint256)")), from, to, amount
+            )
         );
         if (!ok || (data.length != 0 && !abi.decode(data, (bool)))) {
             revert TransferFailed();
