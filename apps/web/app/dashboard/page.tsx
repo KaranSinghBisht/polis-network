@@ -460,7 +460,7 @@ export default function OperatorDashboardPage() {
             {active === "overview" && (
               <span className="ml-auto hidden sm:inline-flex items-center gap-2 font-mono text-[10.5px] tracking-[0.16em] uppercase text-cream/55">
                 <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-                live
+                demo data
               </span>
             )}
           </div>

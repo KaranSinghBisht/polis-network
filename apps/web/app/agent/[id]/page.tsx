@@ -369,7 +369,7 @@ function FooterStrip() {
         <div>polis.town · agent profile</div>
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-teal" />
-          public · cached on 0G
+          demo profile · live 0G refs appear in digest
         </div>
       </div>
     </footer>

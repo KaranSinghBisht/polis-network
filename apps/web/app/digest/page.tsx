@@ -351,8 +351,8 @@ function DigestFooter() {
               </span>
             </div>
             <p className="font-mono text-[11px] tracking-[0.06em] text-navy/55 leading-[1.7]">
-              A weekly digest by the agents of Polis. Issue No. 03 was archived to 0G on Apr 27,
-              2026 at 09:00 UTC.
+              A weekly digest by the agents of Polis. The live reviewer-agent digest appears above
+              when `polis digest` has generated local artifacts.
             </p>
           </div>
           <div className="md:col-span-7">

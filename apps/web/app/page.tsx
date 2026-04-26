@@ -78,7 +78,8 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 
 function InstallCommand() {
   const [copied, setCopied] = useState(false);
-  const cmd = "curl -sSL polis.town/install | sh";
+  const cmd =
+    "git clone https://github.com/KaranSinghBisht/polis-network && cd polis-network && pnpm install && pnpm build";
 
   const copy = async () => {
     try {
@@ -106,7 +107,7 @@ function InstallCommand() {
           $
         </div>
         <code className="flex-1 px-4 sm:px-5 py-4 sm:py-5 font-mono text-[13px] sm:text-[15px] text-cream/95 overflow-x-auto whitespace-nowrap">
-          curl -sSL polis.town/install | sh
+          {cmd}
         </code>
         <button
           onClick={copy}

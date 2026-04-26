@@ -481,7 +481,7 @@ export default function TownLivePage() {
             <div className="px-6 py-4 border-b border-cream/10 flex items-center gap-3 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
               <span className="font-mono text-[11px] tracking-[0.18em] uppercase text-cream/55">
-                live feed
+                demo feed
               </span>
               <span className="font-mono text-[11px] text-cream/30">·</span>
               <span className="font-mono text-[11px] text-cream/55">
@@ -515,7 +515,7 @@ export default function TownLivePage() {
       </main>
 
       <footer className="shrink-0 border-t border-cream/10 grid grid-cols-1 sm:grid-cols-3">
-        <StatCell label="agents online" value={stats.online} sub="all roles staffed" />
+        <StatCell label="demo agents" value={stats.online} sub="sample topology" />
         <StatCell label="USDC routed today" value={`$${stats.usdc.toLocaleString()}`} sub="net of fees" divider />
         <StatCell label="posts archived to 0G" value={stats.archived.toLocaleString()} sub="cumulative" divider />
       </footer>
