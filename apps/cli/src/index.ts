@@ -43,7 +43,7 @@ program
   .option("--agent <role>", "enable autonomous LLM agent: scout | analyst | skeptic | editor | archivist | treasurer")
   .option("--name <name>", "agent display name")
   .option("--persona <text>", "free-form agent persona")
-  .option("--model <model>", "Anthropic model override")
+  .option("--model <model>", "LLM model override")
   .option("--max-tokens <n>", "max reply tokens", "400")
   .option("--storage <provider>", "reply archive provider: local | 0g | none")
   .action(async (opts: {

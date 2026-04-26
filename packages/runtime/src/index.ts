@@ -1,5 +1,12 @@
 import { AxlClient } from "@polis/axl-client";
-import { encodeMessage, parseMessage, type TownMessage } from "./message.js";
+import {
+  encodeMessage,
+  messageId,
+  normalizePeerId,
+  parseMessage,
+  withMessageId,
+  type TownMessage,
+} from "./message.js";
 import { createLlmClient, type LlmClient } from "./llm.js";
 import { replayConfigFromEnv, wrapWithReplay, type ReplayConfig } from "./replay.js";
 
@@ -41,7 +48,14 @@ export interface AgentDeps {
 }
 
 export type { TownMessage };
-export { encodeMessage, parseMessage, isTownMessage } from "./message.js";
+export {
+  encodeMessage,
+  parseMessage,
+  isTownMessage,
+  messageId,
+  normalizePeerId,
+  withMessageId,
+} from "./message.js";
 export {
   createLlmClient,
   AnthropicLlmClient,
@@ -72,6 +86,7 @@ export class Agent {
   private readonly cfg: AgentConfig;
   private readonly axl: AxlClient;
   private readonly llm: LlmClient;
+  private readonly seen = new Set<string>();
   private running = false;
 
   constructor(cfg: AgentConfig, deps: AgentDeps = {}) {
@@ -114,28 +129,48 @@ export class Agent {
       );
       return null;
     }
-    if (incoming.from === this.cfg.peerIdHex) return null;
-    if (incoming.kind === "reply") {
-      console.log(
-        `[${this.cfg.name}] observed reply from ${msg.fromPeerId.slice(0, 8)}…`,
+    if (normalizePeerId(incoming.from) !== normalizePeerId(msg.fromPeerId)) {
+      console.warn(
+        `[${this.cfg.name}] dropped spoofed TownMessage: body.from=${incoming.from.slice(0, 8)}… header=${msg.fromPeerId.slice(0, 8)}…`,
       );
       return null;
     }
 
-    let reply = await this.think(incoming);
+    const incomingId = messageId(incoming);
+    if (this.seen.has(incomingId)) return null;
+    this.remember(incomingId);
+
+    if (normalizePeerId(incoming.from) === normalizePeerId(this.cfg.peerIdHex)) return null;
+    if (!this.shouldReplyTo(incoming)) {
+      console.log(
+        `[${this.cfg.name}] observed ${incoming.kind} from ${msg.fromPeerId.slice(0, 8)}…`,
+      );
+      return null;
+    }
+
+    let reply = await this.think(incoming, incomingId);
     if (!reply) return null;
     if (this.cfg.beforeSendReply) {
       reply = await this.cfg.beforeSendReply(reply, incoming);
     }
 
-    await this.axl.send(msg.fromPeerId, encodeMessage(reply));
+    const recipients = await this.replyRecipients(msg.fromPeerId);
+    const body = encodeMessage(reply);
+    const results = await Promise.allSettled(
+      recipients.map((peer) => this.axl.send(peer, body)),
+    );
+    const sent = results.filter((result) => result.status === "fulfilled").length;
+    const failed = results.length - sent;
+    if (failed > 0) {
+      console.warn(`[${this.cfg.name}] ${failed}/${results.length} reply sends failed`);
+    }
     console.log(
-      `[${this.cfg.name}] replied to ${msg.fromPeerId.slice(0, 8)}…: ${truncate(reply.content, 80)}`,
+      `[${this.cfg.name}] replied to ${sent} peer(s): ${truncate(reply.content, 80)}`,
     );
     return reply;
   }
 
-  private async think(incoming: TownMessage): Promise<TownMessage | null> {
+  private async think(incoming: TownMessage, incomingId: string): Promise<TownMessage | null> {
     const response = await this.llm.complete({
       model: this.cfg.model ?? this.llm.defaultModel,
       maxTokens: this.cfg.maxTokens ?? 400,
@@ -145,15 +180,51 @@ export class Agent {
     });
     const text = response.text.trim();
     if (!text || text === "<<IGNORE>>") return null;
-    return {
+    return withMessageId({
       v: 1,
       kind: "reply",
       topic: incoming.topic,
       from: this.cfg.peerIdHex,
       content: text,
       ts: Date.now(),
-    };
+      parentId: incomingId,
+      ttl: nextTtl(incoming),
+    });
   }
+
+  private shouldReplyTo(incoming: TownMessage): boolean {
+    if (incoming.kind === "post") return true;
+    if (incoming.kind !== "reply") return false;
+    if ((incoming.ttl ?? 1) <= 0) return false;
+    return this.cfg.role !== "scout" && this.cfg.role !== "treasurer";
+  }
+
+  private async replyRecipients(originPeerId: string): Promise<string[]> {
+    const own = normalizePeerId(this.cfg.peerIdHex);
+    const peers = new Set<string>([normalizePeerId(originPeerId)]);
+    try {
+      const topology = await this.axl.topology();
+      for (const peer of topology.peers) {
+        if (peer.up && peer.public_key) peers.add(normalizePeerId(peer.public_key));
+      }
+    } catch {
+      // Fall back to the sender if topology is temporarily unavailable.
+    }
+    peers.delete(own);
+    return [...peers];
+  }
+
+  private remember(id: string): void {
+    this.seen.add(id);
+    if (this.seen.size <= 500) return;
+    const oldest = this.seen.values().next().value as string | undefined;
+    if (oldest) this.seen.delete(oldest);
+  }
+}
+
+function nextTtl(incoming: TownMessage): number {
+  const current = incoming.kind === "post" ? (incoming.ttl ?? 2) : (incoming.ttl ?? 1);
+  return Math.max(0, current - 1);
 }
 
 function systemPrompt(cfg: AgentConfig): string {

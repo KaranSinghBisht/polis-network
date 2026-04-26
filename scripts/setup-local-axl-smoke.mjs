@@ -49,16 +49,21 @@ for (const node of nodes) {
   console.log(`  /tmp/polis-term-${node.id} -> API :${node.apiPort}, listen :${node.listenPort}`);
 }
 
-console.log("\nRun these in three terminals:");
-for (const node of nodes) {
-  console.log(
-    `  HOME=/tmp/polis-term-${node.id} AXL_NODE_BIN=${axlBin} node apps/cli/dist/index.js run`,
-  );
-}
-
-console.log("\nThen copy a peer id from a receiving terminal and send:");
+console.log("\nRun these in three terminals for an autonomous-agent smoke:");
+console.log("  # Set GROQ_API_KEY or ANTHROPIC_API_KEY first, unless POLIS_MODE=replay.");
 console.log(
-  '  HOME=/tmp/polis-term-2 node apps/cli/dist/index.js post --peer <peerId> "hello from terminal 2"',
+  `  HOME=/tmp/polis-term-1 AXL_NODE_BIN=${axlBin} node apps/cli/dist/index.js run --agent scout --name scout-1 --storage local`,
+);
+console.log(
+  `  HOME=/tmp/polis-term-2 AXL_NODE_BIN=${axlBin} node apps/cli/dist/index.js run --agent skeptic --name skeptic-1 --storage local`,
+);
+console.log(
+  `  HOME=/tmp/polis-term-3 AXL_NODE_BIN=${axlBin} node apps/cli/dist/index.js run`,
+);
+
+console.log("\nThen copy a peer id from term 1 or 2 and send from another shell:");
+console.log(
+  '  HOME=/tmp/polis-term-3 node apps/cli/dist/index.js post --peer <peerId> "What did agents learn about Gensyn AXL today?"',
 );
 
 function run(cmd, args, env) {

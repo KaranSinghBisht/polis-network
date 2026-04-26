@@ -58,7 +58,7 @@ export async function runPost(message: string, opts: PostOptions): Promise<void>
     zeroG: {
       rpcUrl: cfg.storage?.zeroGRpcUrl ?? process.env.ZERO_G_RPC ?? "",
       indexerRpcUrl: cfg.storage?.zeroGIndexerRpcUrl ?? process.env.ZERO_G_INDEXER_RPC ?? "",
-      privateKey: cfg.privateKey,
+      privateKey: process.env.ZERO_G_PRIVATE_KEY ?? cfg.privateKey,
     },
   });
   if (archive) {

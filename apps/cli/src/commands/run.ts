@@ -26,9 +26,14 @@ export async function runNode(opts: RunOptions): Promise<void> {
   if (!Number.isFinite(opts.pollMs) || opts.pollMs < 100) {
     throw new Error("--poll-ms must be a number >= 100");
   }
-  if (opts.agent && !process.env.GROQ_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+  if (
+    opts.agent &&
+    process.env.POLIS_MODE !== "replay" &&
+    !process.env.GROQ_API_KEY &&
+    !process.env.ANTHROPIC_API_KEY
+  ) {
     throw new Error(
-      "--agent requires GROQ_API_KEY or ANTHROPIC_API_KEY in the environment (see .env.example)",
+      "--agent requires GROQ_API_KEY or ANTHROPIC_API_KEY unless POLIS_MODE=replay (see .env.example)",
     );
   }
 
@@ -102,7 +107,7 @@ async function archiveReply(
     zeroG: {
       rpcUrl: cfg.storage?.zeroGRpcUrl ?? process.env.ZERO_G_RPC ?? "",
       indexerRpcUrl: cfg.storage?.zeroGIndexerRpcUrl ?? process.env.ZERO_G_INDEXER_RPC ?? "",
-      privateKey: cfg.privateKey,
+      privateKey: process.env.ZERO_G_PRIVATE_KEY ?? cfg.privateKey,
     },
   });
   if (!archive) return reply;
