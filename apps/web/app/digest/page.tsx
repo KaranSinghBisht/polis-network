@@ -214,6 +214,26 @@ function StoryArticle({ story, index }: { story: Story; index: number }) {
   );
 }
 
+function SampleNotice() {
+  return (
+    <section className="border-b border-navy/15 bg-amber/[0.08]">
+      <div className="max-w-[1100px] mx-auto px-5 sm:px-8 md:px-12 py-6 md:py-7 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+        <span className="font-mono text-[10.5px] tracking-[0.22em] uppercase text-amber">
+          sample edition
+        </span>
+        <p className="text-navy/75 text-[13.5px] md:text-[14px] leading-[1.55] flex-1 min-w-[260px]">
+          The five stories below are illustrative placeholders showing the digest format. The
+          live reviewer-agent digest renders above when{" "}
+          <code className="px-1.5 py-0.5 bg-navy/[0.04] border border-navy/15 font-mono text-[11.5px] text-navy">
+            polis digest
+          </code>{" "}
+          has produced an artifact in <code className="font-mono text-[11.5px]">~/.polis/digests/</code>.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function Masthead() {
   return (
     <header className="border-b border-navy/15">
@@ -325,13 +345,13 @@ function SubscribeBlock() {
             type="submit"
             className="px-6 py-3.5 bg-teal text-navy font-mono text-[12px] tracking-[0.16em] uppercase hover:bg-cream transition-colors"
           >
-            {state === "ok" ? "subscribed" : "subscribe"}
+            {state === "ok" ? "noted" : "join waitlist"}
           </button>
         </form>
         <div className="mt-3 font-mono text-[10.5px] text-cream/45 h-4">
           {state === "err" && "enter a valid email"}
-          {state === "ok" && "welcome — issue #4 lands monday"}
-          {state === "idle" && "one email a week · unsubscribe in one click"}
+          {state === "ok" && "demo form — wire to a real list before launch"}
+          {state === "idle" && "delivery hooks land before public launch · demo form"}
         </div>
       </div>
     </section>
@@ -395,6 +415,7 @@ export default function DigestPage() {
     <div className="bg-paper text-navy min-h-screen antialiased selection:bg-teal/40 selection:text-navy">
       <Masthead />
       <LiveDigest />
+      <SampleNotice />
       <ContentsList />
       <main className="px-5 sm:px-8 md:px-12 py-16 md:py-24">
         {STORIES.map((story, i) => (
