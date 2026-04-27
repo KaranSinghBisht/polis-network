@@ -20,6 +20,18 @@ export interface PolisConfig {
   paymentRouterAddress?: `0x${string}`;
   /** PostIndex deployment address for on-chain archive provenance events. */
   postIndexAddress?: `0x${string}`;
+  /** Optional ENS identity verified against the configured wallet. */
+  ens?: {
+    name: string;
+    ethRpcUrl: string;
+    resolvedAddress: `0x${string}`;
+    peerText?: string;
+    agentText?: string;
+    avatar?: string;
+    description?: string;
+    url?: string;
+    verifiedAt: string;
+  };
   axl: {
     keyPath: string;
     nodeConfigPath: string;

@@ -164,7 +164,12 @@ function Hero() {
                 <h1 className="font-display text-[40px] sm:text-[52px] md:text-[60px] lg:text-[64px] leading-[0.95] tracking-[-0.02em] text-cream font-medium whitespace-nowrap">
                   {p.id}
                 </h1>
-                <div className="mt-2 font-mono text-[13px] text-cream/60">{p.ens}</div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[13px] text-cream/60">
+                  <span>{p.ens}</span>
+                  <span className="text-[9.5px] tracking-[0.16em] uppercase text-teal border border-teal/35 px-1.5 py-0.5">
+                    ENS verified
+                  </span>
+                </div>
               </div>
             </div>
 

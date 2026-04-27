@@ -1,6 +1,7 @@
 import { readConfig, writeConfig, type PolisConfig } from "../config.js";
 import { buildClients } from "../viem.js";
 import { derivePeerId } from "../peer.js";
+import { ensMetadataUri, verifyEnsIdentity } from "../ens.js";
 
 const AGENT_REGISTRY_ABI = [
   {
@@ -27,6 +28,12 @@ export interface RegisterOptions {
   registry?: `0x${string}`;
   /** Metadata URI (e.g. 0G CID). Defaults to a placeholder. */
   metadata?: string;
+  /** ENS identity to verify and use as metadata. */
+  ens?: string;
+  /** Ethereum mainnet RPC used for ENS Universal Resolver calls. */
+  ensRpcUrl?: string;
+  /** Require ENS text record com.polis.peer to match the current AXL peer ID. */
+  requireEnsPeerText: boolean;
 }
 
 export async function runRegister(opts: RegisterOptions): Promise<void> {
@@ -39,12 +46,23 @@ export async function runRegister(opts: RegisterOptions): Promise<void> {
   }
 
   const peerId = derivePeerId(cfg.axl.keyPath);
-  const metadataURI = opts.metadata ?? `polis://agent/${peerId.hex}`;
+  const ensName = opts.ens ?? cfg.ens?.name;
+  const ens = ensName
+    ? await verifyEnsIdentity(cfg, {
+        name: ensName,
+        ethRpcUrl: opts.ensRpcUrl ?? cfg.ens?.ethRpcUrl,
+        requirePeerText: opts.requireEnsPeerText || Boolean(cfg.ens?.peerText),
+      })
+    : undefined;
+  const metadataURI =
+    opts.metadata ??
+    (ens ? ensMetadataUri(ens, peerId.hex) : `polis://agent/${peerId.hex}`);
   const { account, publicClient, walletClient } = buildClients(cfg);
 
   console.log(`wallet:   ${account.address}`);
   console.log(`registry: ${registryAddress}`);
   console.log(`peer:     ${peerId.hex}`);
+  if (ens) console.log(`ens:      ${ens.name}`);
   console.log(`metadata: ${metadataURI}`);
 
   const alreadyRegistered = (await publicClient.readContract({
@@ -56,7 +74,7 @@ export async function runRegister(opts: RegisterOptions): Promise<void> {
 
   if (alreadyRegistered) {
     console.log("\nagent is already registered on-chain. nothing to do.");
-    persistRegistry(cfg, registryAddress);
+    persistRegistrationConfig(cfg, registryAddress, ens);
     return;
   }
 
@@ -75,11 +93,15 @@ export async function runRegister(opts: RegisterOptions): Promise<void> {
   }
   console.log(`registered in block ${receipt.blockNumber}.`);
 
-  persistRegistry(cfg, registryAddress);
+  persistRegistrationConfig(cfg, registryAddress, ens);
 }
 
-function persistRegistry(cfg: PolisConfig, addr: `0x${string}`): void {
-  if (cfg.registryAddress === addr) return;
-  writeConfig({ ...cfg, registryAddress: addr });
-  console.log(`saved registry address to ~/.polis/config.json`);
+function persistRegistrationConfig(
+  cfg: PolisConfig,
+  addr: `0x${string}`,
+  ens: PolisConfig["ens"] | undefined,
+): void {
+  if (cfg.registryAddress === addr && (!ens || cfg.ens?.name === ens.name)) return;
+  writeConfig({ ...cfg, registryAddress: addr, ens });
+  console.log("saved registry/ENS identity to ~/.polis/config.json");
 }

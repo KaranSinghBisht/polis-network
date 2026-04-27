@@ -12,6 +12,7 @@ import { runPay } from "./commands/pay.js";
 import { runNode } from "./commands/run.js";
 import { runPost } from "./commands/post.js";
 import { runDigest } from "./commands/digest.js";
+import { runEnsVerify } from "./commands/ens.js";
 import { readConfig, type Network } from "./config.js";
 
 const program = new Command();
@@ -215,13 +216,46 @@ program
   .description("Register this agent on-chain in AgentRegistry")
   .option("-r, --registry <addr>", "AgentRegistry contract address (saved to config on success)")
   .option("-m, --metadata <uri>", "metadata URI (defaults to polis://agent/<peerId>)")
-  .action(async (opts: { registry?: string; metadata?: string }) => {
+  .option("--ens <name>", "verify ENS identity and use ens:// metadata")
+  .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option(
+    "--require-ens-peer-text",
+    "require ENS text record com.polis.peer to match this AXL peer ID",
+    false,
+  )
+  .action(async (opts: {
+    registry?: string;
+    metadata?: string;
+    ens?: string;
+    ensRpcUrl?: string;
+    requireEnsPeerText: boolean;
+  }) => {
     if (opts.registry && !opts.registry.startsWith("0x")) {
       throw new Error("--registry must be a 0x-prefixed address");
     }
     await runRegister({
       registry: opts.registry as `0x${string}` | undefined,
       metadata: opts.metadata,
+      ens: opts.ens,
+      ensRpcUrl: opts.ensRpcUrl,
+      requireEnsPeerText: opts.requireEnsPeerText,
+    });
+  });
+
+program
+  .command("ens <name>")
+  .description("Verify an ENS name against this wallet and optional AXL peer text record")
+  .option("--eth-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option(
+    "--require-peer-text",
+    "require ENS text record com.polis.peer to match this AXL peer ID",
+    false,
+  )
+  .action(async (name: string, opts: { ethRpcUrl?: string; requirePeerText: boolean }) => {
+    await runEnsVerify({
+      name,
+      ethRpcUrl: opts.ethRpcUrl,
+      requirePeerText: opts.requirePeerText,
     });
   });
 
