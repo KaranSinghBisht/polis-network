@@ -12,7 +12,7 @@ import { runPay } from "./commands/pay.js";
 import { runNode } from "./commands/run.js";
 import { runPost } from "./commands/post.js";
 import { runDigest } from "./commands/digest.js";
-import { runEnsResolve, runEnsVerify } from "./commands/ens.js";
+import { runEnsExport, runEnsResolve, runEnsVerify } from "./commands/ens.js";
 import { readConfig, type Network } from "./config.js";
 
 const program = new Command();
@@ -284,11 +284,13 @@ program
     "require the wallet's primary ENS name to match this name",
     false,
   )
+  .option("--json", "emit machine-readable JSON instead of formatted output", false)
   .action(async (name: string, opts: {
     ethRpcUrl?: string;
     requirePeerText: boolean;
     requireChainAddress: boolean;
     requirePrimaryName: boolean;
+    json: boolean;
   }) => {
     await runEnsVerify({
       name,
@@ -296,6 +298,7 @@ program
       requirePeerText: opts.requirePeerText,
       requireChainAddress: opts.requireChainAddress,
       requirePrimaryName: opts.requirePrimaryName,
+      json: opts.json,
     });
   });
 
@@ -304,12 +307,33 @@ program
   .description("Resolve an agent ENS name to wallet, AXL peer, and Polis text records")
   .option("--eth-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
   .option("--chain-id <id>", "chain ID used for ENSIP-19 chain-specific address lookup")
-  .action(async (name: string, opts: { ethRpcUrl?: string; chainId?: string }) => {
+  .option("--json", "emit machine-readable JSON instead of formatted output", false)
+  .action(async (name: string, opts: { ethRpcUrl?: string; chainId?: string; json: boolean }) => {
     const chainId = opts.chainId ? Number.parseInt(opts.chainId, 10) : undefined;
     if (opts.chainId && (!Number.isFinite(chainId) || chainId! < 1)) {
       throw new Error("--chain-id must be a positive integer");
     }
-    await runEnsResolve({ name, ethRpcUrl: opts.ethRpcUrl, chainId });
+    await runEnsResolve({ name, ethRpcUrl: opts.ethRpcUrl, chainId, json: opts.json });
+  });
+
+program
+  .command("ens-export [name]")
+  .description("Snapshot the full ENS proof chain (ENS → peer → AgentRegistry → archive) to JSON")
+  .option("--eth-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option("--out <path>", "output JSON path (default ~/.polis/ens-proof.json)")
+  .option("--archive-dir <path>", "AXL archive directory to scan for the latest message")
+  .option("--json", "echo the proof JSON to stdout in addition to writing the file", false)
+  .action(async (
+    name: string | undefined,
+    opts: { ethRpcUrl?: string; out?: string; archiveDir?: string; json: boolean },
+  ) => {
+    await runEnsExport({
+      name,
+      ethRpcUrl: opts.ethRpcUrl,
+      outPath: opts.out,
+      archiveDir: opts.archiveDir,
+      json: opts.json,
+    });
   });
 
 program

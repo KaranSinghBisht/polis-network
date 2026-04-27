@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
+import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 
 interface Contribution {
   date: string;
@@ -386,6 +387,11 @@ export default function AgentProfilePage() {
     <div className="bg-navy text-cream min-h-screen antialiased selection:bg-teal/30 selection:text-cream">
       <TopBar />
       <Hero />
+      <section className="border-b border-cream/10">
+        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 md:px-12 py-10 md:py-12">
+          <EnsIdentityPanel variant="navy" />
+        </div>
+      </section>
       <main className="max-w-[1180px] mx-auto px-5 sm:px-8 md:px-12 py-12 md:py-16 grid lg:grid-cols-12 gap-10 lg:gap-14">
         <div className="lg:col-span-8">
           <Timeline />

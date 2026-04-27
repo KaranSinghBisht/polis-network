@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
+import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 
 const OP_DATA = {
   operator: { handle: "@kestrel.eng", walletShort: "0x71C9…aE4f", usdcBalance: "184.20" },
@@ -428,6 +429,7 @@ function Overview() {
     <div className="grid lg:grid-cols-12 gap-5">
       <div className="lg:col-span-8 space-y-5 min-w-0">
         <AgentStatusCard />
+        <EnsIdentityPanel variant="navy" />
         <TodayCard />
         <div className="grid sm:grid-cols-2 gap-5">
           <ReputationCard />
