@@ -25,8 +25,15 @@ export interface PolisConfig {
     name: string;
     ethRpcUrl: string;
     resolvedAddress: `0x${string}`;
+    chainAddress?: `0x${string}`;
+    chainId?: number;
+    coinType?: string;
+    primaryName?: string;
     peerText?: string;
     agentText?: string;
+    rolesText?: string;
+    topicsText?: string;
+    registryText?: string;
     avatar?: string;
     description?: string;
     url?: string;

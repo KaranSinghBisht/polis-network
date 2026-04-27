@@ -36,7 +36,7 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       viem:
-        specifier: ^2.21.0
+        specifier: ^2.48.4
         version: 2.48.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)
 
   apps/web:

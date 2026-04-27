@@ -12,7 +12,7 @@ import { runPay } from "./commands/pay.js";
 import { runNode } from "./commands/run.js";
 import { runPost } from "./commands/post.js";
 import { runDigest } from "./commands/digest.js";
-import { runEnsVerify } from "./commands/ens.js";
+import { runEnsResolve, runEnsVerify } from "./commands/ens.js";
 import { readConfig, type Network } from "./config.js";
 
 const program = new Command();
@@ -93,13 +93,18 @@ program
   .command("post <message>")
   .description("Publish a message to town.general")
   .option("-p, --peer <peerId>", "specific destination peer; defaults to all connected peers")
+  .option("--ens <name>", "specific destination agent ENS name; resolves com.polis.peer")
+  .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
   .option("-t, --topic <topic>", "town topic", "town.general")
   .option("--storage <provider>", "archive provider: local | 0g | none")
   .option("--index <addr>", "PostIndex contract address; records archive URI on-chain")
   .action(async (
     message: string,
-    opts: { peer?: string; topic: string; storage?: string; index?: string },
+    opts: { peer?: string; ens?: string; ensRpcUrl?: string; topic: string; storage?: string; index?: string },
   ) => {
+    if (opts.peer && opts.ens) {
+      throw new Error("pass either --peer or --ens, not both");
+    }
     if (
       opts.storage &&
       opts.storage !== "local" &&
@@ -113,6 +118,8 @@ program
     }
     await runPost(message, {
       peer: opts.peer,
+      ens: opts.ens,
+      ensRpcUrl: opts.ensRpcUrl,
       topic: opts.topic,
       storage: opts.storage as StorageProvider | undefined,
       index: opts.index as `0x${string}` | undefined,
@@ -120,16 +127,17 @@ program
   });
 
 program
-  .command("pay <peerId> <amount>")
-  .description("Send USDC to another agent via PaymentRouter")
+  .command("pay <target> <amount>")
+  .description("Send USDC to another agent via PaymentRouter; target can be AXL peer ID or ENS")
   .option("--router <addr>", "PaymentRouter contract address (saved on success)")
   .option("--registry <addr>", "AgentRegistry contract address")
+  .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used when target is ENS")
   .option("--memo <memo>", "payment memo")
   .option("--approve", "approve PaymentRouter to spend this amount first", false)
   .action(async (
-    peerId: string,
+    target: string,
     amount: string,
-    opts: { router?: string; registry?: string; memo?: string; approve: boolean },
+    opts: { router?: string; registry?: string; ensRpcUrl?: string; memo?: string; approve: boolean },
   ) => {
     if (opts.router && !opts.router.startsWith("0x")) {
       throw new Error("--router must be a 0x-prefixed address");
@@ -137,9 +145,10 @@ program
     if (opts.registry && !opts.registry.startsWith("0x")) {
       throw new Error("--registry must be a 0x-prefixed address");
     }
-    await runPay(peerId, amount, {
+    await runPay(target, amount, {
       router: opts.router as `0x${string}` | undefined,
       registry: opts.registry as `0x${string}` | undefined,
+      ensRpcUrl: opts.ensRpcUrl,
       memo: opts.memo,
       approve: opts.approve,
     });
@@ -223,12 +232,24 @@ program
     "require ENS text record com.polis.peer to match this AXL peer ID",
     false,
   )
+  .option(
+    "--require-ens-chain-address",
+    "require ENS chain-specific address for this Polis/Gensyn chain to match the wallet",
+    false,
+  )
+  .option(
+    "--require-ens-primary-name",
+    "require the wallet's primary ENS name to match this ENS name",
+    false,
+  )
   .action(async (opts: {
     registry?: string;
     metadata?: string;
     ens?: string;
     ensRpcUrl?: string;
     requireEnsPeerText: boolean;
+    requireEnsChainAddress: boolean;
+    requireEnsPrimaryName: boolean;
   }) => {
     if (opts.registry && !opts.registry.startsWith("0x")) {
       throw new Error("--registry must be a 0x-prefixed address");
@@ -239,6 +260,8 @@ program
       ens: opts.ens,
       ensRpcUrl: opts.ensRpcUrl,
       requireEnsPeerText: opts.requireEnsPeerText,
+      requireEnsChainAddress: opts.requireEnsChainAddress,
+      requireEnsPrimaryName: opts.requireEnsPrimaryName,
     });
   });
 
@@ -251,12 +274,42 @@ program
     "require ENS text record com.polis.peer to match this AXL peer ID",
     false,
   )
-  .action(async (name: string, opts: { ethRpcUrl?: string; requirePeerText: boolean }) => {
+  .option(
+    "--require-chain-address",
+    "require ENS chain-specific address for this Polis/Gensyn chain to match the wallet",
+    false,
+  )
+  .option(
+    "--require-primary-name",
+    "require the wallet's primary ENS name to match this name",
+    false,
+  )
+  .action(async (name: string, opts: {
+    ethRpcUrl?: string;
+    requirePeerText: boolean;
+    requireChainAddress: boolean;
+    requirePrimaryName: boolean;
+  }) => {
     await runEnsVerify({
       name,
       ethRpcUrl: opts.ethRpcUrl,
       requirePeerText: opts.requirePeerText,
+      requireChainAddress: opts.requireChainAddress,
+      requirePrimaryName: opts.requirePrimaryName,
     });
+  });
+
+program
+  .command("ens-resolve <name>")
+  .description("Resolve an agent ENS name to wallet, AXL peer, and Polis text records")
+  .option("--eth-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option("--chain-id <id>", "chain ID used for ENSIP-19 chain-specific address lookup")
+  .action(async (name: string, opts: { ethRpcUrl?: string; chainId?: string }) => {
+    const chainId = opts.chainId ? Number.parseInt(opts.chainId, 10) : undefined;
+    if (opts.chainId && (!Number.isFinite(chainId) || chainId! < 1)) {
+      throw new Error("--chain-id must be a positive integer");
+    }
+    await runEnsResolve({ name, ethRpcUrl: opts.ethRpcUrl, chainId });
   });
 
 program
