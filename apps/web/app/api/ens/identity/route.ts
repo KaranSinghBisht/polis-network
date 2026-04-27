@@ -97,7 +97,7 @@ export function GET() {
   const proof = readProof(proofPath);
   if (proof) {
     return NextResponse.json({
-      identity: proof,
+      identity: sanitizeProofForApi(proof),
       source: "proof",
       sourcePath: "~/.polis/ens-proof.json",
     });
@@ -127,6 +127,37 @@ function readProof(path: string): EnsIdentityPayload | null {
   } catch {
     return null;
   }
+}
+
+type ProofWithLocalPath = EnsIdentityPayload & {
+  archive?: EnsIdentityPayload["archive"] & { path?: string };
+};
+
+function sanitizeProofForApi(proof: EnsIdentityPayload): EnsIdentityPayload {
+  const localProof = proof as ProofWithLocalPath;
+  const archive = localProof.archive
+    ? {
+        cid: localProof.archive.cid,
+        uri: localProof.archive.uri,
+        topic: localProof.archive.topic,
+        content: localProof.archive.content,
+        ts: localProof.archive.ts,
+        archiveTxHash: localProof.archive.archiveTxHash,
+      }
+    : undefined;
+
+  return {
+    ...proof,
+    archive,
+    chain: {
+      steps: proof.chain.steps.map((step) => ({
+        ...step,
+        detail: step.detail?.startsWith("local archive at ")
+          ? "local archive captured in ~/.polis/archive"
+          : step.detail,
+      })),
+    },
+  };
 }
 
 function readConfigFallback(path: string): EnsIdentityPayload | null {

@@ -35,7 +35,7 @@ packages/contracts/broadcast/
 # OMC orchestration state (local-only plugin state, not source)
 .omc/
 
-# Agent handoff / audit notes — local-only, never commit
+# Agent handoff / audit notes - local-only, never commit
 docs/HANDOFF_*.md
 docs/*_AUDIT.md
 HANDOFF_*.md
