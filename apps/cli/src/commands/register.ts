@@ -5,7 +5,29 @@ import { ensMetadataUri, verifyEnsIdentity } from "../ens.js";
 
 const AGENT_REGISTRY_ABI = [
   {
+    name: "agents",
+    type: "function",
+    inputs: [{ name: "peerId", type: "bytes32" }],
+    outputs: [
+      { name: "owner", type: "address" },
+      { name: "metadataURI", type: "string" },
+      { name: "registeredAt", type: "uint64" },
+      { name: "reputation", type: "uint64" },
+    ],
+    stateMutability: "view",
+  },
+  {
     name: "register",
+    type: "function",
+    inputs: [
+      { name: "peerId", type: "bytes32" },
+      { name: "metadataURI", type: "string" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    name: "setMetadataURI",
     type: "function",
     inputs: [
       { name: "peerId", type: "bytes32" },
@@ -73,7 +95,41 @@ export async function runRegister(opts: RegisterOptions): Promise<void> {
   })) as boolean;
 
   if (alreadyRegistered) {
-    console.log("\nagent is already registered on-chain. nothing to do.");
+    const registeredAgent = (await publicClient.readContract({
+      address: registryAddress,
+      abi: AGENT_REGISTRY_ABI,
+      functionName: "agents",
+      args: [peerId.bytes32],
+    })) as readonly [`0x${string}`, string, bigint, bigint];
+    const [owner, currentMetadataURI] = registeredAgent;
+
+    if (owner.toLowerCase() !== account.address.toLowerCase()) {
+      throw new Error(
+        `peer ${peerId.hex} is already registered to ${owner}, not ${account.address}`,
+      );
+    }
+
+    if (currentMetadataURI === metadataURI) {
+      console.log("\nagent is already registered with matching metadata. nothing to do.");
+      persistRegistrationConfig(cfg, registryAddress, ens);
+      return;
+    }
+
+    console.log("\nagent is already registered. updating metadataURI…");
+    const hash = await walletClient.writeContract({
+      address: registryAddress,
+      abi: AGENT_REGISTRY_ABI,
+      functionName: "setMetadataURI",
+      args: [peerId.bytes32, metadataURI],
+    });
+    console.log(`tx: ${hash}`);
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (receipt.status === "reverted") {
+      throw new Error("setMetadataURI tx reverted");
+    }
+    console.log(`metadata updated in block ${receipt.blockNumber}.`);
+
     persistRegistrationConfig(cfg, registryAddress, ens);
     return;
   }
