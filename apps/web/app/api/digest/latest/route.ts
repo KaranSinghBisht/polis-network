@@ -22,13 +22,40 @@ interface DigestSummary {
   }>;
 }
 
-export function GET() {
+export function GET(request: Request) {
+  if (!canReadLocalFiles(request)) {
+    return NextResponse.json({
+      digest: null,
+      sourceDir: "local file access disabled",
+    });
+  }
+
   const dir = process.env.POLIS_DIGEST_DIR ?? join(homedir(), ".polis", "digests");
   const latest = findLatestDigest(dir);
   if (!latest) {
-    return NextResponse.json({ digest: null, sourceDir: dir });
+    return NextResponse.json({ digest: null, sourceDir: displayDigestDir() });
   }
-  return NextResponse.json({ digest: latest, sourceDir: dir });
+  return NextResponse.json({ digest: latest, sourceDir: displayDigestDir() });
+}
+
+function displayDigestDir(): string {
+  return process.env.POLIS_DIGEST_DIR ? "$POLIS_DIGEST_DIR" : "~/.polis/digests";
+}
+
+function canReadLocalFiles(request: Request): boolean {
+  if (process.env.POLIS_WEB_EXPOSE_LOCAL_FILES === "1") return true;
+  const host = hostnameOnly(request.headers.get("host"));
+  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
+
+function hostnameOnly(hostHeader: string | null): string | undefined {
+  if (!hostHeader) return undefined;
+  const host = hostHeader.toLowerCase();
+  if (host.startsWith("[")) {
+    const end = host.indexOf("]");
+    return end > 0 ? host.slice(1, end) : undefined;
+  }
+  return host.split(":")[0];
 }
 
 function findLatestDigest(dir: string): DigestSummary | null {

@@ -40,6 +40,22 @@ export async function runNode(opts: RunOptions): Promise<void> {
   const cfg = readConfig();
   const client = new AxlClient({ baseUrl: cfg.axl.apiUrl });
   const child = opts.noSpawn ? null : startAxlNode(cfg, opts);
+  let onChildError: ((err: Error) => void) | undefined;
+  let onChildExit: ((code: number | null, signal: NodeJS.Signals | null) => void) | undefined;
+  const childFailure = child
+    ? new Promise<never>((_, reject) => {
+        onChildError = (err) => reject(err);
+        onChildExit = (code, signal) => {
+          reject(
+            new Error(
+              `AXL node exited before ready (code=${code ?? "null"} signal=${signal ?? "null"})`,
+            ),
+          );
+        };
+        child.once("error", onChildError);
+        child.once("exit", onChildExit);
+      })
+    : undefined;
 
   const shutdown = (): void => {
     if (child && !child.killed) child.kill("SIGTERM");
@@ -48,7 +64,15 @@ export async function runNode(opts: RunOptions): Promise<void> {
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);
 
-  await waitForAxl(client);
+  await (childFailure ? Promise.race([waitForAxl(client), childFailure]) : waitForAxl(client));
+  if (child && onChildError && onChildExit) {
+    child.off("error", onChildError);
+    child.off("exit", onChildExit);
+    child.once("exit", (code, signal) => {
+      console.error(`AXL node exited (code=${code ?? "null"} signal=${signal ?? "null"})`);
+      process.exit(code ?? 1);
+    });
+  }
   const topology = await client.topology();
   console.log(`polis node ready: ${shortenPeer(topology.our_public_key)}`);
   console.log(`AXL API: ${cfg.axl.apiUrl}`);

@@ -58,7 +58,7 @@ interface EnsIdentity {
 
 interface ApiResponse {
   identity: EnsIdentity | null;
-  source: "proof" | "config" | "none";
+  source: "proof" | "config" | "none" | "disabled";
   sourcePath: string;
 }
 

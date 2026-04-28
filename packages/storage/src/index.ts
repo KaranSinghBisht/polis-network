@@ -78,11 +78,16 @@ async function putZeroG(payload: string, opts: PutOptions): Promise<PutResult> {
 
     const txHash = extractUploadTxHash(upload);
     const rootHash = extractUploadRootHash(upload) ?? String(tree.rootHash());
-    const archivePath = writeArchiveFile(opts.archiveDir, safeFileStem(rootHash), payload);
+    const uri = `0g://${rootHash}`;
+    const archivePath = writeArchiveFile(
+      opts.archiveDir,
+      safeFileStem(rootHash),
+      annotateArchivePayload(payload, uri, txHash),
+    );
     return {
       provider: "0g",
       cid: rootHash,
-      uri: `0g://${rootHash}`,
+      uri,
       txHash,
       path: archivePath,
     };
@@ -120,6 +125,22 @@ function extractUploadRootHash(upload: unknown): string | undefined {
     if (typeof value === "string" && value.length > 0) return value;
   }
   return undefined;
+}
+
+function annotateArchivePayload(payload: string, archiveUri: string, archiveTxHash: string): string {
+  try {
+    const parsed = JSON.parse(payload) as unknown;
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return payload;
+    }
+    return stableJson({
+      ...(parsed as Record<string, unknown>),
+      archiveTxHash,
+      archiveUri,
+    });
+  } catch {
+    return payload;
+  }
 }
 
 function stableJson(value: unknown): string {

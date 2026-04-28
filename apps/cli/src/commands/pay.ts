@@ -1,4 +1,4 @@
-import { formatUnits, parseUnits, zeroAddress } from "viem";
+import { formatUnits, getAddress, parseUnits, zeroAddress } from "viem";
 import { readConfig, writeConfig, type PolisConfig } from "../config.js";
 import { buildClients } from "../viem.js";
 import { peerIdFromEns, resolveEnsAgent } from "../ens.js";
@@ -68,7 +68,7 @@ export async function runPay(target: string, amount: string, opts: PayOptions): 
     throw new Error("no PaymentRouter address — pass --router 0x...");
   }
 
-  const { peerId, ensName } = await resolvePaymentTarget(cfg, target, opts);
+  const { peerId, ensName, ensOwner } = await resolvePaymentTarget(cfg, target, opts);
   const peerBytes32 = normalizePeerId(peerId);
   const usdcAmount = parseUnits(amount, 6);
   if (usdcAmount <= 0n) throw new Error("amount must be greater than 0");
@@ -84,9 +84,15 @@ export async function runPay(target: string, amount: string, opts: PayOptions): 
   if (recipient === zeroAddress) {
     throw new Error(`peer ${peerId} is not registered in AgentRegistry`);
   }
+  if (ensOwner && getAddress(recipient) !== getAddress(ensOwner)) {
+    throw new Error(
+      `ENS ${ensName} resolves to ${ensOwner}, but AgentRegistry maps peer ${peerId} to ${recipient}; refusing to pay a mismatched owner`,
+    );
+  }
 
   console.log(`payer:     ${account.address}`);
   if (ensName) console.log(`ens:       ${ensName}`);
+  if (ensOwner) console.log(`ens owner: ${ensOwner}`);
   console.log(`peer:      ${peerId}`);
   console.log(`recipient: ${recipient}`);
   console.log(`amount:    ${formatUnits(usdcAmount, 6)} USDC`);
@@ -127,7 +133,7 @@ async function resolvePaymentTarget(
   cfg: PolisConfig,
   target: string,
   opts: PayOptions,
-): Promise<{ peerId: string; ensName?: string }> {
+): Promise<{ peerId: string; ensName?: string; ensOwner?: `0x${string}` }> {
   if (!looksLikeEnsName(target)) return { peerId: target };
   const resolution = await resolveEnsAgent({
     name: target,
@@ -135,10 +141,11 @@ async function resolvePaymentTarget(
     chainId: cfg.chainId,
   });
   const peerId = peerIdFromEns(resolution);
+  const ensOwner = resolution.chainAddress ?? resolution.resolvedAddress;
   console.log(
-    `resolved ENS ${resolution.name} -> peer ${peerId} wallet ${resolution.resolvedAddress}`,
+    `resolved ENS ${resolution.name} -> peer ${peerId} wallet ${ensOwner}`,
   );
-  return { peerId, ensName: resolution.name };
+  return { peerId, ensName: resolution.name, ensOwner };
 }
 
 function normalizePeerId(peerId: string): `0x${string}` {

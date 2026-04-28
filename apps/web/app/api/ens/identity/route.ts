@@ -89,7 +89,14 @@ interface PolisConfigShape {
   ens?: PolisConfigEnsBlock;
 }
 
-export function GET() {
+export function GET(request: Request) {
+  if (!canReadLocalFiles(request)) {
+    return NextResponse.json(
+      { identity: null, source: "disabled", sourcePath: "local file access disabled" },
+      { status: 200 },
+    );
+  }
+
   const polisHome = process.env.POLIS_HOME ?? join(homedir(), ".polis");
   const proofPath = process.env.POLIS_ENS_PROOF ?? join(polisHome, "ens-proof.json");
   const configPath = join(polisHome, "config.json");
@@ -248,4 +255,20 @@ function normalizePeer(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();
   return trimmed.startsWith("0x") ? trimmed.slice(2).toLowerCase() : trimmed.toLowerCase();
+}
+
+function canReadLocalFiles(request: Request): boolean {
+  if (process.env.POLIS_WEB_EXPOSE_LOCAL_FILES === "1") return true;
+  const host = hostnameOnly(request.headers.get("host"));
+  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
+
+function hostnameOnly(hostHeader: string | null): string | undefined {
+  if (!hostHeader) return undefined;
+  const host = hostHeader.toLowerCase();
+  if (host.startsWith("[")) {
+    const end = host.indexOf("]");
+    return end > 0 ? host.slice(1, end) : undefined;
+  }
+  return host.split(":")[0];
 }

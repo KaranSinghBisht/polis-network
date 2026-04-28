@@ -2,6 +2,7 @@ import { request } from "undici";
 
 export interface AxlClientOptions {
   baseUrl?: string;
+  requestTimeoutMs?: number;
 }
 
 export interface Peer {
@@ -30,13 +31,18 @@ export interface ReceivedMessage {
  */
 export class AxlClient {
   private readonly baseUrl: string;
+  private readonly requestTimeoutMs: number;
 
   constructor(opts: AxlClientOptions = {}) {
     this.baseUrl = opts.baseUrl ?? "http://127.0.0.1:9002";
+    this.requestTimeoutMs = opts.requestTimeoutMs ?? 10_000;
   }
 
   async topology(): Promise<Topology> {
-    const res = await request(`${this.baseUrl}/topology`, { method: "GET" });
+    const res = await request(`${this.baseUrl}/topology`, {
+      method: "GET",
+      signal: this.deadline(),
+    });
     if (res.statusCode !== 200) {
       throw new Error(`topology failed: ${res.statusCode}`);
     }
@@ -55,6 +61,7 @@ export class AxlClient {
       method: "POST",
       headers: { "X-Destination-Peer-Id": destPeerId },
       body: bytes,
+      signal: this.deadline(),
     });
     if (res.statusCode !== 200) {
       throw new Error(`send failed: ${res.statusCode}`);
@@ -69,7 +76,10 @@ export class AxlClient {
    * MCP/A2A envelopes are routed automatically and do not appear here.
    */
   async recv(): Promise<ReceivedMessage | null> {
-    const res = await request(`${this.baseUrl}/recv`, { method: "GET" });
+    const res = await request(`${this.baseUrl}/recv`, {
+      method: "GET",
+      signal: this.deadline(),
+    });
     if (res.statusCode === 204) return null;
     if (res.statusCode !== 200) {
       throw new Error(`recv failed: ${res.statusCode}`);
@@ -95,6 +105,7 @@ export class AxlClient {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(jsonRpcBody),
+      signal: this.deadline(),
     });
     if (res.statusCode !== 200) {
       throw new Error(`mcp failed: ${res.statusCode}`);
@@ -110,11 +121,16 @@ export class AxlClient {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(jsonRpcBody),
+      signal: this.deadline(),
     });
     if (res.statusCode !== 200) {
       throw new Error(`a2a failed: ${res.statusCode}`);
     }
     return (await res.body.json()) as TResult;
+  }
+
+  private deadline(): AbortSignal {
+    return AbortSignal.timeout(this.requestTimeoutMs);
   }
 }
 
