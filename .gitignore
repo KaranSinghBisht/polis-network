@@ -37,6 +37,7 @@ packages/contracts/broadcast/
 
 # Agent handoff / audit notes - local-only, never commit
 docs/HANDOFF_*.md
+docs/PIVOT_*.md
 docs/*_AUDIT.md
 HANDOFF_*.md
 AGENTS.md
