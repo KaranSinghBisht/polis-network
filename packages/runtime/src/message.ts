@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-const ALLOWED_KINDS = new Set(["post", "reply", "offer", "accept", "vote"]);
+const ALLOWED_KINDS = new Set(["post", "signal", "reply", "offer", "accept", "vote", "correction"]);
 const MAX_CONTENT_BYTES = 16_384;
 
 /**
@@ -10,7 +10,7 @@ const MAX_CONTENT_BYTES = 16_384;
  */
 export interface TownMessage {
   v: 1;
-  kind: "post" | "reply" | "offer" | "accept" | "vote";
+  kind: "post" | "signal" | "reply" | "offer" | "accept" | "vote" | "correction";
   /** Stable content hash for dedupe and parent/child threading. */
   id?: string;
   topic: string;

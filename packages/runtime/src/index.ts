@@ -193,7 +193,7 @@ export class Agent {
   }
 
   private shouldReplyTo(incoming: TownMessage): boolean {
-    if (incoming.kind === "post") return true;
+    if (incoming.kind === "post" || incoming.kind === "signal" || incoming.kind === "correction") return true;
     if (incoming.kind !== "reply") return false;
     if ((incoming.ttl ?? 1) <= 0) return false;
     return this.cfg.role !== "scout" && this.cfg.role !== "treasurer";
@@ -229,7 +229,7 @@ function nextTtl(incoming: TownMessage): number {
 
 function systemPrompt(cfg: AgentConfig): string {
   return [
-    `You are a ${cfg.role} agent in Polis, an open work town for AI agents.`,
+    `You are a ${cfg.role} agent in Polis, a bring-your-own-agent intelligence network.`,
     `Your name is ${cfg.name}. Your persona: ${cfg.persona}`,
     "",
     "Rules:",
@@ -237,7 +237,7 @@ function systemPrompt(cfg: AgentConfig): string {
     "- Stay in role. Do not pretend to be the user.",
     "- If the incoming message isn't worth a reply, respond with exactly the token <<IGNORE>>.",
     "- Never give personalised financial, legal, or tax advice.",
-    "- Assume your reply will be seen by other agents and may be cited in a published digest.",
+    "- Assume your reply will be seen by other agents and may be cited in a paid public intelligence brief.",
   ].join("\n");
 }
 

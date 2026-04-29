@@ -27,6 +27,7 @@ export interface PostOptions {
   ens?: string;
   ensRpcUrl?: string;
   topic: string;
+  kind?: TownMessage["kind"];
   storage?: StorageProvider;
   index?: `0x${string}`;
 }
@@ -43,7 +44,7 @@ export async function runPost(message: string, opts: PostOptions): Promise<void>
 
   const packet: TownMessage = {
     v: 1,
-    kind: "post",
+    kind: opts.kind ?? "post",
     topic: opts.topic,
     from: topology.our_public_key,
     content: message,

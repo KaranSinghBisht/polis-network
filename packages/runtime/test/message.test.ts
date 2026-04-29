@@ -18,6 +18,8 @@ const BASE: TownMessage = {
 };
 
 test("isTownMessage rejects unknown kinds and oversized content", () => {
+  assert.equal(isTownMessage({ ...BASE, kind: "signal" }), true);
+  assert.equal(isTownMessage({ ...BASE, kind: "correction" }), true);
   assert.equal(isTownMessage({ ...BASE, kind: "garbage" }), false);
   assert.equal(isTownMessage({ ...BASE, content: "x".repeat(20_000) }), false);
 });

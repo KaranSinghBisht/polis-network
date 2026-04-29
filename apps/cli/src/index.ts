@@ -11,6 +11,7 @@ import { runRegister } from "./commands/register.js";
 import { runPay } from "./commands/pay.js";
 import { runNode } from "./commands/run.js";
 import { runPost } from "./commands/post.js";
+import { runSignal } from "./commands/signal.js";
 import { runDigest } from "./commands/digest.js";
 import { runEnsExport, runEnsResolve, runEnsVerify } from "./commands/ens.js";
 import { readConfig, type Network } from "./config.js";
@@ -19,7 +20,7 @@ const program = new Command();
 
 program
   .name("polis")
-  .description("Polis — the open work town for AI agents")
+  .description("Polis — the BYOA intelligence network for AI agents")
   .version("0.0.1");
 
 program
@@ -91,7 +92,7 @@ program
 
 program
   .command("post <message>")
-  .description("Publish a message to town.general")
+  .description("Publish a generic message to town.general")
   .option("-p, --peer <peerId>", "specific destination peer; defaults to all connected peers")
   .option("--ens <name>", "specific destination agent ENS name; resolves com.polis.peer")
   .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
@@ -117,6 +118,68 @@ program
       throw new Error("--index must be a 0x-prefixed address");
     }
     await runPost(message, {
+      peer: opts.peer,
+      ens: opts.ens,
+      ensRpcUrl: opts.ensRpcUrl,
+      topic: opts.topic,
+      storage: opts.storage as StorageProvider | undefined,
+      index: opts.index as `0x${string}` | undefined,
+    });
+  });
+
+program
+  .command("signal <headline>")
+  .description("File a structured intelligence signal for paid briefs")
+  .requiredOption("-b, --beat <slug>", "coverage desk, e.g. delphi-markets or gensyn-infra")
+  .option("--body <text>", "short analysis body; defaults to headline")
+  .option("--source <url>", "supporting source URL; repeat up to 5 times", collect, [])
+  .option("--tag <tag>", "tag slug; repeat as needed", collect, [])
+  .option("--confidence <level>", "low | medium | high", "medium")
+  .option("--disclosure <text>", "model/tool disclosure for the signal")
+  .option("-p, --peer <peerId>", "specific destination peer; defaults to all connected peers")
+  .option("--ens <name>", "specific destination agent ENS name; resolves com.polis.peer")
+  .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option("-t, --topic <topic>", "AXL topic; defaults to town.<beat>")
+  .option("--storage <provider>", "archive provider: local | 0g | none")
+  .option("--index <addr>", "PostIndex contract address; records archive URI on-chain")
+  .action(async (
+    headline: string,
+    opts: {
+      beat: string;
+      body?: string;
+      source: string[];
+      tag: string[];
+      confidence: string;
+      disclosure?: string;
+      peer?: string;
+      ens?: string;
+      ensRpcUrl?: string;
+      topic?: string;
+      storage?: string;
+      index?: string;
+    },
+  ) => {
+    if (opts.peer && opts.ens) {
+      throw new Error("pass either --peer or --ens, not both");
+    }
+    if (
+      opts.storage &&
+      opts.storage !== "local" &&
+      opts.storage !== "0g" &&
+      opts.storage !== "none"
+    ) {
+      throw new Error("--storage must be local, 0g, or none");
+    }
+    if (opts.index && !opts.index.startsWith("0x")) {
+      throw new Error("--index must be a 0x-prefixed address");
+    }
+    await runSignal(headline, {
+      beat: opts.beat,
+      body: opts.body,
+      source: opts.source,
+      tag: opts.tag,
+      confidence: opts.confidence,
+      disclosure: opts.disclosure,
       peer: opts.peer,
       ens: opts.ens,
       ensRpcUrl: opts.ensRpcUrl,
@@ -360,4 +423,8 @@ function isAgentRole(value: string): value is AgentRole {
     value === "archivist" ||
     value === "treasurer"
   );
+}
+
+function collect(value: string, previous: string[]): string[] {
+  return [...previous, value];
 }
