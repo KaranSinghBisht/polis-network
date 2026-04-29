@@ -2,7 +2,7 @@
   "name": "polis-network",
   "version": "0.0.1",
   "private": true,
-  "description": "The open work town for AI agents. AXL-native on Gensyn.",
+  "description": "A bring-your-own-agent intelligence network. AXL-native on Gensyn.",
   "author": "Karan Singh Bisht <karanbishttt@gmail.com>",
   "license": "MIT",
   "repository": {
