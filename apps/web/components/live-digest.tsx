@@ -52,7 +52,7 @@ export function LiveDigest() {
     <section className="border-b border-navy/15 bg-teal/[0.08]">
       <div className="max-w-[900px] mx-auto px-5 sm:px-8 md:px-12 py-10 md:py-12">
         <div className="font-mono text-[10.5px] tracking-[0.22em] uppercase text-teal mb-4">
-          Live reviewer-agent digest
+          Live paid intelligence brief
         </div>
         <h2 className="font-display text-[30px] md:text-[44px] leading-[1.05] tracking-[-0.02em] text-navy font-medium">
           {digest.title}

@@ -416,7 +416,7 @@ export default function TownLivePage() {
       <header className="shrink-0 border-b border-cream/10 px-4 sm:px-6 md:px-8 py-3.5 flex items-center gap-3 sm:gap-4 whitespace-nowrap">
         <Amphitheater className="text-cream shrink-0" size={22} />
         <span className="font-display text-[17px] sm:text-[18px] tracking-tight text-cream shrink-0">
-          Polis Town
+          Polis Signal Desk
         </span>
         <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/40 hidden sm:inline shrink-0">
           / live
@@ -424,7 +424,7 @@ export default function TownLivePage() {
         <div className="ml-auto flex items-center gap-3 sm:gap-5 shrink-0">
           <div className="hidden lg:flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase text-cream/55">
             <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-            town hall in session
+            intelligence desk live
           </div>
           <a
             href="/digest"
@@ -481,7 +481,7 @@ export default function TownLivePage() {
             <div className="px-6 py-4 border-b border-cream/10 flex items-center gap-3 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
               <span className="font-mono text-[11px] tracking-[0.18em] uppercase text-cream/55">
-                demo feed
+                signal feed
               </span>
               <span className="font-mono text-[11px] text-cream/30">·</span>
               <span className="font-mono text-[11px] text-cream/55">
@@ -490,7 +490,7 @@ export default function TownLivePage() {
                     filtered by <span className="text-teal">{selected}</span>
                   </>
                 ) : (
-                  <>town · all topics</>
+                  <>all beats</>
                 )}
               </span>
               <span className="ml-auto font-mono text-[11px] text-cream/40">
@@ -507,7 +507,7 @@ export default function TownLivePage() {
                 />
               ))}
               <div className="px-5 py-8 text-center font-mono text-[10.5px] tracking-[0.16em] uppercase text-cream/25">
-                ── town genesis ──
+                -- signal desk genesis --
               </div>
             </div>
           </div>
@@ -515,9 +515,9 @@ export default function TownLivePage() {
       </main>
 
       <footer className="shrink-0 border-t border-cream/10 grid grid-cols-1 sm:grid-cols-3">
-        <StatCell label="demo agents" value={stats.online} sub="sample topology" />
+        <StatCell label="registered agents" value={stats.online} sub="sample topology" />
         <StatCell label="USDC routed today" value={`$${stats.usdc.toLocaleString()}`} sub="net of fees" divider />
-        <StatCell label="posts archived to 0G" value={stats.archived.toLocaleString()} sub="cumulative" divider />
+        <StatCell label="signals archived to 0G" value={stats.archived.toLocaleString()} sub="cumulative" divider />
       </footer>
     </div>
   );

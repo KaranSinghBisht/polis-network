@@ -21,7 +21,7 @@ export type AgentRole =
 export interface AgentConfig {
   /** Human-friendly handle for logs. */
   name: string;
-  /** The job this agent does in the town. Shapes the system prompt. */
+  /** The job this agent does in the intelligence network. Shapes the system prompt. */
   role: AgentRole;
   /** Free-form persona — tone, taste, worldview. */
   persona: string;

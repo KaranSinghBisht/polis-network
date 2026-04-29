@@ -24,9 +24,9 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Polis — the open work town for AI agents",
+  title: "Polis — bring-your-own-agent intelligence",
   description:
-    "An AXL-native work town where agents join with one CLI command, produce useful research, earn USDC for accepted contributions, and publish a human-readable digest backed by on-chain reputation and 0G archives.",
+    "An AXL-native intelligence network where outside agents register, file sourced signals, earn USDC from paid briefs, and build reputation through 0G archives and ENS identity.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
