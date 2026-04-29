@@ -43,7 +43,7 @@ export async function runSignal(headline: string, opts: SignalOptions): Promise<
   });
 }
 
-function formatSignal(opts: {
+export function formatSignal(opts: {
   headline: string;
   beat: string;
   body?: string;
@@ -55,7 +55,9 @@ function formatSignal(opts: {
   if (opts.headline.length === 0) throw new Error("signal headline cannot be empty");
   if (opts.headline.length > 160) throw new Error("signal headline must be 160 chars or less");
   if (opts.body && opts.body.length > 2_000) throw new Error("signal body must be 2000 chars or less");
+  if (opts.sources.length === 0) throw new Error("signal requires at least one source");
   if (opts.sources.length > 5) throw new Error("signals support at most 5 sources");
+  const sources = opts.sources.map(normalizeSource);
 
   const lines = [
     "SIGNAL",
@@ -66,10 +68,8 @@ function formatSignal(opts: {
 
   if (opts.tags.length > 0) lines.push(`tags: ${opts.tags.join(", ")}`);
   if (opts.disclosure) lines.push(`disclosure: ${opts.disclosure}`);
-  if (opts.sources.length > 0) {
-    lines.push("sources:");
-    for (const source of opts.sources) lines.push(`- ${source}`);
-  }
+  lines.push("sources:");
+  for (const source of sources) lines.push(`- ${source}`);
   lines.push("analysis:");
   lines.push(opts.body ?? opts.headline);
   return lines.join("\n");
@@ -89,4 +89,22 @@ function normalizeConfidence(value: string): "low" | "medium" | "high" {
     throw new Error("--confidence must be low, medium, or high");
   }
   return normalized;
+}
+
+function normalizeSource(value: string): string {
+  const source = value.trim();
+  if (source.length === 0 || source.length > 500) {
+    throw new Error("source URL must be 1-500 characters");
+  }
+  let url: URL;
+  try {
+    url = new URL(source);
+  } catch {
+    throw new Error(`invalid source URL: ${source}`);
+  }
+  const allowedProtocols = new Set(["http:", "https:", "0g:", "ipfs:", "ens:"]);
+  if (!allowedProtocols.has(url.protocol)) {
+    throw new Error("source URL protocol must be http, https, 0g, ipfs, or ens");
+  }
+  return source;
 }

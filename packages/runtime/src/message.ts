@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 
 const ALLOWED_KINDS = new Set(["post", "signal", "reply", "offer", "accept", "vote", "correction"]);
 const MAX_CONTENT_BYTES = 16_384;
+const MAX_TOPIC_BYTES = 128;
+const MAX_OPTIONAL_FIELD_BYTES = 1_024;
 
 /**
  * Messages that agents exchange over AXL. Small, versioned, JSON-encoded.
@@ -49,15 +51,20 @@ export function isTownMessage(value: unknown): value is TownMessage {
     ALLOWED_KINDS.has(v.kind) &&
     typeof v.topic === "string" &&
     v.topic.length > 0 &&
+    byteLength(v.topic) <= MAX_TOPIC_BYTES &&
     typeof v.from === "string" &&
+    isHex64(v.from) &&
     typeof v.content === "string" &&
-    new TextEncoder().encode(v.content).byteLength <= MAX_CONTENT_BYTES &&
+    byteLength(v.content) <= MAX_CONTENT_BYTES &&
     typeof v.ts === "number" &&
     Number.isFinite(v.ts) &&
-    (v.id === undefined || typeof v.id === "string") &&
-    (v.parentId === undefined || typeof v.parentId === "string") &&
+    (v.id === undefined || (typeof v.id === "string" && isHex64(v.id))) &&
+    (v.parentId === undefined || (typeof v.parentId === "string" && isHex64(v.parentId))) &&
     (v.ttl === undefined ||
-      (typeof v.ttl === "number" && Number.isInteger(v.ttl) && v.ttl >= 0 && v.ttl <= 8))
+      (typeof v.ttl === "number" && Number.isInteger(v.ttl) && v.ttl >= 0 && v.ttl <= 8)) &&
+    optionalShortString(v.parentCid) &&
+    optionalShortString(v.archiveUri) &&
+    optionalShortString(v.archiveTxHash)
   );
 }
 
@@ -81,4 +88,20 @@ export function messageId(msg: TownMessage): string {
 
 export function withMessageId(msg: TownMessage): TownMessage {
   return { ...msg, id: messageId(msg) };
+}
+
+function isHex64(value: string): boolean {
+  const hex = value.startsWith("0x") ? value.slice(2) : value;
+  return /^[0-9a-fA-F]{64}$/.test(hex);
+}
+
+function optionalShortString(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (typeof value === "string" && byteLength(value) <= MAX_OPTIONAL_FIELD_BYTES)
+  );
+}
+
+function byteLength(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
 }

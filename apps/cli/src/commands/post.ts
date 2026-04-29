@@ -64,7 +64,7 @@ export async function runPost(message: string, opts: PostOptions): Promise<void>
   if (archive) {
     packet.archiveUri = archive.uri;
     if (archive.txHash) packet.archiveTxHash = archive.txHash;
-    console.log(`archived post: ${archive.uri}${archive.txHash ? ` tx=${archive.txHash}` : ""}`);
+    console.log(`archived ${packet.kind}: ${archive.uri}${archive.txHash ? ` tx=${archive.txHash}` : ""}`);
     await recordArchiveOnChain(cfg, packet, archive.uri, opts.index);
   }
 
