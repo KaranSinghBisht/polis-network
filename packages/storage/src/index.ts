@@ -22,6 +22,8 @@ export interface PutOptions {
     rpcUrl: string;
     indexerRpcUrl: string;
     privateKey: string;
+    /** Optional 0G replication factor; defaults to SDK default (1) when unset. */
+    expectedReplica?: number;
   };
 }
 
@@ -67,11 +69,13 @@ async function putZeroG(payload: string, opts: PutOptions): Promise<PutResult> {
     const provider = new JsonRpcProvider(opts.zeroG.rpcUrl);
     const signer = new Wallet(opts.zeroG.privateKey, provider);
     const indexer = new Indexer(opts.zeroG.indexerRpcUrl);
-    const [upload, uploadErr] = await indexer.upload(
-      file,
-      opts.zeroG.rpcUrl,
-      signer as never,
-    );
+    const uploadArgs: unknown[] = [file, opts.zeroG.rpcUrl, signer];
+    if (typeof opts.zeroG.expectedReplica === "number" && opts.zeroG.expectedReplica > 1) {
+      uploadArgs.push({ expectedReplica: opts.zeroG.expectedReplica });
+    }
+    const [upload, uploadErr] = await (
+      indexer.upload as (...args: unknown[]) => Promise<[unknown, unknown]>
+    )(...uploadArgs);
     if (uploadErr !== null) {
       throw new Error(`0G upload failed: ${String(uploadErr)}`);
     }

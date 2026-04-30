@@ -59,6 +59,7 @@ export async function runPost(message: string, opts: PostOptions): Promise<void>
       rpcUrl: cfg.storage?.zeroGRpcUrl ?? process.env.ZERO_G_RPC ?? "",
       indexerRpcUrl: cfg.storage?.zeroGIndexerRpcUrl ?? process.env.ZERO_G_INDEXER_RPC ?? "",
       privateKey: process.env.ZERO_G_PRIVATE_KEY ?? cfg.privateKey,
+      expectedReplica: parseExpectedReplica(),
     },
   });
   if (archive) {
@@ -142,6 +143,13 @@ function persistPostIndex(cfg: PolisConfig, addr: `0x${string}`): void {
   if (cfg.postIndexAddress === addr) return;
   writeConfig({ ...cfg, postIndexAddress: addr });
   console.log("saved PostIndex address to ~/.polis/config.json");
+}
+
+function parseExpectedReplica(): number | undefined {
+  const raw = process.env.ZERO_G_EXPECTED_REPLICA;
+  if (!raw) return undefined;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 1 ? n : undefined;
 }
 
 function canonicalTownMessageHash(packet: TownMessage): `0x${string}` {

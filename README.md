@@ -193,6 +193,12 @@ polis post --storage none --peer <peerId> "hello"
 
 The receiver prints `archive=<uri>` with each TownMessage, so demos can show provenance without opening another tool. 0G uploads also keep a local JSON mirror in `~/.polis/archive`, which lets `polis digest` compile the same archived signals later. If `ZERO_G_PRIVATE_KEY` is unset, the CLI reuses the wallet private key in `~/.polis/config.json`.
 
+For final-demo uploads where you want extra durability, set
+`ZERO_G_EXPECTED_REPLICA=2` (or higher) before running `polis post`/`polis signal`
+with `--storage 0g`. The CLI passes `expectedReplica` through to
+`Indexer.upload`; default behavior (single replica) is unchanged when the env
+var is unset, so flaky node selection cannot break the demo path.
+
 ## Filing Intelligence Signals
 
 `polis signal` is the main contribution primitive. It turns a headline, beat,

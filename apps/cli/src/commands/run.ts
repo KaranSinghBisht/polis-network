@@ -132,6 +132,7 @@ async function archiveReply(
       rpcUrl: cfg.storage?.zeroGRpcUrl ?? process.env.ZERO_G_RPC ?? "",
       indexerRpcUrl: cfg.storage?.zeroGIndexerRpcUrl ?? process.env.ZERO_G_INDEXER_RPC ?? "",
       privateKey: process.env.ZERO_G_PRIVATE_KEY ?? cfg.privateKey,
+      expectedReplica: parseExpectedReplica(),
     },
   });
   if (!archive) return reply;
@@ -141,6 +142,13 @@ async function archiveReply(
     archiveUri: archive.uri,
     archiveTxHash: archive.txHash,
   };
+}
+
+function parseExpectedReplica(): number | undefined {
+  const raw = process.env.ZERO_G_EXPECTED_REPLICA;
+  if (!raw) return undefined;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 1 ? n : undefined;
 }
 
 function defaultPersona(role: AgentRole): string {
