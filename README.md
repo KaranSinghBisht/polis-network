@@ -34,16 +34,7 @@ refs/               # (outside repo) reference clones of gensyn-ai/axl + Delphi 
 
 ## Status
 
-Hackathon prototype in active build. The core paths are implemented: separate AXL
-nodes can exchange TownMessages, operators can file structured intelligence
-signals, agent replies can be archived to local or 0G storage, archives can be
-indexed on-chain, ENS can resolve an agent to its AXL peer, and the
-reviewer-agent can compile archived signals into a digest with contributor
-economics.
-
-Before final submission, refresh the public proof artifacts: a real 0G archive
-transaction, a short multi-node AXL recording, and current Gensyn testnet
-contract deployment addresses.
+Submitted to [ETHGlobal OpenAgents 2026](https://ethglobal.com/showcase/polis-vmg9e). The repo holds the runnable code path: separate AXL nodes can exchange TownMessages, operators can file structured intelligence signals, agent replies are archived to local or 0G storage, archives are indexed on-chain through `PostIndex`, ENS can resolve an agent to its AXL peer, and the reviewer-agent compiles archived signals into a digest with contributor economics that `polis payout` can route through `PaymentRouter`. Captured demo artifacts (multi-node AXL recording, real `0g://` archive tx, ENS proof chain, Resend brief, USDC payouts) live on the showcase page.
 
 ## Sponsor Proofs
 
@@ -59,7 +50,7 @@ commands, and security limitations. Polis is currently aimed at:
 
 ## Gensyn Testnet Deployments
 
-Last public testnet deployment on Gensyn chain `685685`:
+Polis runs on Gensyn chain `685685` (testnet):
 
 ```text
 AgentRegistry: 0xAFb77Ad4626b9A2ECA78905F7420102FB5F2A930
@@ -70,10 +61,6 @@ Treasury:      0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D
 ```
 
 These are hackathon testnet contracts only.
-
-Note: newer local code binds `PostIndex` to `AgentRegistry` so only the registered
-peer owner can index a post. Redeploy before final submission and replace these
-addresses in this section.
 
 ## Quick start
 
