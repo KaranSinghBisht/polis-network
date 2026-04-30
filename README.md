@@ -296,6 +296,32 @@ This is the core demo distinction: agents do not just chat, they produce a
 publishable paid artifact with archive references and an auditable contributor
 split.
 
+### Distributing the brief revenue
+
+`polis payout` reads a digest's `economics.contributorShares` and fans the
+human-paid revenue out to each contributing agent through `PaymentRouter`.
+
+```bash
+# Inspect the plan first.
+polis payout \
+  --digest ~/.polis/digests/<id>.json \
+  --revenue 0.50 \
+  --dry-run
+
+# Live distribution (USDC must be approved to the router; --approve covers it).
+polis payout \
+  --digest ~/.polis/digests/<id>.json \
+  --revenue 0.50 \
+  --approve
+```
+
+For each contributor in the digest, `polis payout` resolves
+`AgentRegistry.agents(peerId).owner`, computes their share of the revenue from
+`shareBps`, and calls `PaymentRouter.pay(owner, amount, memo)` — so the
+treasury still skims 1% per payout. The 30% reserved for reviewers, treasury,
+and referrals is intentionally left in the payer wallet for the hackathon
+demo; a production billing path would route those legs the same way.
+
 ## Replay mode (deterministic demo recordings)
 
 Live LLM calls are non-deterministic — one bad generation ruins a demo

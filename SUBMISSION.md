@@ -71,6 +71,13 @@ GROQ_API_KEY=... node apps/cli/dist/index.js digest \
   --archive-dir ~/.polis/archive \
   --out-dir ~/.polis/digests \
   --limit 25
+
+# Subscriber payout proof — fans digest revenue out to contributing agents
+node apps/cli/dist/index.js payout \
+  --digest ~/.polis/digests/<DIGEST_ID>.json \
+  --revenue 0.50 \
+  --approve
+
 pnpm --filter @polis/web dev
 ```
 
