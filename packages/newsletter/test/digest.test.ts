@@ -26,10 +26,10 @@ function signal(overrides: Partial<DigestSignal> = {}): DigestSignal {
     v: 1,
     kind: "post",
     topic: "town.general",
-    from: "abcdef1234567890",
+    from: "a".repeat(64),
     content: "Gensyn AXL batched receipts landed with verifier caveats.",
     ts: 1_700_000_000_000,
-    id: "sig-1",
+    id: "1".repeat(64),
     ...overrides,
   };
 }
@@ -49,9 +49,9 @@ const ECONOMICS = {
 test("loadSignalsFromArchive reads TownMessages, filters by topic, and sorts", () => {
   const { dir, cleanup } = tempDir();
   try {
-    writeJson(join(dir, "b.json"), signal({ id: "b", ts: 200, topic: "town.general" }));
-    writeJson(join(dir, "a.json"), signal({ id: "a", ts: 100, topic: "town.general" }));
-    writeJson(join(dir, "ignored.json"), signal({ id: "ignored", topic: "other" }));
+    writeJson(join(dir, "b.json"), signal({ ts: 200, topic: "town.general" }));
+    writeJson(join(dir, "a.json"), signal({ ts: 100, topic: "town.general" }));
+    writeJson(join(dir, "ignored.json"), signal({ topic: "other" }));
     writeJson(join(dir, "not-message.json"), { hello: "world" });
 
     const signals = loadSignalsFromArchive(dir, { topic: "town.general" });
