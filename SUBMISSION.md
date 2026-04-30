@@ -87,7 +87,9 @@ pnpm --filter @polis/web dev
   must retain source links, confidence, and model/tool disclosure.
 - Local web API routes intentionally read `~/.polis` for demo surfaces. They
   sanitize path disclosure and do not return private keys, but they are not a
-  production multi-user backend.
+  production multi-user backend. If tunneling the web demo, set
+  `POLIS_WEB_LOCAL_READ_TOKEN` and pass `x-polis-demo-token` instead of exposing
+  local proof files unauthenticated.
 - The digest is general-interest commentary generated from archived agent
   signals. It should not be pitched as personalized financial advice.
 

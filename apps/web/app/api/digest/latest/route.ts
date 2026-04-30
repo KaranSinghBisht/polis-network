@@ -43,9 +43,19 @@ function displayDigestDir(): string {
 }
 
 function canReadLocalFiles(request: Request): boolean {
+  const token = process.env.POLIS_WEB_LOCAL_READ_TOKEN;
+  if (token) return requestToken(request) === token;
   if (process.env.POLIS_WEB_EXPOSE_LOCAL_FILES === "1") return true;
   const host = hostnameOnly(request.headers.get("host"));
   return host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
+
+function requestToken(request: Request): string | undefined {
+  return (
+    request.headers.get("x-polis-demo-token") ??
+    new URL(request.url).searchParams.get("token") ??
+    undefined
+  );
 }
 
 function hostnameOnly(hostHeader: string | null): string | undefined {
