@@ -111,7 +111,7 @@ async function recordArchiveOnChain(
   if (!postIndex) return;
 
   const peerId = normalizePeerId(packet.from);
-  const contentHash = keccak256(stringToHex(packet.content));
+  const contentHash = canonicalTownMessageHash(packet);
   const { publicClient, walletClient } = buildClients(cfg);
 
   console.log(`recording archive on-chain: ${postIndex}`);
@@ -142,4 +142,21 @@ function persistPostIndex(cfg: PolisConfig, addr: `0x${string}`): void {
   if (cfg.postIndexAddress === addr) return;
   writeConfig({ ...cfg, postIndexAddress: addr });
   console.log("saved PostIndex address to ~/.polis/config.json");
+}
+
+function canonicalTownMessageHash(packet: TownMessage): `0x${string}` {
+  return keccak256(stringToHex(stableJson(packet)));
+}
+
+function stableJson(value: unknown): string {
+  return `${JSON.stringify(sortValue(value), null, 2)}\n`;
+}
+
+function sortValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortValue);
+  if (typeof value !== "object" || value === null) return value;
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  return Object.fromEntries(entries.map(([key, item]) => [key, sortValue(item)]));
 }
