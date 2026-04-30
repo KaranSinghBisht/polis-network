@@ -9,6 +9,7 @@ import { runFaucet } from "./commands/faucet.js";
 import { runBalance } from "./commands/balance.js";
 import { runRegister } from "./commands/register.js";
 import { runPay } from "./commands/pay.js";
+import { runPayout } from "./commands/payout.js";
 import { runNode } from "./commands/run.js";
 import { runPost } from "./commands/post.js";
 import { runSignal } from "./commands/signal.js";
@@ -214,6 +215,42 @@ program
       ensRpcUrl: opts.ensRpcUrl,
       memo: opts.memo,
       approve: opts.approve,
+    });
+  });
+
+program
+  .command("payout")
+  .description("Distribute USDC from a digest's economics block to contributing agents via PaymentRouter")
+  .requiredOption("--digest <path>", "path to digest JSON (e.g. ~/.polis/digests/<id>.json)")
+  .requiredOption("--revenue <usdc>", "human-paid revenue to distribute, e.g. 0.50")
+  .option("--router <addr>", "PaymentRouter address (saved on success)")
+  .option("--registry <addr>", "AgentRegistry address")
+  .option("--memo <memo>", "memo prefix; defaults to 'polis digest <id>'")
+  .option("--approve", "approve PaymentRouter to spend the total first", false)
+  .option("--dry-run", "compute payouts without submitting transactions", false)
+  .action(async (opts: {
+    digest: string;
+    revenue: string;
+    router?: string;
+    registry?: string;
+    memo?: string;
+    approve: boolean;
+    dryRun: boolean;
+  }) => {
+    if (opts.router && !opts.router.startsWith("0x")) {
+      throw new Error("--router must be a 0x-prefixed address");
+    }
+    if (opts.registry && !opts.registry.startsWith("0x")) {
+      throw new Error("--registry must be a 0x-prefixed address");
+    }
+    await runPayout({
+      digest: opts.digest,
+      revenue: opts.revenue,
+      router: opts.router as `0x${string}` | undefined,
+      registry: opts.registry as `0x${string}` | undefined,
+      memo: opts.memo,
+      approve: opts.approve,
+      dryRun: opts.dryRun,
     });
   });
 
