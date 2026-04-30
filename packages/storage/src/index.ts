@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Wallet, JsonRpcProvider } from "ethers";
-import { Indexer, ZgFile } from "@0glabs/0g-ts-sdk";
+import { Indexer, ZgFile, type UploadOption } from "@0glabs/0g-ts-sdk";
 
 export type StorageProvider = "local" | "0g" | "none";
 
@@ -69,13 +69,23 @@ async function putZeroG(payload: string, opts: PutOptions): Promise<PutResult> {
     const provider = new JsonRpcProvider(opts.zeroG.rpcUrl);
     const signer = new Wallet(opts.zeroG.privateKey, provider);
     const indexer = new Indexer(opts.zeroG.indexerRpcUrl);
-    const uploadArgs: unknown[] = [file, opts.zeroG.rpcUrl, signer];
-    if (typeof opts.zeroG.expectedReplica === "number" && opts.zeroG.expectedReplica > 1) {
-      uploadArgs.push({ expectedReplica: opts.zeroG.expectedReplica });
-    }
-    const [upload, uploadErr] = await (
-      indexer.upload as (...args: unknown[]) => Promise<[unknown, unknown]>
-    )(...uploadArgs);
+    const uploadOpts =
+      typeof opts.zeroG.expectedReplica === "number" && opts.zeroG.expectedReplica > 1
+        ? ({
+            tags: "0x",
+            finalityRequired: true,
+            taskSize: 10,
+            expectedReplica: opts.zeroG.expectedReplica,
+            skipTx: false,
+            fee: 0n,
+          } satisfies UploadOption)
+        : undefined;
+    const [upload, uploadErr] = await indexer.upload(
+      file,
+      opts.zeroG.rpcUrl,
+      signer as never,
+      uploadOpts,
+    );
     if (uploadErr !== null) {
       throw new Error(`0G upload failed: ${String(uploadErr)}`);
     }

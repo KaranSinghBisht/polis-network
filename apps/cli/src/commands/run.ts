@@ -147,8 +147,8 @@ async function archiveReply(
 function parseExpectedReplica(): number | undefined {
   const raw = process.env.ZERO_G_EXPECTED_REPLICA;
   if (!raw) return undefined;
-  const n = Number.parseInt(raw, 10);
-  return Number.isFinite(n) && n > 1 ? n : undefined;
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 1 ? n : undefined;
 }
 
 function defaultPersona(role: AgentRole): string {
