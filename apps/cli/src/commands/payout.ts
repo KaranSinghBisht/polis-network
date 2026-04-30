@@ -101,6 +101,15 @@ export async function runPayout(opts: PayoutOptions): Promise<void> {
   if (splitSum !== 10000) {
     throw new Error(`digest splitBps sums to ${splitSum}, expected 10000`);
   }
+  const contributorShareSum = digest.economics.contributorShares.reduce(
+    (sum, share) => sum + share.shareBps,
+    0,
+  );
+  if (contributorShareSum !== splits.contributors) {
+    throw new Error(
+      `digest contributorShares sum to ${contributorShareSum}, expected contributors split ${splits.contributors}`,
+    );
+  }
 
   const revenue = parseUnits(opts.revenue, 6);
   if (revenue <= 0n) throw new Error("--revenue must be greater than 0");
@@ -218,7 +227,7 @@ export async function runPayout(opts: PayoutOptions): Promise<void> {
   persistRouter(cfg, routerAddress);
 }
 
-function loadDigest(path: string): DigestSummary {
+export function loadDigest(path: string): DigestSummary {
   const resolved = resolve(path);
   let raw: string;
   try {
@@ -243,9 +252,41 @@ function isDigestSummary(value: unknown): value is DigestSummary {
   const v = value as Partial<DigestSummary>;
   if (typeof v.id !== "string") return false;
   if (!v.economics || typeof v.economics !== "object") return false;
-  if (!Array.isArray(v.economics.contributorShares)) return false;
-  if (!v.economics.splitBps || typeof v.economics.splitBps !== "object") return false;
+  const economics = v.economics as Partial<DigestEconomics>;
+  if (economics.revenueModel !== "paid-brief") return false;
+  if (economics.currency !== "USDC") return false;
+  if (!Array.isArray(economics.contributorShares) || economics.contributorShares.length === 0) {
+    return false;
+  }
+  if (!economics.splitBps || typeof economics.splitBps !== "object") return false;
+  const splitBps = economics.splitBps as Partial<DigestEconomics["splitBps"]>;
+  if (
+    !isBps(splitBps.contributors) ||
+    !isBps(splitBps.reviewers) ||
+    !isBps(splitBps.treasury) ||
+    !isBps(splitBps.referrals)
+  ) {
+    return false;
+  }
+  if (
+    !economics.contributorShares.every(
+      (share) =>
+        typeof share === "object" &&
+        share !== null &&
+        typeof share.from === "string" &&
+        share.from.length > 0 &&
+        Number.isSafeInteger(share.signalCount) &&
+        share.signalCount > 0 &&
+        isBps(share.shareBps),
+    )
+  ) {
+    return false;
+  }
   return true;
+}
+
+function isBps(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 && value <= 10000;
 }
 
 function normalizePeerId(peerId: string): `0x${string}` {
