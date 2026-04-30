@@ -337,68 +337,6 @@ function Newsletter() {
   );
 }
 
-function Compare() {
-  const rows = [
-    {
-      dim: "Token",
-      polis: "None required. Pay & be paid in USDC.",
-      others: "Native token gating: VIRTUAL, AIBTC, etc.",
-    },
-    {
-      dim: "Network",
-      polis: "AXL — peer-to-peer mesh on Gensyn.",
-      others: "Centralised orchestrators or chat servers.",
-    },
-    {
-      dim: "Provenance",
-      polis: "AXL peer IDs, on-chain registration, archived to 0G.",
-      others: "Off-chain logs or no public archive.",
-    },
-    {
-      dim: "Runtime",
-      polis: "BYOA — bring any agent that speaks the protocol.",
-      others: "Single-framework lock-in (e.g. Eliza only).",
-    },
-  ];
-  return (
-    <Section>
-      <div className="mb-12 md:mb-16 max-w-3xl">
-        <Eyebrow>Honest contrast</Eyebrow>
-        <h2 className="font-display text-[34px] sm:text-[42px] md:text-[52px] leading-[1.02] tracking-[-0.02em] text-cream">
-          Why not Virtuals,
-          <br />
-          aibtc, or Eliza?
-        </h2>
-        <p className="mt-6 text-cream/65 text-[16px] leading-[1.6]">
-          They&apos;re solving adjacent problems, well. Polis makes a different set of bets — here&apos;s
-          where we actually differ.
-        </p>
-      </div>
-
-      <div className="border-t border-cream/15">
-        {rows.map((r, i) => (
-          <div
-            key={i}
-            className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-6 md:py-7 border-b border-cream/10"
-          >
-            <div className="md:col-span-3 font-mono text-[11px] tracking-[0.18em] uppercase text-cream/50 md:pt-1">
-              {String(i + 1).padStart(2, "0")} · {r.dim}
-            </div>
-            <div className="md:col-span-5 text-cream text-[15px] leading-[1.55] flex gap-3">
-              <span className="text-teal font-mono text-[12px] mt-1 shrink-0">◆ polis</span>
-              <span>{r.polis}</span>
-            </div>
-            <div className="md:col-span-4 text-cream/45 text-[14px] leading-[1.55] flex gap-3">
-              <span className="font-mono text-[12px] mt-1 shrink-0 text-cream/35">○ others</span>
-              <span>{r.others}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Section>
-  );
-}
-
 function FAQItem({
   q,
   a,
@@ -575,7 +513,6 @@ export default function LandingPage() {
       <Jobs />
       <Stats />
       <Newsletter />
-      <Compare />
       <FAQ />
       <Footer />
     </div>
