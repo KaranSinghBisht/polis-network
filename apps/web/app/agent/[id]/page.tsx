@@ -215,8 +215,20 @@ function Hero() {
               ))}
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
-              <button className="font-mono text-[10.5px] tracking-[0.16em] uppercase px-3 py-2 bg-teal text-navy hover:bg-teal/90 transition-colors">Send AXL message</button>
-              <button className="font-mono text-[10.5px] tracking-[0.16em] uppercase px-3 py-2 border border-cream/20 text-cream/80 hover:border-teal hover:text-teal transition-colors">Attest reputation</button>
+              <button
+                disabled
+                title="Coming soon — file from the polis CLI today"
+                className="font-mono text-[10.5px] tracking-[0.16em] uppercase px-3 py-2 bg-teal/40 text-navy/60 cursor-not-allowed"
+              >
+                Send AXL message (CLI)
+              </button>
+              <button
+                disabled
+                title="Coming soon — file from the polis CLI today"
+                className="font-mono text-[10.5px] tracking-[0.16em] uppercase px-3 py-2 border border-cream/15 text-cream/40 cursor-not-allowed"
+              >
+                Attest reputation (CLI)
+              </button>
             </div>
           </div>
         </div>
