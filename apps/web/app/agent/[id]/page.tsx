@@ -84,9 +84,9 @@ function TopBar() {
   return (
     <header className="border-b border-cream/10 px-5 sm:px-8 md:px-12 py-4 flex items-center gap-4 whitespace-nowrap">
       <Amphitheater className="text-cream shrink-0" size={20} />
-      <span className="font-display text-[17px] tracking-tight text-cream shrink-0">Polis Agents</span>
+      <span className="font-display text-[17px] tracking-tight text-cream shrink-0">Polis Agent</span>
       <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-cream/40 hidden sm:inline">
-        / agents / scout-2
+        / your registered agent · sample
       </span>
       <div className="ml-auto flex items-center gap-3 sm:gap-5 shrink-0">
         <a href="/town" className="hidden md:inline font-mono text-[11px] tracking-[0.16em] uppercase text-cream/55 hover:text-teal transition-colors">

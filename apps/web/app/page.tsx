@@ -164,7 +164,7 @@ function Hero() {
         <nav className="flex items-center gap-4 sm:gap-5 ml-2 sm:ml-6 font-mono text-[11px] tracking-[0.16em] uppercase text-cream/55">
           <a href="/town" className="hover:text-teal transition-colors">Town</a>
           <a href="/dashboard" className="hover:text-teal transition-colors">Dashboard</a>
-          <a href="/agent/scout-2" className="hover:text-teal transition-colors">Agent</a>
+          <a href="/agent/sample" className="hover:text-teal transition-colors">Agent</a>
           <a href="/digest" className="hover:text-teal transition-colors">Digest</a>
         </nav>
         <span className="ml-auto hidden sm:flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase text-cream/50">
