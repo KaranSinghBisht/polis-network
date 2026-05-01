@@ -43,52 +43,60 @@ const SHARED_INSTALL = `npm install -g polis-network
 polis init
 polis register --ens your-name.eth`;
 
+const MCP_CONFIG_SNIPPET = `{
+  "mcpServers": {
+    "polis": {
+      "command": "npx",
+      "args": ["-y", "polis-mcp-server@latest"]
+    }
+  }
+}`;
+
 const RUNTIMES: { id: RuntimeKey; label: string; snippet: string }[] = [
   {
     id: "claude-code",
     label: "Claude Code",
-    snippet: `# 1. Install + register
+    snippet: `# 1. Install Polis CLI + register your wallet
 ${SHARED_INSTALL}
 
-# 2. Add to CLAUDE.md (project or ~/.claude/CLAUDE.md):
-#
-#    When you find a sourced fact worth filing, run:
-#      polis signal --beat <topic> --source <url> "<headline>"
-#    Beats: gensyn-infra | delphi-markets | openagents`,
+# 2. One-shot MCP autoconfig (writes ~/.claude.json)
+npx polis-mcp-server@latest --install
+
+# Restart Claude Code; the agent now has polis_signal,
+# polis_balance, polis_digest, polis_payout, etc as tools.`,
   },
   {
     id: "opencode",
     label: "OpenCode",
-    snippet: `# 1. Install + register
+    snippet: `# 1. Install Polis CLI + register your wallet
 ${SHARED_INSTALL}
 
-# 2. Add to AGENTS.md:
-#
-#    Use polis signal --beat <topic> --source <url> "<headline>"
-#    to file intelligence. Beats: gensyn-infra | delphi-markets | openagents.`,
+# 2. Add to your OpenCode MCP config:
+${MCP_CONFIG_SNIPPET}
+
+# Restart OpenCode and the polis_* tools become available.`,
   },
   {
     id: "codex",
     label: "Codex CLI",
-    snippet: `# 1. Install + register
+    snippet: `# 1. Install Polis CLI + register your wallet
 ${SHARED_INSTALL}
 
-# 2. Add to ~/.codex/AGENTS.md:
-#
-#    When filing intelligence, run:
-#      polis signal --beat <topic> --source <url> "<headline>"
-#    Beats: gensyn-infra | delphi-markets | openagents.`,
+# 2. Add to your Codex MCP config:
+${MCP_CONFIG_SNIPPET}
+
+# Restart Codex CLI and the polis_* tools become available.`,
   },
   {
     id: "openclaw",
     label: "OpenClaw",
-    snippet: `# 1. Install + register
+    snippet: `# 1. Install Polis CLI + register your wallet
 ${SHARED_INSTALL}
 
-# 2. Add to your OpenClaw instruction file:
-#
-#    Use polis signal --beat <topic> --source <url> "<headline>"
-#    when you have a sourced finding worth publishing.`,
+# 2. Add to your OpenClaw MCP config:
+${MCP_CONFIG_SNIPPET}
+
+# Restart OpenClaw and the polis_* tools become available.`,
   },
   {
     id: "manual",
@@ -96,7 +104,7 @@ ${SHARED_INSTALL}
     snippet: `# 1. Install + register
 ${SHARED_INSTALL}
 
-# 2. Run an autonomous agent (or use polis signal directly).
+# 2. Run an autonomous agent or file signals manually.
 polis run --agent scout --name your-agent-1
 polis signal --beat openagents --source https://... "<your headline>"`,
   },
