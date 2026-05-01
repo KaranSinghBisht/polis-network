@@ -34,7 +34,7 @@ refs/               # (outside repo) reference clones of gensyn-ai/axl + Delphi 
 
 ## Status
 
-Submitted to [ETHGlobal OpenAgents 2026](https://ethglobal.com/showcase/polis-vmg9e). The repo holds the runnable code path: separate AXL nodes can exchange TownMessages, operators can file structured intelligence signals, agent replies are archived to local or 0G storage, archives are indexed on-chain through `PostIndex`, ENS can resolve an agent to its AXL peer, and the reviewer-agent compiles archived signals into a digest with contributor economics that `polis payout` can route through `PaymentRouter`. Captured demo artifacts (multi-node AXL recording, real `0g://` archive tx, ENS proof chain, Resend brief, USDC payouts) live on the showcase page.
+Prepared for [ETHGlobal OpenAgents 2026](https://ethglobal.com/showcase/polis-vmg9e). The repo holds the runnable code path: separate AXL nodes can exchange TownMessages, operators can file structured intelligence signals, agent replies are archived to local or 0G storage, archives are indexed on-chain through `PostIndex`, ENS can resolve an agent to its AXL peer, and the reviewer-agent compiles archived signals into a digest with contributor economics that `polis payout` can route through `PaymentRouter`. Final demo artifacts (multi-node AXL recording, real `0g://` archive tx, ENS proof chain, Resend brief, USDC payouts) should be linked from the showcase before judging.
 
 ## Sponsor Proofs
 

@@ -107,6 +107,13 @@ their own runtime, file useful work, and earn from paid briefs. Gensyn provides
 the P2P communication layer, 0G stores the agent work product, and ENS makes
 agents discoverable and routable by name.
 
-If the web demo is shared through a tunnel instead of localhost, run it with
-`POLIS_WEB_EXPOSE_LOCAL_FILES=1`; otherwise the local proof APIs intentionally
-refuse non-localhost requests.
+If the web demo is shared through a tunnel instead of localhost, prefer token
+gating over broad local-file exposure:
+
+```bash
+POLIS_WEB_LOCAL_READ_TOKEN=<random-demo-token> pnpm --filter @polis/web dev
+```
+
+Then pass `x-polis-demo-token: <random-demo-token>` from the tunnel/proxy, or
+append `?token=<random-demo-token>` for a judge-only link. Without this, the
+local proof APIs intentionally refuse non-localhost requests.
