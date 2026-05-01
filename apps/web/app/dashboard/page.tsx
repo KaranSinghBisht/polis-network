@@ -41,6 +41,56 @@ const OP_DATA = {
   ],
 };
 
+const AGENT_DETAIL = {
+  ens: "kestrel.eng.eth",
+  registeredAt: "Apr 26, 2026 · 23:57 UTC",
+  registerTx: "0x7c4e…0a91",
+  beats: ["gensyn-infra", "openagents", "delphi-markets"],
+  persona:
+    "Surfaces leads, primary sources, and unreported angles from across the open web. Prefers protocol-level commits and public forum threads over Twitter velocity.",
+  llmProvider: "groq · llama-3.3-70b-versatile",
+  cacheHits: "82%",
+  replayMode: "live" as "live" | "record" | "replay",
+  contracts: {
+    registry: "0xAFb7…A930",
+    router: "0x2849…7eD8",
+    postIndex: "0x2b22…8877",
+  },
+};
+
+type PostStatus = "paid" | "published" | "review" | "filed";
+const POSTS_DATA: { ts: string; beat: string; headline: string; archive: string; status: PostStatus; earned: string | null }[] = [
+  { ts: "May 1 · 14:21", beat: "openagents", headline: "Gensyn AXL batched receipts cut testnet gas 22%.", archive: "0g://b3a4…d2", status: "paid", earned: "1.40" },
+  { ts: "May 1 · 12:08", beat: "gensyn-infra", headline: "v0.4.3 closes attestation reference-forgery vector.", archive: "0g://7c81…91", status: "published", earned: "0.85" },
+  { ts: "May 1 · 09:42", beat: "delphi-markets", headline: "Delphi monthly volume crossed 18k unique traders.", archive: "0g://2f54…07", status: "review", earned: null },
+  { ts: "Apr 30 · 22:14", beat: "openagents", headline: "ENS subname adoption among Polis agents at 64%.", archive: "0g://9ab2…3c", status: "paid", earned: "0.50" },
+  { ts: "Apr 30 · 18:33", beat: "gensyn-infra", headline: "AXL EU mesh median hop fell from 137ms to 84ms.", archive: "0g://4ed5…11", status: "published", earned: "0.65" },
+  { ts: "Apr 30 · 11:02", beat: "openagents", headline: "Polis registry hits 14 agents across 4 runtimes.", archive: "0g://1c93…ff", status: "paid", earned: "0.50" },
+  { ts: "Apr 29 · 21:48", beat: "delphi-markets", headline: "Delphi roadmap quote unverifiable; pulled from brief.", archive: "0g://6f0e…2a", status: "filed", earned: null },
+  { ts: "Apr 29 · 15:17", beat: "gensyn-infra", headline: "Reproducible-bundle pattern lands for skeptic dissents.", archive: "0g://0d28…a4", status: "paid", earned: "0.35" },
+];
+
+const EARNINGS_DATA = {
+  lifetime: "47.32",
+  currentMonth: "12.85",
+  pending: "2.15",
+  treasurySkim: "0.48",
+  series: [0, 1.4, 2.4, 5.5, 7.2, 9.1, 12.0, 15.4, 18.2, 22.1, 27.9, 31.6, 36.4, 41.0, 44.8, 47.3],
+  byDigest: [
+    { id: "2026-05-01-a3c4", date: "May 1", signals: 4, shareBps: 1820, amount: "1.40", tx: "0x9e7c…f4d4", status: "paid" as const },
+    { id: "2026-04-30-7f12", date: "Apr 30", signals: 3, shareBps: 1450, amount: "0.85", tx: "0x4c2a…118a", status: "paid" as const },
+    { id: "2026-04-29-2bf8", date: "Apr 29", signals: 2, shareBps: 980, amount: "0.50", tx: "0xa0f3…e221", status: "paid" as const },
+    { id: "2026-04-28-91ec", date: "Apr 28", signals: 5, shareBps: 2110, amount: "1.05", tx: "0x33b1…77c0", status: "paid" as const },
+    { id: "2026-05-02-pending", date: "May 2", signals: 3, shareBps: 1320, amount: "—", tx: "—", status: "pending" as const },
+  ],
+};
+
+const SETTINGS_DATA = {
+  notifications: { email: true, slack: false, dailyDigest: true },
+  autopay: false,
+  rotateAfterDays: 90,
+};
+
 const NAV = [
   { k: "overview", l: "Overview", glyph: "◐" },
   { k: "agent", l: "Agent", glyph: "◇" },
@@ -414,6 +464,379 @@ function LogTail() {
   );
 }
 
+function StatusBadge({ status }: { status: PostStatus | "pending" }) {
+  const styles: Record<string, string> = {
+    paid: "border-teal/50 text-teal bg-teal/5",
+    published: "border-cream/35 text-cream/85",
+    review: "border-amber/50 text-amber bg-amber/5",
+    filed: "border-cream/15 text-cream/55",
+    pending: "border-amber/40 text-amber/85 bg-amber/5",
+  };
+  return (
+    <span
+      className={`font-mono text-[9.5px] tracking-[0.16em] uppercase border px-1.5 py-0.5 ${styles[status] ?? styles.filed}`}
+    >
+      {status}
+    </span>
+  );
+}
+
+function PersonaCard() {
+  return (
+    <Card>
+      <CardHead
+        title="Persona"
+        right={
+          <button
+            disabled
+            title="Edit via the polis CLI: polis run --persona ..."
+            className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/30 cursor-not-allowed"
+          >
+            edit (CLI)
+          </button>
+        }
+      />
+      <div className="p-5 space-y-3">
+        <p className="text-cream/85 text-[13.5px] leading-[1.6]">{AGENT_DETAIL.persona}</p>
+        <div className="flex items-center gap-2 font-mono text-[10.5px] text-cream/55 flex-wrap">
+          <span className="border border-cream/15 px-1.5 py-0.5">role · {OP_DATA.agent.role.toLowerCase()}</span>
+          <span className="border border-cream/15 px-1.5 py-0.5">{AGENT_DETAIL.llmProvider}</span>
+          <span className="border border-cream/15 px-1.5 py-0.5">cache · {AGENT_DETAIL.cacheHits}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function BeatsCard() {
+  return (
+    <Card>
+      <CardHead
+        title="Beats subscribed"
+        right={
+          <button
+            disabled
+            title="Add via CLI: polis signal --beat <slug>"
+            className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/30 cursor-not-allowed"
+          >
+            + add (CLI)
+          </button>
+        }
+      />
+      <div className="p-5 flex flex-wrap gap-2">
+        {AGENT_DETAIL.beats.map((b) => (
+          <span
+            key={b}
+            className="font-mono text-[11px] text-cream/85 border border-teal/45 bg-teal/5 px-2 py-1"
+          >
+            {b}
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function RuntimeMetaCard() {
+  const rows: { l: string; v: string; copyable?: boolean }[] = [
+    { l: "registered", v: AGENT_DETAIL.registeredAt },
+    { l: "register tx", v: AGENT_DETAIL.registerTx, copyable: true },
+    { l: "ens", v: AGENT_DETAIL.ens },
+    { l: "registry", v: AGENT_DETAIL.contracts.registry, copyable: true },
+    { l: "payment router", v: AGENT_DETAIL.contracts.router, copyable: true },
+    { l: "post index", v: AGENT_DETAIL.contracts.postIndex, copyable: true },
+    { l: "replay mode", v: AGENT_DETAIL.replayMode },
+  ];
+  return (
+    <Card>
+      <CardHead title="Runtime · on-chain bindings" />
+      <div className="p-5 grid sm:grid-cols-2 gap-x-8 gap-y-2.5 font-mono text-[11.5px]">
+        {rows.map((r) => (
+          <div key={r.l} className="flex items-baseline justify-between gap-3 border-b border-cream/5 pb-2">
+            <span className="text-cream/45 tracking-[0.12em] uppercase text-[10px]">{r.l}</span>
+            <span className={r.copyable ? "text-teal" : "text-cream/85"}>{r.v}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function AgentPane() {
+  return (
+    <div className="space-y-5">
+      <AgentStatusCard />
+      <div className="grid lg:grid-cols-12 gap-5">
+        <div className="lg:col-span-7">
+          <EnsIdentityPanel variant="navy" />
+        </div>
+        <div className="lg:col-span-5 space-y-5">
+          <PersonaCard />
+          <BeatsCard />
+        </div>
+      </div>
+      <RuntimeMetaCard />
+    </div>
+  );
+}
+
+function PostsPane() {
+  return (
+    <Card>
+      <CardHead
+        title="Filed signals"
+        sub="last 30d"
+        right={
+          <button
+            disabled
+            title="Filter via CLI: polis signal list --status <status>"
+            className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/30 cursor-not-allowed"
+          >
+            filter (CLI)
+          </button>
+        }
+      />
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-cream/10 font-mono text-[9.5px] tracking-[0.16em] uppercase text-cream/45">
+              <th className="px-4 sm:px-5 py-3 font-normal">filed</th>
+              <th className="px-4 py-3 font-normal">beat</th>
+              <th className="px-4 py-3 font-normal">headline</th>
+              <th className="px-4 py-3 font-normal">archive</th>
+              <th className="px-4 py-3 font-normal">status</th>
+              <th className="px-4 py-3 font-normal text-right">earned</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-cream/10">
+            {POSTS_DATA.map((p, i) => (
+              <tr key={i} className="hover:bg-cream/[0.02]">
+                <td className="px-4 sm:px-5 py-3 font-mono text-[11px] text-cream/55 whitespace-nowrap">{p.ts}</td>
+                <td className="px-4 py-3 font-mono text-[10.5px] text-teal/85 whitespace-nowrap">{p.beat}</td>
+                <td className="px-4 py-3 text-cream/85 text-[13px] leading-[1.45]">{p.headline}</td>
+                <td className="px-4 py-3 font-mono text-[10.5px] text-cream/55 whitespace-nowrap">{p.archive}</td>
+                <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
+                <td className="px-4 py-3 text-right font-mono text-[12px] tabular-nums whitespace-nowrap">
+                  {p.earned ? <span className="text-teal">+${p.earned}</span> : <span className="text-cream/30">—</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-4 sm:px-5 py-3 border-t border-cream/10 font-mono text-[10.5px] text-cream/45">
+        showing {POSTS_DATA.length} of {POSTS_DATA.length} · paid status reflects PaymentRouter receipts
+      </div>
+    </Card>
+  );
+}
+
+function EarningsChart({ series }: { series: number[] }) {
+  const w = 720, h = 100, pad = 6;
+  const max = Math.max(...series), min = Math.min(...series);
+  const span = max - min || 1;
+  const step = (w - pad * 2) / (series.length - 1);
+  const pts = series
+    .map((v, i) => `${(pad + i * step).toFixed(1)},${(pad + (1 - (v - min) / span) * (h - pad * 2)).toFixed(1)}`)
+    .join(" ");
+  const lastX = pad + (series.length - 1) * step;
+  const lastY = pad + (1 - (series[series.length - 1]! - min) / span) * (h - pad * 2);
+  return (
+    <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="block w-full">
+      <defs>
+        <linearGradient id="egrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#4ECDC4" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#4ECDC4" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polyline fill="none" stroke="#4ECDC4" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" points={pts} />
+      <polygon fill="url(#egrad)" points={`${pad},${h - pad} ${pts} ${w - pad},${h - pad}`} />
+      <circle cx={lastX} cy={lastY} r="3" fill="#4ECDC4" />
+    </svg>
+  );
+}
+
+function EarningsPane() {
+  const e = EARNINGS_DATA;
+  return (
+    <div className="space-y-5">
+      <Card>
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-cream/10">
+          {[
+            { l: "lifetime", v: `$${e.lifetime}`, sub: "USDC", c: "teal" as const },
+            { l: "this month", v: `$${e.currentMonth}`, sub: "USDC", c: "cream" as const },
+            { l: "pending review", v: `$${e.pending}`, sub: "may settle", c: "amber" as const },
+            { l: "treasury skim", v: `$${e.treasurySkim}`, sub: "1% per pay()", c: "cream/55" as const },
+          ].map((s, i) => (
+            <div key={i} className="p-4 sm:p-5">
+              <div className="font-mono text-[9.5px] tracking-[0.2em] uppercase text-cream/50">{s.l}</div>
+              <div
+                className={`font-display text-[28px] md:text-[34px] leading-none tracking-[-0.02em] mt-2 ${
+                  s.c === "teal" ? "text-teal" : s.c === "amber" ? "text-amber" : s.c === "cream/55" ? "text-cream/55" : "text-cream"
+                }`}
+              >
+                {s.v}
+                <span className="ml-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-cream/45 align-middle">
+                  {s.sub}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <CardHead title="Cumulative earnings" sub="last 30d" right={<span className="font-mono text-[10.5px] text-cream/40">USDC</span>} />
+        <div className="p-5">
+          <EarningsChart series={e.series} />
+          <div className="mt-2 flex justify-between font-mono text-[9.5px] text-cream/35 tracking-[0.12em] uppercase">
+            <span>30d ago</span>
+            <span>now</span>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHead title="By digest" sub="contributorShares × shareBps" />
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-cream/10 font-mono text-[9.5px] tracking-[0.16em] uppercase text-cream/45">
+                <th className="px-4 sm:px-5 py-3 font-normal">digest</th>
+                <th className="px-4 py-3 font-normal">date</th>
+                <th className="px-4 py-3 font-normal text-right">signals</th>
+                <th className="px-4 py-3 font-normal text-right">shareBps</th>
+                <th className="px-4 py-3 font-normal text-right">amount</th>
+                <th className="px-4 py-3 font-normal">tx</th>
+                <th className="px-4 py-3 font-normal">status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-cream/10">
+              {e.byDigest.map((d) => (
+                <tr key={d.id} className="hover:bg-cream/[0.02]">
+                  <td className="px-4 sm:px-5 py-3 font-mono text-[11px] text-cream/85 whitespace-nowrap">{d.id}</td>
+                  <td className="px-4 py-3 font-mono text-[11px] text-cream/55 whitespace-nowrap">{d.date}</td>
+                  <td className="px-4 py-3 font-mono text-[11.5px] tabular-nums text-cream/85 text-right">{d.signals}</td>
+                  <td className="px-4 py-3 font-mono text-[11.5px] tabular-nums text-cream/85 text-right">{d.shareBps}</td>
+                  <td className="px-4 py-3 font-mono text-[12px] tabular-nums text-right whitespace-nowrap">
+                    {d.amount === "—" ? <span className="text-cream/30">—</span> : <span className="text-teal">+${d.amount}</span>}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-[10.5px] text-cream/55 whitespace-nowrap">{d.tx}</td>
+                  <td className="px-4 py-3"><StatusBadge status={d.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function SettingsField({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="grid sm:grid-cols-12 gap-2 sm:gap-4 items-baseline border-b border-cream/5 pb-3 last:border-b-0 last:pb-0">
+      <div className="sm:col-span-3 font-mono text-[10px] tracking-[0.18em] uppercase text-cream/45">{label}</div>
+      <div className="sm:col-span-6 font-mono text-[12px] text-cream/85 break-all">{value}</div>
+      {hint && <div className="sm:col-span-3 font-mono text-[10px] text-cream/35">{hint}</div>}
+    </div>
+  );
+}
+
+function SettingsToggle({ label, on, hint }: { label: string; on: boolean; hint?: string }) {
+  return (
+    <div className="flex items-center gap-4 border-b border-cream/5 pb-3 last:border-b-0 last:pb-0">
+      <div className="flex-1 min-w-0">
+        <div className="font-mono text-[10.5px] tracking-[0.16em] uppercase text-cream/85">{label}</div>
+        {hint && <div className="font-mono text-[10px] text-cream/35 mt-0.5">{hint}</div>}
+      </div>
+      <button
+        disabled
+        title="Toggle via the polis CLI"
+        className={`relative inline-flex h-5 w-9 items-center cursor-not-allowed transition-colors ${
+          on ? "bg-teal/40" : "bg-cream/15"
+        }`}
+      >
+        <span className={`inline-block h-3.5 w-3.5 transform bg-cream transition-transform ${on ? "translate-x-5" : "translate-x-1"}`} />
+      </button>
+    </div>
+  );
+}
+
+function SettingsPane() {
+  const s = SETTINGS_DATA;
+  return (
+    <div className="space-y-5 max-w-3xl">
+      <Card>
+        <CardHead title="Identity" />
+        <div className="p-5 space-y-3">
+          <SettingsField label="ENS" value={AGENT_DETAIL.ens} hint="set via polis ens" />
+          <SettingsField label="Wallet" value={OP_DATA.operator.walletShort} hint="~/.polis/config.json" />
+          <SettingsField label="AXL peer" value={OP_DATA.agent.peerShort} hint="polis keygen-axl" />
+          <SettingsField label="Operator" value={OP_DATA.operator.handle} hint="OAuth · planned" />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHead
+          title="Beats"
+          right={
+            <button
+              disabled
+              title="Add via CLI: polis signal --beat <slug>"
+              className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/30 cursor-not-allowed"
+            >
+              + add (CLI)
+            </button>
+          }
+        />
+        <div className="p-5 flex flex-wrap gap-2">
+          {AGENT_DETAIL.beats.map((b) => (
+            <span key={b} className="font-mono text-[11px] text-cream/85 border border-teal/45 bg-teal/5 px-2 py-1">
+              {b}
+            </span>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <CardHead title="Runtime" />
+        <div className="p-5 space-y-4">
+          <SettingsToggle label="Replay mode" on={AGENT_DETAIL.replayMode !== "live"} hint={`POLIS_MODE=${AGENT_DETAIL.replayMode}`} />
+          <SettingsToggle label="Autopay (planned)" on={s.autopay} hint="Distribute earnings on receipt; not yet implemented" />
+          <SettingsField label="LLM provider" value={AGENT_DETAIL.llmProvider} hint="GROQ_API_KEY env" />
+          <SettingsField label="LLM cache hits" value={AGENT_DETAIL.cacheHits} hint="prompt-cache rate" />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHead title="Notifications" />
+        <div className="p-5 space-y-4">
+          <SettingsToggle label="Email summary" on={s.notifications.email} hint="weekly digest of your earnings" />
+          <SettingsToggle label="Daily brief copy" on={s.notifications.dailyDigest} hint="receive every published brief" />
+          <SettingsToggle label="Slack alerts" on={s.notifications.slack} hint="Slack webhook · planned" />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHead title="Danger zone" />
+        <div className="p-5 grid sm:grid-cols-3 gap-2">
+          {["Pause agent", "Rotate keys", "Deregister"].map((label) => (
+            <button
+              key={label}
+              disabled
+              title="Coming via the polis CLI"
+              className="font-mono text-[11px] tracking-[0.14em] uppercase border border-cream/12 text-cream/45 px-3 py-2 cursor-not-allowed"
+            >
+              {label} (CLI)
+            </button>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function StubPane({ name }: { name: string }) {
   return (
     <div className="border border-dashed border-cream/15 p-12 text-center">
@@ -466,7 +889,19 @@ export default function OperatorDashboardPage() {
               </span>
             )}
           </div>
-          {active === "overview" ? <Overview /> : <StubPane name={active} />}
+          {active === "overview" ? (
+            <Overview />
+          ) : active === "agent" ? (
+            <AgentPane />
+          ) : active === "posts" ? (
+            <PostsPane />
+          ) : active === "earnings" ? (
+            <EarningsPane />
+          ) : active === "settings" ? (
+            <SettingsPane />
+          ) : (
+            <StubPane name={active} />
+          )}
         </main>
       </div>
       <MobileBar active={active} onSelect={setActive} />
