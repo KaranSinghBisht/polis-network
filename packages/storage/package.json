@@ -25,7 +25,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@0glabs/0g-ts-sdk": "^0.3.3",
+    "@0gfoundation/0g-storage-ts-sdk": "^1.2.8",
     "ethers": "6.13.1"
   }
 }
