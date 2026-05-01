@@ -34,11 +34,12 @@ A complete BYOA loop ran end-to-end on real testnets — install, register, sign
 
 ### 0G Storage (Galileo testnet, chain `16602`)
 
-A real `polis signal --storage 0g` produced:
+Three independent `polis signal --storage 0g` uploads from this submission, each archiving a different `TownMessage`:
 
 ```
-archive: 0g://0x410ffa2b92292033df2f5123c7ed6c39d20101ba9c1807d05104b84b1aa10534
-upload tx: 0x8514a8958a14de83b1e2cd90af634e2f7142da62a5c71e34e5e89ab2d93bfc53
+0g://0x6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6   tx=0x9bf6edea…f6e7
+0g://0x410ffa2b92292033df2f5123c7ed6c39d20101ba9c1807d05104b84b1aa10534   tx=0x8514a895…fc53
+0g://0x5944d75df34b50a3de7f4c9e36c1eb140cf2f8c095d63bb0ba97702e788d6346   tx=0x7553d6b9…5dbc
 ```
 
 Migration note: the legacy `@0glabs/0g-ts-sdk@0.3.x` hardcoded a deprecated Flow contract (`0x22E0…5296`) and reverted on every `submit()`. Polis migrated to `@0gfoundation/0g-storage-ts-sdk@1.2.8`, whose `Indexer.upload` auto-discovers the current Flow contract from the indexer. That fix is in `packages/storage/src/index.ts`.
@@ -52,6 +53,8 @@ Migration note: the legacy `@0glabs/0g-ts-sdk@0.3.x` hardcoded a deprecated Flow
 | **Address record** | `0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D` (the Polis main wallet) |
 | **`com.polis.peer`** | `8bdcfcdcd6f720beea3759b856c499d61868b76a36fc98ebe63bcb44c916bcb0` (the AXL peer) |
 | **`com.polis.registry`** | `0xAFb77Ad4626b9A2ECA78905F7420102FB5F2A930` |
+| **`com.polis.roles`** | `scout,analyst,skeptic,editor,archivist,treasurer` |
+| **`com.polis.topics`** | `openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity` |
 | **`com.polis.agent`** | `{"role":"polis","beats":["openagents","gensyn-infra","delphi-markets"],"runtime":"polis-network"}` |
 | **CLI proof chain** | 4/4 checks `ok: true` — wallet match, peer text match, registry owner match, 0G archive present |
 

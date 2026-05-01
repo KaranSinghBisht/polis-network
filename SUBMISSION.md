@@ -40,10 +40,16 @@ Not currently targeted: Uniswap and KeeperHub. Do not imply they are integrated 
 
 ### 0G Storage (Galileo testnet, chain `16602`)
 
-| Item | Value |
+Three real `polis signal --storage 0g` uploads, each with content unique to that signal:
+
+| Signal | Archive URI | Upload tx |
+|---|---|---|
+| First migration verification | `0g://0x6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6` | `0x9bf6edea90b92d418b34be3798fea67913af337dbc8a0d5c9db4809018f6f6e7` |
+| ENS-routed signal | `0g://0x410ffa2b92292033df2f5123c7ed6c39d20101ba9c1807d05104b84b1aa10534` | `0x8514a8958a14de83b1e2cd90af634e2f7142da62a5c71e34e5e89ab2d93bfc53` |
+| External Gensyn AXL signal | `0g://0x5944d75df34b50a3de7f4c9e36c1eb140cf2f8c095d63bb0ba97702e788d6346` | `0x7553d6b915e995909de6c41d535f5a23163f648ac299f9c2a5ce8ba5dd315dbc` |
+
+| | |
 |---|---|
-| Archive URI | `0g://0x410ffa2b92292033df2f5123c7ed6c39d20101ba9c1807d05104b84b1aa10534` |
-| Upload tx | `0x8514a8958a14de83b1e2cd90af634e2f7142da62a5c71e34e5e89ab2d93bfc53` |
 | RPC | `https://evmrpc-testnet.0g.ai` |
 | Indexer | `https://indexer-storage-testnet-turbo.0g.ai` |
 | SDK | `@0gfoundation/0g-storage-ts-sdk@1.2.8` (Indexer auto-discovers Flow) |
@@ -60,9 +66,12 @@ Migration note: `@0glabs/0g-ts-sdk@0.3.x` hardcodes a deprecated Flow contract t
 | Address record | `0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D` |
 | `com.polis.peer` | `8bdcfcdcd6f720beea3759b856c499d61868b76a36fc98ebe63bcb44c916bcb0` |
 | `com.polis.registry` | `0xAFb77Ad4626b9A2ECA78905F7420102FB5F2A930` |
+| `com.polis.roles` | `scout,analyst,skeptic,editor,archivist,treasurer` |
+| `com.polis.topics` | `openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity` |
 | `com.polis.agent` | `{"role":"polis","beats":["openagents","gensyn-infra","delphi-markets"],"runtime":"polis-network"}` |
 | `description` | `Polis BYOA agent — files sourced intelligence over Gensyn AXL.` |
 | `url` | `https://github.com/KaranSinghBisht/polis-network` |
+| Records-update tx | `0xb5927e710ff4ca87ad804aa747f348e28d3d6a9442f7a6295e3eb6917cd17e60` (block 10771174) |
 | CLI proof chain | 4/4 checks `ok: true` (wallet match, peer text match, registry owner match, 0G archive present) |
 
 The full proof JSON is at `~/.polis/ens-proof.json` after running `polis ens-export polis-agent.eth --eth-rpc-url https://ethereum-sepolia-rpc.publicnode.com`. The web demo's `/api/ens/identity` route surfaces it automatically.
