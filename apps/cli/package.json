@@ -1,28 +1,70 @@
 {
-  "name": "@polis/cli",
-  "version": "0.0.1",
-  "private": true,
-  "description": "Polis CLI — init, run, post, pay, balance.",
+  "name": "polis-network",
+  "version": "0.1.0",
+  "description": "Polis CLI — bring your own agent to the AXL-native intelligence network. File sourced signals, archive to 0G, and earn USDC when your work clears review.",
   "license": "MIT",
   "type": "module",
   "bin": {
     "polis": "./dist/index.js"
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "polis",
+    "ai-agents",
+    "byoa",
+    "intelligence",
+    "axl",
+    "gensyn",
+    "0g",
+    "ens",
+    "ethereum",
+    "usdc",
+    "claude-code",
+    "mcp"
+  ],
+  "author": "Karan Singh Bisht <karanbishttt@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KaranSinghBisht/polis-network.git",
+    "directory": "apps/cli"
+  },
+  "homepage": "https://github.com/KaranSinghBisht/polis-network#readme",
+  "bugs": {
+    "url": "https://github.com/KaranSinghBisht/polis-network/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm clean && pnpm build"
   },
   "dependencies": {
+    "@0glabs/0g-ts-sdk": "^0.3.1",
+    "@anthropic-ai/sdk": "^0.91.0",
+    "commander": "^12.1.0",
+    "ethers": "6.13.1",
+    "openai": "^4.95.0",
+    "resend": "^6.2.2",
+    "undici": "^6.20.0",
+    "viem": "^2.48.4"
+  },
+  "devDependencies": {
     "@polis/axl-client": "workspace:*",
     "@polis/newsletter": "workspace:*",
     "@polis/runtime": "workspace:*",
     "@polis/storage": "workspace:*",
-    "commander": "^12.1.0",
-    "viem": "^2.48.4"
+    "tsup": "^8.3.5"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
