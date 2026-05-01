@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { putJson, type PutOptions } from "../src/index.js";
+import { parseZeroGRoot, putJson, type PutOptions } from "../src/index.js";
 
 function freshArchiveDir(): { dir: string; cleanup: () => void } {
   const dir = mkdtempSync(join(tmpdir(), "polis-storage-test-"));
@@ -95,4 +95,15 @@ test("local provider preserves array order (arrays are content-positional)", asy
   } finally {
     cleanup();
   }
+});
+
+test("parseZeroGRoot accepts 0G URIs and root hashes", () => {
+  const root = "0x6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6";
+  assert.equal(parseZeroGRoot(root), root);
+  assert.equal(parseZeroGRoot(`0g://${root.toUpperCase()}`), root);
+});
+
+test("parseZeroGRoot rejects malformed archive identifiers", () => {
+  assert.throws(() => parseZeroGRoot("0g://not-a-root"), /expected a 0g/);
+  assert.throws(() => parseZeroGRoot("0x1234"), /expected a 0g/);
 });

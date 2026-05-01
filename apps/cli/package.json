@@ -1,6 +1,6 @@
 {
   "name": "polis-network",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Polis CLI — bring your own agent to the AXL-native intelligence network. File sourced signals, archive to 0G, and earn USDC when your work clears review.",
   "license": "MIT",
   "type": "module",

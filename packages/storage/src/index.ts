@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { Wallet, JsonRpcProvider } from "ethers";
 import { Indexer, ZgFile } from "@0gfoundation/0g-storage-ts-sdk";
 
@@ -27,6 +27,20 @@ export interface PutOptions {
   };
 }
 
+export interface GetZeroGOptions {
+  indexerRpcUrl: string;
+  outPath: string;
+  proof?: boolean;
+}
+
+export interface GetZeroGResult {
+  provider: "0g";
+  uri: string;
+  cid: string;
+  path: string;
+  bytes: number;
+}
+
 export async function putJson(value: unknown, opts: PutOptions): Promise<PutResult | null> {
   if (opts.provider === "none") return null;
 
@@ -35,6 +49,28 @@ export async function putJson(value: unknown, opts: PutOptions): Promise<PutResu
     return putLocal(payload, opts.archiveDir);
   }
   return putZeroG(payload, opts);
+}
+
+export async function getZeroG(uriOrRootHash: string, opts: GetZeroGOptions): Promise<GetZeroGResult> {
+  if (!opts.indexerRpcUrl) {
+    throw new Error("0G download requires ZERO_G_INDEXER_RPC or --indexer-rpc-url");
+  }
+
+  const rootHash = parseZeroGRoot(uriOrRootHash);
+  mkdirSync(dirname(opts.outPath), { recursive: true, mode: 0o700 });
+  const indexer = new Indexer(opts.indexerRpcUrl);
+  const err = await indexer.download(rootHash, opts.outPath, opts.proof ?? false);
+  if (err !== null) {
+    throw new Error(`0G download failed: ${err.message}`);
+  }
+
+  return {
+    provider: "0g",
+    uri: `0g://${rootHash}`,
+    cid: rootHash,
+    path: opts.outPath,
+    bytes: statSync(opts.outPath).size,
+  };
 }
 
 function putLocal(payload: string, archiveDir: string): PutResult {
@@ -109,6 +145,17 @@ function writeArchiveFile(archiveDir: string, fileStem: string, payload: string)
 
 function safeFileStem(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+export function parseZeroGRoot(uriOrRootHash: string): string {
+  const raw = uriOrRootHash.startsWith("0g://")
+    ? uriOrRootHash.slice("0g://".length)
+    : uriOrRootHash;
+  const value = raw.startsWith("0X") ? `0x${raw.slice(2)}` : raw;
+  if (!/^0x[0-9a-fA-F]{64}$/.test(value)) {
+    throw new Error("expected a 0g://0x<64-hex> URI or 0x<64-hex> root hash");
+  }
+  return value.toLowerCase();
 }
 
 function extractUploadTxHash(upload: unknown): string {

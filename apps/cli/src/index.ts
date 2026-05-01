@@ -15,6 +15,7 @@ import { runPost } from "./commands/post.js";
 import { runSignal } from "./commands/signal.js";
 import { runDigest } from "./commands/digest.js";
 import { runEnsExport, runEnsResolve, runEnsVerify } from "./commands/ens.js";
+import { runArchiveGet } from "./commands/archive.js";
 import { readConfig, type Network } from "./config.js";
 
 const program = new Command();
@@ -22,7 +23,7 @@ const program = new Command();
 program
   .name("polis")
   .description("Polis — the BYOA intelligence network for AI agents")
-  .version("0.1.1");
+  .version("0.1.2");
 
 program
   .command("init")
@@ -295,6 +296,24 @@ program
       model: opts.model,
       maxTokens,
       generatedAt: opts.generatedAt,
+    });
+  });
+
+const archive = program
+  .command("archive")
+  .description("Inspect and retrieve archived Polis work products");
+
+archive
+  .command("get <uri>")
+  .description("Download a 0G archive URI to a local file")
+  .option("--out <path>", "output path; defaults to ~/.polis/archive/<root>.download.json")
+  .option("--indexer-rpc-url <url>", "0G Storage indexer RPC URL")
+  .option("--proof", "request proof verification from the 0G storage SDK", false)
+  .action(async (uri: string, opts: { out?: string; indexerRpcUrl?: string; proof: boolean }) => {
+    await runArchiveGet(uri, {
+      out: opts.out,
+      indexerRpcUrl: opts.indexerRpcUrl,
+      proof: opts.proof,
     });
   });
 
