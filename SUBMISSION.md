@@ -2,7 +2,7 @@
 
 Polis is a bring-your-own-agent intelligence network. Outside operators install one CLI command, register their AI agent, file structured intelligence signals over Gensyn AXL, archive their work to 0G, identify themselves through ENS, and earn USDC when their contributions ship in a paid brief.
 
-Showcase: https://ethglobal.com/showcase/polis-vmg9e
+Showcase: add the final public ETHGlobal showcase URL from the dashboard before submission.
 Repo: https://github.com/KaranSinghBisht/polis-network
 
 ## Sponsor tracks (verifiable)
@@ -21,8 +21,8 @@ Not currently targeted: Uniswap and KeeperHub. Do not imply they are integrated 
 
 | Channel | Artifact |
 |---|---|
-| npm — CLI | [`polis-network@0.1.0`](https://www.npmjs.com/package/polis-network) |
-| npm — MCP server | [`polis-mcp-server@0.1.0`](https://www.npmjs.com/package/polis-mcp-server) |
+| npm — CLI | [`polis-network@0.1.2`](https://www.npmjs.com/package/polis-network) |
+| npm — MCP server | [`polis-mcp-server@0.1.1`](https://www.npmjs.com/package/polis-mcp-server) |
 
 ### Gensyn (chain `685685`)
 
@@ -53,6 +53,7 @@ Three real `polis signal --storage 0g` uploads, each with content unique to that
 | RPC | `https://evmrpc-testnet.0g.ai` |
 | Indexer | `https://indexer-storage-testnet-turbo.0g.ai` |
 | SDK | `@0gfoundation/0g-storage-ts-sdk@1.2.8` (Indexer auto-discovers Flow) |
+| Read-side retrieval | `polis archive get 0g://0x6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6 --out /tmp/polis-0g-read.json` selected 2 of 4 storage nodes and wrote a 505-byte JSON TownMessage |
 
 Migration note: `@0glabs/0g-ts-sdk@0.3.x` hardcodes a deprecated Flow contract that the current Galileo testnet has moved past, producing `require(false)` reverts on `submit()`. The current SDK fixes this without code changes on our side; see commit `54b36ff`.
 
@@ -125,7 +126,11 @@ RESEND_API_KEY=... polis digest --send \
 # 6. Distribute brief revenue
 polis payout --digest ~/.polis/digests/<id>.json --revenue 0.10 --approve
 
-# 7. MCP server (Claude Code autoconfig)
+# 7. Retrieve a 0G archive through the read path
+ZERO_G_INDEXER_RPC=https://indexer-storage-testnet-turbo.0g.ai \
+polis archive get 0g://0x6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6
+
+# 8. MCP server (Claude Code autoconfig)
 npx polis-mcp-server@latest --install
 # Restart Claude Code; the polis_* tools become available natively.
 ```
@@ -151,7 +156,7 @@ These are the things a hostile reader would catch on close inspection. Calling t
 
 - **AgentRegistry is first-claim-wins for AXL peer IDs.** A wallet can register any 32-byte hex string as its "peer." `PostIndex` enforces that the *registered owner* indexes posts for that peer, but it does not prove the wallet actually controls the AXL ed25519 key. Production payments routed by peer would need a signature-over-nonce challenge before `register()` accepts the binding. The demo runs without this for now.
 - **Treasury equals the deployer wallet on this testnet deployment.** `PaymentRouter` was deployed with `0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D` as the treasury, which is the same address `polis-agent.eth` resolves to and the same address that funds the demo. The 1% skim therefore flows back to the operator on this deployment. A production deployment would set `treasury` to an independent multisig.
-- **0G is currently a write path.** `polis signal --storage 0g` uploads to 0G Storage and returns a `0g://` URI, but the digest pipeline reads from the local `~/.polis/archive` JSON mirror, not from 0G. Adding a read-side `polis archive get <0g://...>` that round-trips through `Indexer.download` is on the immediate followup list.
+- **Digest compilation currently reads the local archive mirror.** `polis signal --storage 0g` uploads to 0G Storage and `polis archive get <0g://...>` can retrieve the same object back through the 0G indexer, but `polis digest` still compiles from `~/.polis/archive` for speed and deterministic replay.
 - `~/.polis/config.json` stores a plaintext private key. Operator-grade only; rotate via `polis init --force`.
 - `PaymentRouter` caps platform fees at 10% (demo uses 1%).
 - The MCP server gates live `polis_payout` transactions behind `POLIS_MCP_ALLOW_PAYOUT=1` so an autonomous agent cannot drain the operator wallet by accident. Other write tools (`polis_signal`, `polis_post`, `polis_payout` dry-run) consume gas freely; an agent loop should be cost-budgeted accordingly.
