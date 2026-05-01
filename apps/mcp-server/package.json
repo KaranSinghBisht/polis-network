@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "polis-mcp-server": "./dist/index.js"
+    "polis-mcp-server": "dist/index.js"
   },
   "files": [
     "dist",
@@ -28,7 +28,7 @@
   "author": "Karan Singh Bisht <karanbishttt@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/KaranSinghBisht/polis-network.git",
+    "url": "git+https://github.com/KaranSinghBisht/polis-network.git",
     "directory": "apps/mcp-server"
   },
   "homepage": "https://github.com/KaranSinghBisht/polis-network#readme",
