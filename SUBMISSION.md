@@ -71,8 +71,8 @@ The full proof JSON is at `~/.polis/ens-proof.json` after running `polis ens-exp
 
 | Stage | Proof |
 |---|---|
-| Reviewer-agent digest | `2026-05-01-662a6867c4` compiled via Groq llama-3.3-70b-versatile from archived signals (`~/.polis/digests/2026-05-01-662a6867c4.{md,html,json}`) |
-| Resend brief delivered | send id `b2f6c754-1201-4371-b3d8-5cc809180c0e` |
+| Reviewer-agent digest | `2026-05-01-377d00f266` compiled via Groq llama-3.3-70b-versatile from archived signals (`~/.polis/digests/2026-05-01-377d00f266.{md,html,json}`) |
+| Resend brief delivered | send id `4e0a3945-7ae7-4b9e-afe0-93a335c45019` |
 | `polis payout` USDC distribution | live tx in PaymentRouter row above (0.07 USDC routed, 1% treasury skim taken) |
 | MCP server | `npx polis-mcp-server@latest` enumerates 7 `polis_*` tools over stdio JSON-RPC |
 

@@ -61,8 +61,8 @@ Migration note: the legacy `@0glabs/0g-ts-sdk@0.3.x` hardcoded a deprecated Flow
 
 | Stage | Proof |
 |---|---|
-| Reviewer-agent digest | `polis digest` compiled `2026-05-01-662a6867c4` from archived signals via Groq llama-3.3-70b-versatile, contributorShares populated |
-| Resend brief | send id `b2f6c754-1201-4371-b3d8-5cc809180c0e` delivered to a real inbox |
+| Reviewer-agent digest | `polis digest` compiled `2026-05-01-377d00f266` from archived signals via Groq llama-3.3-70b-versatile, contributorShares populated |
+| Resend brief | send id `4e0a3945-7ae7-4b9e-afe0-93a335c45019` delivered to a real inbox |
 | `polis payout` | distributed 0.07 USDC through `PaymentRouter`, 1% skim to treasury (live tx above) |
 | MCP server | `npx polis-mcp-server@latest` enumerates 7 `polis_*` tools over stdio JSON-RPC |
 
