@@ -68,20 +68,69 @@ function toPostEntry(value: unknown, fileName: string): PostEntry | null {
   if (typeof v.from !== "string") return null;
   if (typeof v.content !== "string") return null;
   if (typeof v.ts !== "number") return null;
+  const signalMeta = parseSignalContent(v.content);
   return {
     id: fileName.replace(/\.json$/, ""),
     ts: v.ts,
     kind: v.kind,
     topic: v.topic,
-    beat: typeof v.beat === "string" ? v.beat : undefined,
+    beat: typeof v.beat === "string" ? v.beat : signalMeta.beat ?? beatFromTopic(v.topic),
     from: v.from,
     content: v.content,
     archiveUri: typeof v.archiveUri === "string" ? v.archiveUri : undefined,
     archiveTxHash: typeof v.archiveTxHash === "string" ? v.archiveTxHash : undefined,
-    sources: Array.isArray(v.source) ? v.source.filter((s): s is string => typeof s === "string") : undefined,
-    tags: Array.isArray(v.tag) ? v.tag.filter((t): t is string => typeof t === "string") : undefined,
-    confidence: typeof v.confidence === "string" ? v.confidence : undefined,
+    sources: Array.isArray(v.source)
+      ? v.source.filter((s): s is string => typeof s === "string")
+      : signalMeta.sources,
+    tags: Array.isArray(v.tag)
+      ? v.tag.filter((t): t is string => typeof t === "string")
+      : signalMeta.tags,
+    confidence: typeof v.confidence === "string" ? v.confidence : signalMeta.confidence,
   };
+}
+
+function parseSignalContent(content: string): Partial<Pick<PostEntry, "beat" | "sources" | "tags" | "confidence">> {
+  const lines = content.split(/\r?\n/);
+  if (lines[0]?.trim() !== "SIGNAL") return {};
+
+  const out: Partial<Pick<PostEntry, "beat" | "sources" | "tags" | "confidence">> = {};
+  const sources: string[] = [];
+  let inSources = false;
+
+  for (const rawLine of lines.slice(1)) {
+    const line = rawLine.trim();
+    if (line === "analysis:") break;
+    if (line === "sources:") {
+      inSources = true;
+      continue;
+    }
+    if (inSources && line.startsWith("- ")) {
+      const source = line.slice(2).trim();
+      if (source) sources.push(source);
+      continue;
+    }
+    inSources = false;
+
+    const separator = line.indexOf(":");
+    if (separator === -1) continue;
+    const key = line.slice(0, separator).trim();
+    const value = line.slice(separator + 1).trim();
+    if (key === "beat" && value) out.beat = value;
+    if (key === "confidence" && value) out.confidence = value;
+    if (key === "tags" && value) {
+      out.tags = value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+    }
+  }
+
+  if (sources.length > 0) out.sources = sources;
+  return out;
+}
+
+function beatFromTopic(topic: string): string | undefined {
+  return topic.startsWith("town.") ? topic.slice("town.".length) : undefined;
 }
 
 function displayDir(path: string): string {
