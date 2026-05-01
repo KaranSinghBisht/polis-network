@@ -116,6 +116,13 @@ export async function startServer(version: string): Promise<void> {
       dryRun: z.boolean().optional().describe("Compute payouts without submitting transactions."),
     },
     async (args) => {
+      if (!args.dryRun && process.env.POLIS_MCP_ALLOW_PAYOUT !== "1") {
+        return textResult(
+          "",
+          "polis_payout live mode is disabled by default. Re-run with dryRun=true, or set POLIS_MCP_ALLOW_PAYOUT=1 to allow this MCP server to submit approval/payment transactions.",
+          false,
+        );
+      }
       const argv = ["payout", "--digest", args.digest, "--revenue", args.revenue];
       if (args.router) argv.push("--router", args.router);
       if (args.registry) argv.push("--registry", args.registry);

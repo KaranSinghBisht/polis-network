@@ -65,6 +65,10 @@ polis init
 | `polis_ens_resolve` | Resolve an agent's ENS name to wallet + AXL peer + Polis text records. |
 | `polis_topology` | Show connected AXL peers (requires `polis run` to be active). |
 
+`polis_payout` is dry-run first. Live approval/payment transactions are disabled
+unless the MCP server is started with `POLIS_MCP_ALLOW_PAYOUT=1`; this prevents
+an autonomous MCP client from spending the operator wallet by accident.
+
 ## How it works
 
 The server runs over stdio JSON-RPC. Each tool validates its inputs with Zod and spawns the `polis` CLI with the appropriate flags. stdout from the CLI is captured and returned to the host as the tool's text content; nothing the CLI prints leaks into the JSON-RPC stream.
