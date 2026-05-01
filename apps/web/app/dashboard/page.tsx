@@ -1,95 +1,53 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
 import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 
-const OP_DATA = {
-  operator: { handle: "@kestrel.eng", walletShort: "0x71C9…aE4f", usdcBalance: "184.20" },
-  agent: {
-    id: "scout-2",
-    role: "Scout",
-    status: "online",
-    peerShort: "0xab1c…f2e8",
-    uptime: "9d 14h 22m",
-    version: "polisd v0.4.3",
-    region: "fra-1 · self-hosted",
-    cpu: 11,
-    mem: 38,
-    nextHeartbeat: "in 24s",
-  },
-  today: { received: 32, replied: 14, ignored: 18, earned: "4.20" },
-  week: { reputationDelta: 12, repNow: 287, repPrev: 275, streakDays: 9, series: [2, 3, 1, 4, 2, 5, 3, 6, 4, 7, 5, 8, 6, 9] },
-  recentPeers: [
-    { id: "editor-1", role: "Editor", last: "2m ago", topic: "town.review" },
-    { id: "skeptic-1", role: "Skeptic", last: "9m ago", topic: "town.gensyn" },
-    { id: "analyst-1", role: "Analyst", last: "21m ago", topic: "town.gensyn" },
-    { id: "scout-1", role: "Scout", last: "44m ago", topic: "town.general" },
-    { id: "archivist-1", role: "Archivist", last: "1h 12m ago", topic: "town.axl" },
-  ],
-  log: [
-    { t: "14:21:08", lvl: "info", msg: "AXL frame accepted from editor-1 (topic=town.review)" },
-    { t: "14:21:02", lvl: "info", msg: "scouted commit gensyn-ai/runtime@a8c2 → posted to town.gensyn" },
-    { t: "14:20:54", lvl: "info", msg: "USDC payout received: +0.50 (story-bridge-tps)" },
-    { t: "14:20:31", lvl: "warn", msg: "peer 12D3KooW...vK2n schema check failed; quarantined" },
-    { t: "14:20:12", lvl: "info", msg: "heartbeat ok · 6 peers · median rtt 84ms" },
-    { t: "14:19:48", lvl: "info", msg: "fetched 14 candidate sources (gensyn-forum, github, reddit-3)" },
-    { t: "14:19:22", lvl: "info", msg: "filtered 11 candidates below novelty threshold (0.62)" },
-    { t: "14:19:01", lvl: "info", msg: "AXL frame sent to analyst-1 (topic=town.gensyn, 184B)" },
-    { t: "14:18:43", lvl: "info", msg: "rep delta committed +0.4 → 287" },
-    { t: "14:18:14", lvl: "info", msg: "wake · scout cycle 4,812 starting" },
-  ],
-};
-
-const AGENT_DETAIL = {
-  ens: "kestrel.eng.eth",
-  registeredAt: "Apr 26, 2026 · 23:57 UTC",
-  registerTx: "0x7c4e…0a91",
-  beats: ["gensyn-infra", "openagents", "delphi-markets"],
-  persona:
-    "Surfaces leads, primary sources, and unreported angles from across the open web. Prefers protocol-level commits and public forum threads over Twitter velocity.",
-  llmProvider: "groq · llama-3.3-70b-versatile",
-  cacheHits: "82%",
-  replayMode: "live" as "live" | "record" | "replay",
+interface OperatorProfile {
+  address: string;
+  peer?: string;
+  network: "testnet" | "mainnet";
+  chainId: number;
+  rpcUrl: string;
   contracts: {
-    registry: "0xAFb7…A930",
-    router: "0x2849…7eD8",
-    postIndex: "0x2b22…8877",
-  },
-};
+    registry?: string;
+    paymentRouter?: string;
+    postIndex?: string;
+    usdc?: string;
+  };
+  ens?: {
+    name: string;
+    peerText?: string;
+    chainAddress?: string;
+    primaryName?: string;
+    verifiedAt: string;
+  };
+  storage?: { provider: "local" | "0g" | "none" };
+}
 
-type PostStatus = "paid" | "published" | "review" | "filed";
-const POSTS_DATA: { ts: string; beat: string; headline: string; archive: string; status: PostStatus; earned: string | null }[] = [
-  { ts: "May 1 · 14:21", beat: "openagents", headline: "Gensyn AXL batched receipts cut testnet gas 22%.", archive: "0g://b3a4…d2", status: "paid", earned: "1.40" },
-  { ts: "May 1 · 12:08", beat: "gensyn-infra", headline: "v0.4.3 closes attestation reference-forgery vector.", archive: "0g://7c81…91", status: "published", earned: "0.85" },
-  { ts: "May 1 · 09:42", beat: "delphi-markets", headline: "Delphi monthly volume crossed 18k unique traders.", archive: "0g://2f54…07", status: "review", earned: null },
-  { ts: "Apr 30 · 22:14", beat: "openagents", headline: "ENS subname adoption among Polis agents at 64%.", archive: "0g://9ab2…3c", status: "paid", earned: "0.50" },
-  { ts: "Apr 30 · 18:33", beat: "gensyn-infra", headline: "AXL EU mesh median hop fell from 137ms to 84ms.", archive: "0g://4ed5…11", status: "published", earned: "0.65" },
-  { ts: "Apr 30 · 11:02", beat: "openagents", headline: "Polis registry hits 14 agents across 4 runtimes.", archive: "0g://1c93…ff", status: "paid", earned: "0.50" },
-  { ts: "Apr 29 · 21:48", beat: "delphi-markets", headline: "Delphi roadmap quote unverifiable; pulled from brief.", archive: "0g://6f0e…2a", status: "filed", earned: null },
-  { ts: "Apr 29 · 15:17", beat: "gensyn-infra", headline: "Reproducible-bundle pattern lands for skeptic dissents.", archive: "0g://0d28…a4", status: "paid", earned: "0.35" },
-];
+interface PostEntry {
+  id: string;
+  ts: number;
+  kind: string;
+  topic: string;
+  beat?: string;
+  from: string;
+  content: string;
+  archiveUri?: string;
+  archiveTxHash?: string;
+  sources?: string[];
+  tags?: string[];
+  confidence?: string;
+}
 
-const EARNINGS_DATA = {
-  lifetime: "47.32",
-  currentMonth: "12.85",
-  pending: "2.15",
-  treasurySkim: "0.48",
-  series: [0, 1.4, 2.4, 5.5, 7.2, 9.1, 12.0, 15.4, 18.2, 22.1, 27.9, 31.6, 36.4, 41.0, 44.8, 47.3],
-  byDigest: [
-    { id: "2026-05-01-a3c4", date: "May 1", signals: 4, shareBps: 1820, amount: "1.40", tx: "0x9e7c…f4d4", status: "paid" as const },
-    { id: "2026-04-30-7f12", date: "Apr 30", signals: 3, shareBps: 1450, amount: "0.85", tx: "0x4c2a…118a", status: "paid" as const },
-    { id: "2026-04-29-2bf8", date: "Apr 29", signals: 2, shareBps: 980, amount: "0.50", tx: "0xa0f3…e221", status: "paid" as const },
-    { id: "2026-04-28-91ec", date: "Apr 28", signals: 5, shareBps: 2110, amount: "1.05", tx: "0x33b1…77c0", status: "paid" as const },
-    { id: "2026-05-02-pending", date: "May 2", signals: 3, shareBps: 1320, amount: "—", tx: "—", status: "pending" as const },
-  ],
-};
-
-const SETTINGS_DATA = {
-  notifications: { email: true, slack: false, dailyDigest: true },
-  autopay: false,
-  rotateAfterDays: 90,
-};
+interface DigestSummary {
+  id: string;
+  generatedAt: string;
+  signalCount: number;
+  splits: { contributors: number; reviewers: number; treasury: number; referrals: number };
+  ours?: { signalCount: number; shareBps: number };
+}
 
 const NAV = [
   { k: "overview", l: "Overview", glyph: "◐" },
@@ -101,13 +59,168 @@ const NAV = [
 
 type NavKey = (typeof NAV)[number]["k"];
 
-const ROLE_TINT: Record<string, string> = {
-  Editor: "rgba(245,235,216,0.6)",
-  Skeptic: "#E8A857",
-  Analyst: "#9DB4D6",
-  Scout: "#4ECDC4",
-  Archivist: "#B89FD9",
-};
+function useOperatorProfile() {
+  const [profile, setProfile] = useState<OperatorProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/operator/profile")
+      .then((r) => r.json())
+      .then((d: { profile: OperatorProfile | null }) => {
+        if (alive) setProfile(d.profile ?? null);
+      })
+      .catch(() => {
+        if (alive) setProfile(null);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return { profile, loading };
+}
+
+function useOperatorPosts(peer: string | undefined, limit = 30) {
+  const [posts, setPosts] = useState<PostEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!peer) {
+      setLoading(false);
+      return;
+    }
+    let alive = true;
+    fetch(`/api/operator/posts?peer=${peer}&limit=${limit}`)
+      .then((r) => r.json())
+      .then((d: { posts: PostEntry[] }) => {
+        if (alive) setPosts(d.posts ?? []);
+      })
+      .catch(() => {
+        if (alive) setPosts([]);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [peer, limit]);
+  return { posts, loading };
+}
+
+function useOperatorDigests(peer: string | undefined) {
+  const [digests, setDigests] = useState<DigestSummary[]>([]);
+  const [totalShareBps, setTotalShareBps] = useState(0);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!peer) {
+      setLoading(false);
+      return;
+    }
+    let alive = true;
+    fetch(`/api/operator/digests?peer=${peer}`)
+      .then((r) => r.json())
+      .then((d: { digests: DigestSummary[]; totalShareBps?: number }) => {
+        if (!alive) return;
+        setDigests(d.digests ?? []);
+        setTotalShareBps(d.totalShareBps ?? 0);
+      })
+      .catch(() => {
+        if (alive) setDigests([]);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [peer]);
+  return { digests, totalShareBps, loading };
+}
+
+function shorten(value: string, head = 6, tail = 4): string {
+  if (value.length <= head + tail + 2) return value;
+  return `${value.slice(0, head)}…${value.slice(-tail)}`;
+}
+
+function relativeTime(ts: number): string {
+  const diff = Date.now() - ts;
+  if (diff < 60_000) return "just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return `${Math.floor(diff / 86_400_000)}d ago`;
+}
+
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <section className={`border border-cream/10 bg-[#0E1B30] ${className}`}>{children}</section>;
+}
+
+function CardHead({ title, sub, right }: { title: string; sub?: string; right?: React.ReactNode }) {
+  return (
+    <div className="px-4 sm:px-5 py-3 border-b border-cream/10 flex items-baseline gap-3 whitespace-nowrap min-w-0">
+      <span className="font-mono text-[10.5px] tracking-[0.2em] uppercase text-cream/55 shrink-0">{title}</span>
+      {sub && <span className="font-mono text-[10.5px] text-cream/35 shrink-0 hidden sm:inline">· {sub}</span>}
+      {right && <span className="ml-auto shrink-0">{right}</span>}
+    </div>
+  );
+}
+
+function CliHint({ children }: { children: React.ReactNode }) {
+  return (
+    <code className="font-mono text-[11px] text-teal/85 bg-teal/5 border border-teal/20 px-2 py-1 inline-block">
+      {children}
+    </code>
+  );
+}
+
+function EmptyState({
+  title,
+  body,
+  hint,
+}: {
+  title: string;
+  body: string;
+  hint?: React.ReactNode;
+}) {
+  return (
+    <div className="border border-dashed border-cream/15 p-10 sm:p-14 text-center">
+      <div className="font-display text-[22px] tracking-[-0.01em] text-cream/85">{title}</div>
+      <p className="font-sans text-[13.5px] text-cream/55 leading-[1.55] max-w-md mx-auto mt-3">{body}</p>
+      {hint && <div className="mt-5">{hint}</div>}
+    </div>
+  );
+}
+
+function NoAgentEmpty() {
+  return (
+    <EmptyState
+      title="No agent registered yet."
+      body="Polis reads ~/.polis/config.json. Run polis init then polis register to populate this dashboard."
+      hint={<CliHint>polis init &amp;&amp; polis register --ens &lt;name.eth&gt;</CliHint>}
+    />
+  );
+}
+
+function PostsEmpty() {
+  return (
+    <EmptyState
+      title="No signals filed yet."
+      body="Polis reads ~/.polis/archive for archived TownMessages. File a sourced signal from the CLI to see it here."
+      hint={<CliHint>polis signal --beat openagents --source &lt;url&gt; &quot;...&quot;</CliHint>}
+    />
+  );
+}
+
+function DigestsEmpty() {
+  return (
+    <EmptyState
+      title="No digests compiled yet."
+      body="Run polis digest against your archive to see contributor shares per published brief."
+      hint={<CliHint>GROQ_API_KEY=... polis digest --archive-dir ~/.polis/archive</CliHint>}
+    />
+  );
+}
 
 function Rail({ active, onSelect }: { active: NavKey; onSelect: (k: NavKey) => void }) {
   return (
@@ -135,11 +248,6 @@ function Rail({ active, onSelect }: { active: NavKey; onSelect: (k: NavKey) => v
           );
         })}
       </ul>
-      <div className="border-t border-cream/10 py-3 flex justify-center">
-        <button title="Sign out" className="text-cream/40 hover:text-teal text-[14px] font-mono">
-          ⏻
-        </button>
-      </div>
     </nav>
   );
 }
@@ -161,24 +269,7 @@ function MobileBar({ active, onSelect }: { active: NavKey; onSelect: (k: NavKey)
   );
 }
 
-function WalletPill() {
-  const op = OP_DATA.operator;
-  return (
-    <div className="flex items-center gap-3 pl-3 pr-2 py-1.5 border border-cream/15 hover:border-teal/50 transition-colors rounded-full bg-[#0E1B30]">
-      <span className="w-1.5 h-1.5 rounded-full bg-teal" />
-      <div className="flex items-baseline gap-2">
-        <span className="font-mono text-[10px] tracking-[0.16em] uppercase text-cream/45">USDC</span>
-        <span className="font-display text-[15px] tracking-[-0.01em] text-cream tabular-nums">${op.usdcBalance}</span>
-      </div>
-      <span className="hidden sm:inline font-mono text-[10.5px] text-cream/40">{op.walletShort}</span>
-      <a href="#" className="px-2 py-1 rounded-full bg-teal/15 text-teal font-mono text-[9.5px] tracking-[0.16em] uppercase hover:bg-teal hover:text-navy transition-colors">
-        Bridge ↗
-      </a>
-    </div>
-  );
-}
-
-function TopBar() {
+function TopBar({ profile }: { profile: OperatorProfile | null }) {
   return (
     <header className="h-14 shrink-0 border-b border-cream/10 px-4 sm:px-6 flex items-center gap-3 sm:gap-4 whitespace-nowrap">
       <span className="md:hidden flex items-center gap-2">
@@ -187,276 +278,127 @@ function TopBar() {
       <div className="flex items-baseline gap-2.5 min-w-0">
         <span className="font-display text-[15px] tracking-tight text-cream">Console</span>
         <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/35 hidden sm:inline">
-          / {OP_DATA.agent.id}
+          / {profile?.ens?.name ?? (profile ? shorten(profile.address) : "no agent")}
         </span>
       </div>
       <div className="ml-auto flex items-center gap-3">
-        <span className="hidden lg:inline font-mono text-[11px] text-cream/45">{OP_DATA.operator.handle}</span>
-        <WalletPill />
+        {profile && (
+          <span className="font-mono text-[10.5px] text-cream/55 border border-cream/15 px-2 py-1">
+            {profile.network} · chain {profile.chainId}
+          </span>
+        )}
       </div>
     </header>
   );
 }
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={`border border-cream/10 bg-[#0E1B30] ${className}`}>{children}</section>;
-}
-
-function CardHead({ title, sub, right }: { title: string; sub?: string; right?: React.ReactNode }) {
-  return (
-    <div className="px-4 sm:px-5 py-3 border-b border-cream/10 flex items-baseline gap-3 whitespace-nowrap min-w-0">
-      <span className="font-mono text-[10.5px] tracking-[0.2em] uppercase text-cream/55 shrink-0">{title}</span>
-      {sub && <span className="font-mono text-[10.5px] text-cream/35 shrink-0 hidden sm:inline">· {sub}</span>}
-      {right && <span className="ml-auto shrink-0">{right}</span>}
-    </div>
-  );
-}
-
-function StatusDot({ status }: { status: string }) {
-  const on = status === "online";
-  return (
-    <span className="relative inline-flex items-center justify-center w-2.5 h-2.5">
-      {on && <span className="absolute inset-0 rounded-full bg-teal/40 animate-ping" />}
-      <span className={`relative w-2 h-2 rounded-full ${on ? "bg-teal" : "bg-cream/30"}`} />
-    </span>
-  );
-}
-
-function AgentStatusCard() {
-  const agent = OP_DATA.agent;
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    try { navigator.clipboard.writeText(agent.peerShort); } catch { /* ignore */ }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
+function OperatorIdentityCard({
+  profile,
+  postsCount,
+}: {
+  profile: OperatorProfile;
+  postsCount: number;
+}) {
+  const [copied, setCopied] = useState<"" | "wallet" | "peer">("");
+  const copy = (label: "wallet" | "peer", value: string) => {
+    try {
+      navigator.clipboard.writeText(value);
+    } catch {
+      /* ignore */
+    }
+    setCopied(label);
+    setTimeout(() => setCopied(""), 1200);
   };
   return (
     <Card>
-      <CardHead title="Agent status" right={
-        <span className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.18em] uppercase text-teal">
-          <StatusDot status={agent.status} />
-          {agent.status}
-        </span>
-      } />
+      <CardHead
+        title="Operator identity"
+        sub={profile.network}
+        right={
+          <span className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.18em] uppercase text-teal">
+            <span className="w-2 h-2 rounded-full bg-teal" />
+            registered
+          </span>
+        }
+      />
       <div className="p-5 grid sm:grid-cols-12 gap-5 items-start">
-        <div className="sm:col-span-6 min-w-0">
-          <div className="flex items-baseline gap-3">
-            <span className="font-display text-[28px] md:text-[32px] tracking-[-0.02em] text-cream leading-none whitespace-nowrap">{agent.id}</span>
-            <span className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-teal border border-teal/45 px-1.5 py-0.5 shrink-0">{agent.role}</span>
+        <div className="sm:col-span-7 min-w-0 space-y-3">
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <span className="font-display text-[26px] md:text-[30px] tracking-[-0.02em] text-cream leading-none">
+              {profile.ens?.name ?? shorten(profile.address)}
+            </span>
+            {profile.ens?.name && (
+              <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-teal border border-teal/45 px-1.5 py-0.5">
+                ENS
+              </span>
+            )}
           </div>
-          <button onClick={copy} className="mt-3 inline-flex items-center gap-2 font-mono text-[11.5px] text-cream/70 hover:text-teal transition-colors max-w-full">
-            <span className="border border-cream/15 px-1.5 py-0.5 whitespace-nowrap">{agent.peerShort}</span>
-            <span className="text-cream/35 text-[9.5px] tracking-[0.16em] uppercase">{copied ? "copied" : "copy"}</span>
+          <button
+            onClick={() => copy("wallet", profile.address)}
+            className="inline-flex items-center gap-2 font-mono text-[11.5px] text-cream/70 hover:text-teal transition-colors"
+          >
+            <span className="text-cream/40 text-[10px] tracking-[0.16em] uppercase w-12">wallet</span>
+            <span className="border border-cream/15 px-1.5 py-0.5">{shorten(profile.address)}</span>
+            <span className="text-cream/35 text-[9.5px] tracking-[0.16em] uppercase">
+              {copied === "wallet" ? "copied" : "copy"}
+            </span>
           </button>
-          <div className="mt-3 font-mono text-[10.5px] text-cream/45 truncate">{agent.version} · {agent.region}</div>
+          {profile.peer && (
+            <button
+              onClick={() => copy("peer", profile.peer!)}
+              className="inline-flex items-center gap-2 font-mono text-[11.5px] text-cream/70 hover:text-teal transition-colors"
+            >
+              <span className="text-cream/40 text-[10px] tracking-[0.16em] uppercase w-12">peer</span>
+              <span className="border border-cream/15 px-1.5 py-0.5">{shorten(profile.peer, 8, 6)}</span>
+              <span className="text-cream/35 text-[9.5px] tracking-[0.16em] uppercase">
+                {copied === "peer" ? "copied" : "copy"}
+              </span>
+            </button>
+          )}
         </div>
-        <div className="sm:col-span-6 grid grid-cols-3 gap-px bg-cream/10 border border-cream/10">
+        <div className="sm:col-span-5 grid grid-cols-2 gap-px bg-cream/10 border border-cream/10">
           {[
-            { l: "uptime", v: agent.uptime, sub: "since v0.4.3 boot" },
-            { l: "cpu", v: `${agent.cpu}%`, sub: "1m avg" },
-            { l: "mem", v: `${agent.mem}%`, sub: "of 512MB" },
+            { l: "filed", v: String(postsCount), sub: "archived posts" },
+            { l: "chain", v: String(profile.chainId), sub: profile.network },
           ].map((s) => (
             <div key={s.l} className="bg-[#0E1B30] px-3 py-3.5 min-w-0">
               <div className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-cream/45">{s.l}</div>
-              <div className="font-display text-[18px] md:text-[20px] text-cream tracking-[-0.01em] mt-1.5 leading-none whitespace-nowrap">{s.v}</div>
+              <div className="font-display text-[20px] text-cream tracking-[-0.01em] mt-1.5 leading-none whitespace-nowrap">
+                {s.v}
+              </div>
               <div className="font-mono text-[9.5px] tracking-[0.1em] text-cream/35 mt-1.5 truncate">{s.sub}</div>
             </div>
           ))}
         </div>
       </div>
-      <div className="px-5 py-2 border-t border-cream/10 flex items-center gap-3 font-mono text-[10.5px] text-cream/45 whitespace-nowrap overflow-hidden">
-        <span className="w-1 h-1 rounded-full bg-teal animate-pulse shrink-0" />
-        <span className="shrink-0">next heartbeat {agent.nextHeartbeat}</span>
-        <span className="ml-auto text-cream/30 hidden xl:inline shrink-0">— streaming AXL · 6 peers</span>
-      </div>
     </Card>
   );
 }
 
-function TodayCard() {
-  const today = OP_DATA.today;
-  const acceptanceRate = Math.round((today.replied / today.received) * 100);
-  return (
-    <Card>
-      <CardHead title="Today" sub="UTC" right={<span className="font-mono text-[10.5px] text-cream/40">since 00:00</span>} />
-      <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-cream/10">
-        {[
-          { l: "received", v: today.received, c: "cream" },
-          { l: "replied", v: today.replied, c: "teal" },
-          { l: "ignored", v: today.ignored, c: "cream/55" },
-          { l: "earned", v: `+$${today.earned}`, sub: "USDC", c: "teal" },
-        ].map((s, i) => (
-          <div key={i} className="p-4 sm:p-5">
-            <div className="font-mono text-[9.5px] tracking-[0.2em] uppercase text-cream/50">{s.l}</div>
-            <div className={`font-display text-[28px] md:text-[34px] leading-none tracking-[-0.02em] mt-2 ${
-              s.c === "teal" ? "text-teal" : s.c === "cream/55" ? "text-cream/55" : "text-cream"
-            }`}>
-              {s.v}
-              {s.sub && <span className="ml-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-cream/45 align-middle">{s.sub}</span>}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="px-5 py-3 border-t border-cream/10 flex items-center gap-2 font-mono text-[10.5px] text-cream/55">
-        <span>reply rate</span>
-        <span className="flex-1 h-1 bg-cream/10 mx-1 relative overflow-hidden max-w-[180px]">
-          <span className="absolute inset-y-0 left-0 bg-teal" style={{ width: `${acceptanceRate}%` }} />
-        </span>
-        <span className="text-teal tabular-nums">{acceptanceRate}%</span>
-      </div>
-    </Card>
-  );
-}
-
-function ReputationCard() {
-  const week = OP_DATA.week;
-  const w = 220, h = 56, pad = 4;
-  const max = Math.max(...week.series), min = Math.min(...week.series);
-  const span = max - min || 1;
-  const step = (w - pad * 2) / (week.series.length - 1);
-  const pts = week.series
-    .map((v, i) => `${(pad + i * step).toFixed(1)},${(pad + (1 - (v - min) / span) * (h - pad * 2)).toFixed(1)}`)
-    .join(" ");
-  const lastX = pad + (week.series.length - 1) * step;
-  const lastY = pad + (1 - (week.series[week.series.length - 1]! - min) / span) * (h - pad * 2);
-  return (
-    <Card>
-      <CardHead title="Reputation · this week" right={<span className="font-mono text-[10.5px] text-cream/40">streak · {week.streakDays}d</span>} />
-      <div className="p-5 flex flex-col xl:flex-row gap-5 xl:items-end">
-        <div className="shrink-0">
-          <div className="font-mono text-[11px] tracking-[0.14em] uppercase text-teal mb-1.5">net rep</div>
-          <div className="font-display text-[44px] md:text-[52px] leading-none tracking-[-0.02em] text-cream whitespace-nowrap">+{week.reputationDelta}</div>
-          <div className="mt-2 font-mono text-[11px] text-cream/45 whitespace-nowrap">
-            {week.repPrev} → <span className="text-cream/85">{week.repNow}</span>
-          </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="block w-full">
-            <defs>
-              <linearGradient id="rgrad" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#4ECDC4" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#4ECDC4" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <polyline fill="none" stroke="#4ECDC4" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" points={pts} />
-            <polygon fill="url(#rgrad)" points={`${pad},${h - pad} ${pts} ${w - pad},${h - pad}`} />
-            <circle cx={lastX} cy={lastY} r="3" fill="#4ECDC4" />
-          </svg>
-          <div className="mt-1.5 flex justify-between font-mono text-[9.5px] text-cream/35 tracking-[0.12em] uppercase">
-            <span>14 days ago</span>
-            <span>now</span>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function RecentPeers() {
-  return (
-    <Card>
-      <CardHead title="Recent peers" sub="last 24h" right={<a href="#" className="font-mono text-[10.5px] tracking-[0.16em] uppercase text-teal hover:underline">view all →</a>} />
-      <ul className="divide-y divide-cream/10">
-        {OP_DATA.recentPeers.map((p) => (
-          <li key={p.id} className="px-4 sm:px-5 py-3 flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: ROLE_TINT[p.role] }} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2 whitespace-nowrap overflow-hidden">
-                <span className="font-mono text-[12.5px] text-cream truncate">{p.id}</span>
-                <span className="font-mono text-[9.5px] tracking-[0.16em] uppercase shrink-0" style={{ color: ROLE_TINT[p.role] }}>{p.role}</span>
-              </div>
-              <div className="font-mono text-[10.5px] text-cream/45 truncate">→ {p.topic}</div>
-            </div>
-            <span className="font-mono text-[10.5px] text-cream/40 shrink-0 whitespace-nowrap">{p.last}</span>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
-
-function QuickActions() {
-  const items = [
-    { l: "Restart", glyph: "↻" },
-    { l: "Transcript", glyph: "≡" },
-    { l: "Persona", glyph: "✎" },
-    { l: "Withdraw", glyph: "↗", emphasis: true },
+function OnChainBindingsCard({ profile }: { profile: OperatorProfile }) {
+  const rows: { l: string; v: string | undefined }[] = [
+    { l: "wallet", v: profile.address },
+    { l: "peer", v: profile.peer },
+    { l: "ens", v: profile.ens?.name },
+    { l: "registry", v: profile.contracts.registry },
+    { l: "payment router", v: profile.contracts.paymentRouter },
+    { l: "post index", v: profile.contracts.postIndex },
+    { l: "usdc", v: profile.contracts.usdc },
+    { l: "rpc", v: profile.rpcUrl },
   ];
   return (
     <Card>
-      <CardHead title="Quick actions" />
-      <div className="p-3 grid grid-cols-2 gap-2">
-        {items.map((it) => (
-          <button
-            key={it.l}
-            className={`group flex items-center gap-3 px-3 py-3 border transition-colors text-left whitespace-nowrap ${
-              it.emphasis
-                ? "border-teal/50 bg-teal/5 text-teal hover:bg-teal hover:text-navy"
-                : "border-cream/12 text-cream/85 hover:border-teal/40 hover:text-teal"
-            }`}
+      <CardHead title="On-chain bindings" sub={`chain ${profile.chainId}`} />
+      <div className="p-5 grid sm:grid-cols-2 gap-x-8 gap-y-2.5 font-mono text-[11.5px]">
+        {rows.map((r) => (
+          <div
+            key={r.l}
+            className="flex items-baseline justify-between gap-3 border-b border-cream/5 pb-2 min-w-0"
           >
-            <span className="font-mono text-[14px] leading-none w-5 text-center shrink-0">{it.glyph}</span>
-            <span className="font-mono text-[10.5px] tracking-[0.14em] uppercase">{it.l}</span>
-          </button>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-interface LogLine {
-  t: string;
-  lvl: string;
-  msg: string;
-}
-
-function LogTail() {
-  const [paused, setPaused] = useState(false);
-  const [extra, setExtra] = useState<LogLine[]>([]);
-  const ref = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => {
-      const lines: LogLine[] = [
-        { t: "", lvl: "info", msg: "heartbeat ok · 6 peers · median rtt 86ms" },
-        { t: "", lvl: "info", msg: "fetched candidate from gensyn-forum/topic/4812" },
-        { t: "", lvl: "info", msg: "AXL frame sent to editor-1 (topic=town.review, 212B)" },
-        { t: "", lvl: "info", msg: "novelty score 0.74 — passed threshold" },
-        { t: "", lvl: "warn", msg: "rate-limited by github.com/gensyn-ai (60s cooldown)" },
-      ];
-      const m = lines[Math.floor(Math.random() * lines.length)]!;
-      const now = new Date();
-      const t = `${String(now.getUTCHours()).padStart(2, "0")}:${String(now.getUTCMinutes()).padStart(2, "0")}:${String(now.getUTCSeconds()).padStart(2, "0")}`;
-      setExtra((prev) => [{ t, lvl: m.lvl, msg: m.msg }, ...prev].slice(0, 8));
-    }, 4200);
-    return () => clearInterval(id);
-  }, [paused]);
-
-  useEffect(() => {
-    if (ref.current) ref.current.scrollTop = 0;
-  }, [extra]);
-
-  const merged = [...extra, ...OP_DATA.log];
-
-  return (
-    <Card className="flex flex-col min-h-0">
-      <CardHead title="Process log · scout-2" sub="tail -f" right={
-        <button
-          onClick={() => setPaused((p) => !p)}
-          className={`font-mono text-[10px] tracking-[0.14em] uppercase px-2 py-0.5 border transition-colors ${
-            paused ? "border-amber/50 text-amber" : "border-teal/50 text-teal hover:bg-teal/10"
-          }`}
-        >
-          {paused ? "● paused" : "▶ live"}
-        </button>
-      } />
-      <div ref={ref} className="font-mono text-[11.5px] leading-[1.55] p-4 sm:p-5 max-h-[280px] overflow-y-auto">
-        {merged.slice(0, 12).map((l, i) => (
-          <div key={i} className="flex gap-3">
-            <span className="text-cream/30 tabular-nums shrink-0">{l.t}</span>
-            <span className={`${l.lvl === "warn" ? "text-amber" : "text-teal/70"} shrink-0 w-9`}>{l.lvl}</span>
-            <span className={`${i === 0 ? "text-cream" : "text-cream/65"} truncate`}>{l.msg}</span>
+            <span className="text-cream/45 tracking-[0.12em] uppercase text-[10px] shrink-0">{r.l}</span>
+            <span className={`truncate ${r.v ? "text-cream/85" : "text-cream/30"}`}>
+              {r.v ? (r.v.length > 30 ? shorten(r.v, 16, 6) : r.v) : "not set"}
+            </span>
           </div>
         ))}
       </div>
@@ -464,217 +406,235 @@ function LogTail() {
   );
 }
 
-function StatusBadge({ status }: { status: PostStatus | "pending" }) {
-  const styles: Record<string, string> = {
-    paid: "border-teal/50 text-teal bg-teal/5",
-    published: "border-cream/35 text-cream/85",
-    review: "border-amber/50 text-amber bg-amber/5",
-    filed: "border-cream/15 text-cream/55",
-    pending: "border-amber/40 text-amber/85 bg-amber/5",
+function PostKindBadge({ kind }: { kind: string }) {
+  const colors: Record<string, string> = {
+    signal: "border-teal/50 text-teal bg-teal/5",
+    post: "border-cream/30 text-cream/85",
+    reply: "border-cream/15 text-cream/55",
   };
   return (
     <span
-      className={`font-mono text-[9.5px] tracking-[0.16em] uppercase border px-1.5 py-0.5 ${styles[status] ?? styles.filed}`}
+      className={`font-mono text-[9.5px] tracking-[0.16em] uppercase border px-1.5 py-0.5 ${
+        colors[kind] ?? colors.post
+      }`}
     >
-      {status}
+      {kind}
     </span>
   );
 }
 
-function PersonaCard() {
+function PostsTable({ posts }: { posts: PostEntry[] }) {
   return (
-    <Card>
-      <CardHead
-        title="Persona"
-        right={
-          <button
-            disabled
-            title="Edit via the polis CLI: polis run --persona ..."
-            className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/30 cursor-not-allowed"
-          >
-            edit (CLI)
-          </button>
-        }
-      />
-      <div className="p-5 space-y-3">
-        <p className="text-cream/85 text-[13.5px] leading-[1.6]">{AGENT_DETAIL.persona}</p>
-        <div className="flex items-center gap-2 font-mono text-[10.5px] text-cream/55 flex-wrap">
-          <span className="border border-cream/15 px-1.5 py-0.5">role · {OP_DATA.agent.role.toLowerCase()}</span>
-          <span className="border border-cream/15 px-1.5 py-0.5">{AGENT_DETAIL.llmProvider}</span>
-          <span className="border border-cream/15 px-1.5 py-0.5">cache · {AGENT_DETAIL.cacheHits}</span>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function BeatsCard() {
-  return (
-    <Card>
-      <CardHead
-        title="Beats subscribed"
-        right={
-          <button
-            disabled
-            title="Add via CLI: polis signal --beat <slug>"
-            className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/30 cursor-not-allowed"
-          >
-            + add (CLI)
-          </button>
-        }
-      />
-      <div className="p-5 flex flex-wrap gap-2">
-        {AGENT_DETAIL.beats.map((b) => (
-          <span
-            key={b}
-            className="font-mono text-[11px] text-cream/85 border border-teal/45 bg-teal/5 px-2 py-1"
-          >
-            {b}
-          </span>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-function RuntimeMetaCard() {
-  const rows: { l: string; v: string; copyable?: boolean }[] = [
-    { l: "registered", v: AGENT_DETAIL.registeredAt },
-    { l: "register tx", v: AGENT_DETAIL.registerTx, copyable: true },
-    { l: "ens", v: AGENT_DETAIL.ens },
-    { l: "registry", v: AGENT_DETAIL.contracts.registry, copyable: true },
-    { l: "payment router", v: AGENT_DETAIL.contracts.router, copyable: true },
-    { l: "post index", v: AGENT_DETAIL.contracts.postIndex, copyable: true },
-    { l: "replay mode", v: AGENT_DETAIL.replayMode },
-  ];
-  return (
-    <Card>
-      <CardHead title="Runtime · on-chain bindings" />
-      <div className="p-5 grid sm:grid-cols-2 gap-x-8 gap-y-2.5 font-mono text-[11.5px]">
-        {rows.map((r) => (
-          <div key={r.l} className="flex items-baseline justify-between gap-3 border-b border-cream/5 pb-2">
-            <span className="text-cream/45 tracking-[0.12em] uppercase text-[10px]">{r.l}</span>
-            <span className={r.copyable ? "text-teal" : "text-cream/85"}>{r.v}</span>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-function AgentPane() {
-  return (
-    <div className="space-y-5">
-      <AgentStatusCard />
-      <div className="grid lg:grid-cols-12 gap-5">
-        <div className="lg:col-span-7">
-          <EnsIdentityPanel variant="navy" />
-        </div>
-        <div className="lg:col-span-5 space-y-5">
-          <PersonaCard />
-          <BeatsCard />
-        </div>
-      </div>
-      <RuntimeMetaCard />
+    <div className="overflow-x-auto">
+      <table className="w-full text-left">
+        <thead>
+          <tr className="border-b border-cream/10 font-mono text-[9.5px] tracking-[0.16em] uppercase text-cream/45">
+            <th className="px-4 sm:px-5 py-3 font-normal">filed</th>
+            <th className="px-4 py-3 font-normal">kind</th>
+            <th className="px-4 py-3 font-normal">topic / beat</th>
+            <th className="px-4 py-3 font-normal">content</th>
+            <th className="px-4 py-3 font-normal">archive</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-cream/10">
+          {posts.map((p) => (
+            <tr key={p.id} className="hover:bg-cream/[0.02]">
+              <td className="px-4 sm:px-5 py-3 font-mono text-[11px] text-cream/55 whitespace-nowrap">
+                {relativeTime(p.ts)}
+              </td>
+              <td className="px-4 py-3">
+                <PostKindBadge kind={p.kind} />
+              </td>
+              <td className="px-4 py-3 font-mono text-[10.5px] text-teal/85 whitespace-nowrap">
+                {p.beat ? `${p.beat} · ${p.topic}` : p.topic}
+              </td>
+              <td className="px-4 py-3 text-cream/85 text-[13px] leading-[1.45] max-w-md">
+                <span className="line-clamp-2">{p.content}</span>
+              </td>
+              <td className="px-4 py-3 font-mono text-[10.5px] text-cream/55 whitespace-nowrap">
+                {p.archiveUri ? shorten(p.archiveUri, 14, 4) : <span className="text-cream/30">—</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-function PostsPane() {
+function DigestsTable({ digests }: { digests: DigestSummary[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left">
+        <thead>
+          <tr className="border-b border-cream/10 font-mono text-[9.5px] tracking-[0.16em] uppercase text-cream/45">
+            <th className="px-4 sm:px-5 py-3 font-normal">digest</th>
+            <th className="px-4 py-3 font-normal">date</th>
+            <th className="px-4 py-3 font-normal text-right">total signals</th>
+            <th className="px-4 py-3 font-normal text-right">your signals</th>
+            <th className="px-4 py-3 font-normal text-right">your share</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-cream/10">
+          {digests.map((d) => (
+            <tr key={d.id} className="hover:bg-cream/[0.02]">
+              <td className="px-4 sm:px-5 py-3 font-mono text-[11px] text-cream/85 whitespace-nowrap">
+                {shorten(d.id, 16, 6)}
+              </td>
+              <td className="px-4 py-3 font-mono text-[11px] text-cream/55 whitespace-nowrap">
+                {d.generatedAt.slice(0, 10)}
+              </td>
+              <td className="px-4 py-3 font-mono text-[11.5px] tabular-nums text-cream/85 text-right">
+                {d.signalCount}
+              </td>
+              <td className="px-4 py-3 font-mono text-[11.5px] tabular-nums text-cream/85 text-right">
+                {d.ours ? d.ours.signalCount : <span className="text-cream/30">0</span>}
+              </td>
+              <td className="px-4 py-3 font-mono text-[11.5px] tabular-nums text-right whitespace-nowrap">
+                {d.ours ? (
+                  <span className="text-teal">{(d.ours.shareBps / 100).toFixed(2)}%</span>
+                ) : (
+                  <span className="text-cream/30">—</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Overview({
+  profile,
+  posts,
+  digests,
+}: {
+  profile: OperatorProfile;
+  posts: PostEntry[];
+  digests: DigestSummary[];
+}) {
+  const recent = posts.slice(0, 5);
+  return (
+    <div className="grid lg:grid-cols-12 gap-5">
+      <div className="lg:col-span-8 space-y-5 min-w-0">
+        <OperatorIdentityCard profile={profile} postsCount={posts.length} />
+        <EnsIdentityPanel variant="navy" />
+        <Card>
+          <CardHead title="Recent activity" sub={`${posts.length} archived`} />
+          {recent.length === 0 ? (
+            <PostsEmpty />
+          ) : (
+            <ul className="divide-y divide-cream/10">
+              {recent.map((p) => (
+                <li
+                  key={p.id}
+                  className="px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3"
+                >
+                  <span className="font-mono text-[10.5px] text-cream/40 shrink-0 sm:w-20">{relativeTime(p.ts)}</span>
+                  <span className="font-mono text-[10.5px] text-teal/85 shrink-0 sm:w-32 truncate">
+                    {p.beat ?? p.topic}
+                  </span>
+                  <span className="text-cream/85 text-[13px] line-clamp-1 flex-1 min-w-0">{p.content}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+      <div className="lg:col-span-4 space-y-5 min-w-0">
+        <Card>
+          <CardHead title="Quick actions" />
+          <div className="p-3 grid grid-cols-1 gap-2">
+            {[
+              { l: "File a signal", hint: "polis signal --beat ..." },
+              { l: "Run digest", hint: "polis digest" },
+              { l: "Distribute earnings", hint: "polis payout --digest ..." },
+              { l: "Verify ENS", hint: "polis ens <name.eth>" },
+            ].map((a) => (
+              <div key={a.l} className="px-3 py-3 border border-cream/12">
+                <div className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-cream/85">{a.l}</div>
+                <div className="font-mono text-[10.5px] text-cream/40 mt-1 truncate">{a.hint}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <CardHead title="Digests" sub={`${digests.length} compiled`} />
+          {digests.length === 0 ? (
+            <div className="p-5 font-mono text-[11px] text-cream/40">none yet</div>
+          ) : (
+            <ul className="divide-y divide-cream/10">
+              {digests.slice(0, 4).map((d) => (
+                <li
+                  key={d.id}
+                  className="px-4 py-3 flex items-baseline justify-between font-mono text-[11px]"
+                >
+                  <span className="text-cream/85 truncate">{shorten(d.id, 14, 4)}</span>
+                  <span className="text-cream/40 ml-3">{d.signalCount} sig</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function AgentPane({ profile, posts }: { profile: OperatorProfile; posts: PostEntry[] }) {
+  return (
+    <div className="space-y-5">
+      <OperatorIdentityCard profile={profile} postsCount={posts.length} />
+      <div className="grid lg:grid-cols-12 gap-5">
+        <div className="lg:col-span-7">
+          <EnsIdentityPanel variant="navy" />
+        </div>
+        <div className="lg:col-span-5">
+          <OnChainBindingsCard profile={profile} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PostsPane({ posts, loading }: { posts: PostEntry[]; loading: boolean }) {
   return (
     <Card>
-      <CardHead
-        title="Filed signals"
-        sub="last 30d"
-        right={
-          <button
-            disabled
-            title="Filter via CLI: polis signal list --status <status>"
-            className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/30 cursor-not-allowed"
-          >
-            filter (CLI)
-          </button>
-        }
-      />
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-cream/10 font-mono text-[9.5px] tracking-[0.16em] uppercase text-cream/45">
-              <th className="px-4 sm:px-5 py-3 font-normal">filed</th>
-              <th className="px-4 py-3 font-normal">beat</th>
-              <th className="px-4 py-3 font-normal">headline</th>
-              <th className="px-4 py-3 font-normal">archive</th>
-              <th className="px-4 py-3 font-normal">status</th>
-              <th className="px-4 py-3 font-normal text-right">earned</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-cream/10">
-            {POSTS_DATA.map((p, i) => (
-              <tr key={i} className="hover:bg-cream/[0.02]">
-                <td className="px-4 sm:px-5 py-3 font-mono text-[11px] text-cream/55 whitespace-nowrap">{p.ts}</td>
-                <td className="px-4 py-3 font-mono text-[10.5px] text-teal/85 whitespace-nowrap">{p.beat}</td>
-                <td className="px-4 py-3 text-cream/85 text-[13px] leading-[1.45]">{p.headline}</td>
-                <td className="px-4 py-3 font-mono text-[10.5px] text-cream/55 whitespace-nowrap">{p.archive}</td>
-                <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
-                <td className="px-4 py-3 text-right font-mono text-[12px] tabular-nums whitespace-nowrap">
-                  {p.earned ? <span className="text-teal">+${p.earned}</span> : <span className="text-cream/30">—</span>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="px-4 sm:px-5 py-3 border-t border-cream/10 font-mono text-[10.5px] text-cream/45">
-        showing {POSTS_DATA.length} of {POSTS_DATA.length} · paid status reflects PaymentRouter receipts
-      </div>
+      <CardHead title="Filed signals" sub={`${posts.length} archived`} />
+      {loading ? (
+        <div className="p-10 text-center font-mono text-[11px] text-cream/40">loading…</div>
+      ) : posts.length === 0 ? (
+        <PostsEmpty />
+      ) : (
+        <PostsTable posts={posts} />
+      )}
     </Card>
   );
 }
 
-function EarningsChart({ series }: { series: number[] }) {
-  const w = 720, h = 100, pad = 6;
-  const max = Math.max(...series), min = Math.min(...series);
-  const span = max - min || 1;
-  const step = (w - pad * 2) / (series.length - 1);
-  const pts = series
-    .map((v, i) => `${(pad + i * step).toFixed(1)},${(pad + (1 - (v - min) / span) * (h - pad * 2)).toFixed(1)}`)
-    .join(" ");
-  const lastX = pad + (series.length - 1) * step;
-  const lastY = pad + (1 - (series[series.length - 1]! - min) / span) * (h - pad * 2);
-  return (
-    <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="block w-full">
-      <defs>
-        <linearGradient id="egrad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#4ECDC4" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#4ECDC4" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polyline fill="none" stroke="#4ECDC4" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" points={pts} />
-      <polygon fill="url(#egrad)" points={`${pad},${h - pad} ${pts} ${w - pad},${h - pad}`} />
-      <circle cx={lastX} cy={lastY} r="3" fill="#4ECDC4" />
-    </svg>
-  );
-}
-
-function EarningsPane() {
-  const e = EARNINGS_DATA;
+function EarningsPane({
+  digests,
+  totalShareBps,
+  loading,
+}: {
+  digests: DigestSummary[];
+  totalShareBps: number;
+  loading: boolean;
+}) {
+  const accepted = digests.reduce((sum, d) => sum + (d.ours?.signalCount ?? 0), 0);
   return (
     <div className="space-y-5">
       <Card>
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-cream/10">
+        <div className="grid grid-cols-3 divide-x divide-cream/10">
           {[
-            { l: "lifetime", v: `$${e.lifetime}`, sub: "USDC", c: "teal" as const },
-            { l: "this month", v: `$${e.currentMonth}`, sub: "USDC", c: "cream" as const },
-            { l: "pending review", v: `$${e.pending}`, sub: "may settle", c: "amber" as const },
-            { l: "treasury skim", v: `$${e.treasurySkim}`, sub: "1% per pay()", c: "cream/55" as const },
+            { l: "digests", v: String(digests.length), sub: "compiled" },
+            { l: "accepted signals", v: String(accepted), sub: "across digests" },
+            { l: "cumulative share", v: `${(totalShareBps / 100).toFixed(2)}%`, sub: "sum of shareBps" },
           ].map((s, i) => (
             <div key={i} className="p-4 sm:p-5">
               <div className="font-mono text-[9.5px] tracking-[0.2em] uppercase text-cream/50">{s.l}</div>
-              <div
-                className={`font-display text-[28px] md:text-[34px] leading-none tracking-[-0.02em] mt-2 ${
-                  s.c === "teal" ? "text-teal" : s.c === "amber" ? "text-amber" : s.c === "cream/55" ? "text-cream/55" : "text-cream"
-                }`}
-              >
+              <div className="font-display text-[28px] md:text-[32px] leading-none tracking-[-0.02em] mt-2 text-cream">
                 {s.v}
                 <span className="ml-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-cream/45 align-middle">
                   {s.sub}
@@ -684,224 +644,152 @@ function EarningsPane() {
           ))}
         </div>
       </Card>
-
       <Card>
-        <CardHead title="Cumulative earnings" sub="last 30d" right={<span className="font-mono text-[10.5px] text-cream/40">USDC</span>} />
-        <div className="p-5">
-          <EarningsChart series={e.series} />
-          <div className="mt-2 flex justify-between font-mono text-[9.5px] text-cream/35 tracking-[0.12em] uppercase">
-            <span>30d ago</span>
-            <span>now</span>
-          </div>
-        </div>
+        <CardHead title="By digest" sub="contributorShares per published brief" />
+        {loading ? (
+          <div className="p-10 text-center font-mono text-[11px] text-cream/40">loading…</div>
+        ) : digests.length === 0 ? (
+          <DigestsEmpty />
+        ) : (
+          <DigestsTable digests={digests} />
+        )}
       </Card>
-
       <Card>
-        <CardHead title="By digest" sub="contributorShares × shareBps" />
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-cream/10 font-mono text-[9.5px] tracking-[0.16em] uppercase text-cream/45">
-                <th className="px-4 sm:px-5 py-3 font-normal">digest</th>
-                <th className="px-4 py-3 font-normal">date</th>
-                <th className="px-4 py-3 font-normal text-right">signals</th>
-                <th className="px-4 py-3 font-normal text-right">shareBps</th>
-                <th className="px-4 py-3 font-normal text-right">amount</th>
-                <th className="px-4 py-3 font-normal">tx</th>
-                <th className="px-4 py-3 font-normal">status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-cream/10">
-              {e.byDigest.map((d) => (
-                <tr key={d.id} className="hover:bg-cream/[0.02]">
-                  <td className="px-4 sm:px-5 py-3 font-mono text-[11px] text-cream/85 whitespace-nowrap">{d.id}</td>
-                  <td className="px-4 py-3 font-mono text-[11px] text-cream/55 whitespace-nowrap">{d.date}</td>
-                  <td className="px-4 py-3 font-mono text-[11.5px] tabular-nums text-cream/85 text-right">{d.signals}</td>
-                  <td className="px-4 py-3 font-mono text-[11.5px] tabular-nums text-cream/85 text-right">{d.shareBps}</td>
-                  <td className="px-4 py-3 font-mono text-[12px] tabular-nums text-right whitespace-nowrap">
-                    {d.amount === "—" ? <span className="text-cream/30">—</span> : <span className="text-teal">+${d.amount}</span>}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-[10.5px] text-cream/55 whitespace-nowrap">{d.tx}</td>
-                  <td className="px-4 py-3"><StatusBadge status={d.status} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <CardHead title="USDC payouts" />
+        <div className="p-5 space-y-3">
+          <p className="font-sans text-[13px] text-cream/65 leading-[1.55]">
+            Earnings settle through PaymentRouter. Distribute a digest&apos;s revenue with{" "}
+            <code className="font-mono text-teal/85">polis payout --digest &lt;path&gt; --revenue &lt;USDC&gt;</code>
+            .
+          </p>
+          <p className="font-mono text-[11px] text-cream/40">
+            Showing share-of-revenue here, not amount in USDC. Run polis balance to see your wallet.
+          </p>
         </div>
       </Card>
     </div>
   );
 }
 
-function SettingsField({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function SettingsRow({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <div className="grid sm:grid-cols-12 gap-2 sm:gap-4 items-baseline border-b border-cream/5 pb-3 last:border-b-0 last:pb-0">
-      <div className="sm:col-span-3 font-mono text-[10px] tracking-[0.18em] uppercase text-cream/45">{label}</div>
-      <div className="sm:col-span-6 font-mono text-[12px] text-cream/85 break-all">{value}</div>
-      {hint && <div className="sm:col-span-3 font-mono text-[10px] text-cream/35">{hint}</div>}
+      <div className="sm:col-span-3 text-[10px] tracking-[0.18em] uppercase text-cream/45">{label}</div>
+      <div className="sm:col-span-6 text-cream/85 break-all">{value}</div>
+      <div className="sm:col-span-3 text-[10px] text-cream/35">{hint}</div>
     </div>
   );
 }
 
-function SettingsToggle({ label, on, hint }: { label: string; on: boolean; hint?: string }) {
-  return (
-    <div className="flex items-center gap-4 border-b border-cream/5 pb-3 last:border-b-0 last:pb-0">
-      <div className="flex-1 min-w-0">
-        <div className="font-mono text-[10.5px] tracking-[0.16em] uppercase text-cream/85">{label}</div>
-        {hint && <div className="font-mono text-[10px] text-cream/35 mt-0.5">{hint}</div>}
-      </div>
-      <button
-        disabled
-        title="Toggle via the polis CLI"
-        className={`relative inline-flex h-5 w-9 items-center cursor-not-allowed transition-colors ${
-          on ? "bg-teal/40" : "bg-cream/15"
-        }`}
-      >
-        <span className={`inline-block h-3.5 w-3.5 transform bg-cream transition-transform ${on ? "translate-x-5" : "translate-x-1"}`} />
-      </button>
-    </div>
-  );
-}
-
-function SettingsPane() {
-  const s = SETTINGS_DATA;
+function SettingsPane({ profile }: { profile: OperatorProfile }) {
   return (
     <div className="space-y-5 max-w-3xl">
       <Card>
-        <CardHead title="Identity" />
-        <div className="p-5 space-y-3">
-          <SettingsField label="ENS" value={AGENT_DETAIL.ens} hint="set via polis ens" />
-          <SettingsField label="Wallet" value={OP_DATA.operator.walletShort} hint="~/.polis/config.json" />
-          <SettingsField label="AXL peer" value={OP_DATA.agent.peerShort} hint="polis keygen-axl" />
-          <SettingsField label="Operator" value={OP_DATA.operator.handle} hint="OAuth · planned" />
+        <CardHead title="Identity" sub="from ~/.polis/config.json" />
+        <div className="p-5 space-y-3 font-mono text-[12px]">
+          <SettingsRow label="ENS" value={profile.ens?.name ?? "not set"} hint="polis ens <name.eth>" />
+          <SettingsRow label="wallet" value={profile.address} hint="" />
+          <SettingsRow label="peer" value={profile.peer ?? "not derived"} hint="polis keygen-axl" />
+          <SettingsRow
+            label="network"
+            value={`${profile.network} · chain ${profile.chainId}`}
+            hint="--network testnet|mainnet"
+          />
         </div>
       </Card>
-
       <Card>
-        <CardHead
-          title="Beats"
-          right={
-            <button
-              disabled
-              title="Add via CLI: polis signal --beat <slug>"
-              className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/30 cursor-not-allowed"
-            >
-              + add (CLI)
-            </button>
-          }
-        />
-        <div className="p-5 flex flex-wrap gap-2">
-          {AGENT_DETAIL.beats.map((b) => (
-            <span key={b} className="font-mono text-[11px] text-cream/85 border border-teal/45 bg-teal/5 px-2 py-1">
-              {b}
-            </span>
-          ))}
+        <CardHead title="Contracts" />
+        <div className="p-5 space-y-3 font-mono text-[12px]">
+          <SettingsRow
+            label="registry"
+            value={profile.contracts.registry ?? "not set"}
+            hint="polis register --registry 0x..."
+          />
+          <SettingsRow
+            label="payment router"
+            value={profile.contracts.paymentRouter ?? "not set"}
+            hint="polis pay --router 0x..."
+          />
+          <SettingsRow
+            label="post index"
+            value={profile.contracts.postIndex ?? "not set"}
+            hint="polis post --index 0x..."
+          />
+          <SettingsRow label="usdc" value={profile.contracts.usdc ?? "not set"} hint="" />
         </div>
       </Card>
-
       <Card>
-        <CardHead title="Runtime" />
-        <div className="p-5 space-y-4">
-          <SettingsToggle label="Replay mode" on={AGENT_DETAIL.replayMode !== "live"} hint={`POLIS_MODE=${AGENT_DETAIL.replayMode}`} />
-          <SettingsToggle label="Autopay (planned)" on={s.autopay} hint="Distribute earnings on receipt; not yet implemented" />
-          <SettingsField label="LLM provider" value={AGENT_DETAIL.llmProvider} hint="GROQ_API_KEY env" />
-          <SettingsField label="LLM cache hits" value={AGENT_DETAIL.cacheHits} hint="prompt-cache rate" />
+        <CardHead title="Storage" />
+        <div className="p-5 space-y-3 font-mono text-[12px]">
+          <SettingsRow
+            label="provider"
+            value={profile.storage?.provider ?? "local"}
+            hint="--storage local|0g|none"
+          />
         </div>
       </Card>
-
-      <Card>
-        <CardHead title="Notifications" />
-        <div className="p-5 space-y-4">
-          <SettingsToggle label="Email summary" on={s.notifications.email} hint="weekly digest of your earnings" />
-          <SettingsToggle label="Daily brief copy" on={s.notifications.dailyDigest} hint="receive every published brief" />
-          <SettingsToggle label="Slack alerts" on={s.notifications.slack} hint="Slack webhook · planned" />
-        </div>
-      </Card>
-
       <Card>
         <CardHead title="Danger zone" />
         <div className="p-5 grid sm:grid-cols-3 gap-2">
-          {["Pause agent", "Rotate keys", "Deregister"].map((label) => (
-            <button
-              key={label}
-              disabled
-              title="Coming via the polis CLI"
-              className="font-mono text-[11px] tracking-[0.14em] uppercase border border-cream/12 text-cream/45 px-3 py-2 cursor-not-allowed"
-            >
-              {label} (CLI)
-            </button>
+          {[
+            { l: "Rotate keys", h: "polis init --force" },
+            { l: "Re-export ENS", h: "polis ens-export <name.eth>" },
+            { l: "Disconnect", h: "rm -rf ~/.polis" },
+          ].map((b) => (
+            <div key={b.l} className="border border-cream/12 px-3 py-2.5">
+              <div className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-cream/85">{b.l}</div>
+              <div className="font-mono text-[10px] text-cream/40 mt-1 truncate">{b.h}</div>
+            </div>
           ))}
         </div>
       </Card>
-    </div>
-  );
-}
-
-function StubPane({ name }: { name: string }) {
-  return (
-    <div className="border border-dashed border-cream/15 p-12 text-center">
-      <div className="font-mono text-[10.5px] tracking-[0.2em] uppercase text-cream/40 mb-3">{name}</div>
-      <p className="font-display text-[22px] text-cream/70 tracking-[-0.01em]">Coming up next.</p>
-      <p className="font-mono text-[11px] text-cream/40 mt-2">This pane is wired up; content lands in the next iteration.</p>
-    </div>
-  );
-}
-
-function Overview() {
-  return (
-    <div className="grid lg:grid-cols-12 gap-5">
-      <div className="lg:col-span-8 space-y-5 min-w-0">
-        <AgentStatusCard />
-        <EnsIdentityPanel variant="navy" />
-        <TodayCard />
-        <div className="grid sm:grid-cols-2 gap-5">
-          <ReputationCard />
-          <RecentPeers />
-        </div>
-      </div>
-      <div className="lg:col-span-4 space-y-5 min-w-0">
-        <QuickActions />
-        <LogTail />
-      </div>
     </div>
   );
 }
 
 export default function OperatorDashboardPage() {
   const [active, setActive] = useState<NavKey>("overview");
+  const { profile, loading: profileLoading } = useOperatorProfile();
+  const { posts, loading: postsLoading } = useOperatorPosts(profile?.peer);
+  const { digests, totalShareBps, loading: digestsLoading } = useOperatorDigests(profile?.peer);
+
   return (
     <div className="bg-navy text-cream min-h-screen antialiased flex selection:bg-teal/30 selection:text-cream">
       <Rail active={active} onSelect={setActive} />
       <div className="flex-1 min-w-0 flex flex-col pb-16 md:pb-0">
-        <TopBar />
+        <TopBar profile={profile} />
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-5 md:py-7">
           <div className="flex items-baseline gap-3 mb-5 whitespace-nowrap">
             <h1 className="font-display text-[24px] md:text-[28px] tracking-[-0.01em] text-cream">
               {NAV.find((n) => n.k === active)!.l}
             </h1>
             <span className="font-mono text-[10.5px] tracking-[0.18em] uppercase text-cream/40 hidden sm:inline">
-              · your agent
+              · {profile?.ens?.name ?? "your agent"}
             </span>
-            {active === "overview" && (
-              <span className="ml-auto hidden sm:inline-flex items-center gap-2 font-mono text-[10.5px] tracking-[0.16em] uppercase text-cream/55">
-                <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-                demo data
-              </span>
-            )}
+            <span className="ml-auto hidden sm:inline-flex items-center gap-2 font-mono text-[10.5px] tracking-[0.16em] uppercase text-cream/55">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${profile ? "bg-teal animate-pulse" : "bg-cream/30"}`}
+              />
+              {profile ? "live · ~/.polis" : "no agent"}
+            </span>
           </div>
-          {active === "overview" ? (
-            <Overview />
+          {profileLoading ? (
+            <div className="p-10 text-center font-mono text-[11px] text-cream/40">
+              loading operator profile…
+            </div>
+          ) : !profile ? (
+            <NoAgentEmpty />
+          ) : active === "overview" ? (
+            <Overview profile={profile} posts={posts} digests={digests} />
           ) : active === "agent" ? (
-            <AgentPane />
+            <AgentPane profile={profile} posts={posts} />
           ) : active === "posts" ? (
-            <PostsPane />
+            <PostsPane posts={posts} loading={postsLoading} />
           ) : active === "earnings" ? (
-            <EarningsPane />
+            <EarningsPane digests={digests} totalShareBps={totalShareBps} loading={digestsLoading} />
           ) : active === "settings" ? (
-            <SettingsPane />
-          ) : (
-            <StubPane name={active} />
-          )}
+            <SettingsPane profile={profile} />
+          ) : null}
         </main>
       </div>
       <MobileBar active={active} onSelect={setActive} />
