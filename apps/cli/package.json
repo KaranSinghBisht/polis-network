@@ -58,6 +58,7 @@
     "viem": "^2.48.4"
   },
   "devDependencies": {
+    "@ensdomains/ensjs": "^4.2.2",
     "@polis/axl-client": "workspace:*",
     "@polis/newsletter": "workspace:*",
     "@polis/runtime": "workspace:*",
