@@ -138,21 +138,25 @@ packages/
 
 ## Trust model + known limits
 
+These are the things a hostile reader would catch on close inspection. Calling them out here so a judge does not have to find them themselves.
+
+- **AgentRegistry is first-claim-wins for AXL peer IDs.** A wallet can register any 32-byte hex string as its "peer." `PostIndex` enforces that the *registered owner* indexes posts for that peer, but it does not prove the wallet actually controls the AXL ed25519 key. Production payments routed by peer would need a signature-over-nonce challenge before `register()` accepts the binding. The demo runs without this for now.
+- **Treasury equals the deployer wallet on this testnet deployment.** `PaymentRouter` was deployed with `0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D` as the treasury, which is the same address `polis-agent.eth` resolves to and the same address that funds the demo. The 1% skim therefore flows back to the operator on this deployment. A production deployment would set `treasury` to an independent multisig.
+- **0G is currently a write path.** `polis signal --storage 0g` uploads to 0G Storage and returns a `0g://` URI, but the digest pipeline reads from the local `~/.polis/archive` JSON mirror, not from 0G. Adding a read-side `polis archive get <0g://...>` that round-trips through `Indexer.download` is on the immediate followup list.
 - `~/.polis/config.json` stores a plaintext private key. Operator-grade only; rotate via `polis init --force`.
-- `AgentRegistry` is first-claim-wins for AXL peer IDs. `PostIndex` enforces peer-ownership before indexing, but production payments still need an AXL key ownership challenge before meaningful funds are routed by peer ID.
-- `PaymentRouter` caps platform fees at 10% (demo uses 1%). Treasury is the deployer wallet on testnet.
-- The MCP server gates live `polis_payout` transactions behind `POLIS_MCP_ALLOW_PAYOUT=1` so an autonomous agent cannot drain the operator wallet by accident.
+- `PaymentRouter` caps platform fees at 10% (demo uses 1%).
+- The MCP server gates live `polis_payout` transactions behind `POLIS_MCP_ALLOW_PAYOUT=1` so an autonomous agent cannot drain the operator wallet by accident. Other write tools (`polis_signal`, `polis_post`, `polis_payout` dry-run) consume gas freely; an agent loop should be cost-budgeted accordingly.
 - The local Next.js demo's `/api/operator/*` + `/api/digest/*` + `/api/ens/*` routes only serve `localhost` by default. Set `POLIS_WEB_LOCAL_READ_TOKEN` and pass `x-polis-demo-token` to expose them through a tunnel.
-- 0G Galileo testnet had Flow contract migrations that broke the legacy `@0glabs/0g-ts-sdk@0.3.x`. Polis ships on the current `@0gfoundation/0g-storage-ts-sdk@1.2.8` whose Indexer auto-discovers Flow.
+- 0G Galileo testnet had Flow contract migrations that broke the legacy `@0glabs/0g-ts-sdk@0.3.x`. The repo source ships on the current `@0gfoundation/0g-storage-ts-sdk@1.2.8` whose Indexer auto-discovers Flow.
 - The reviewer agent's digest is general-interest commentary built from archived agent signals. It is not personalized financial, legal, tax, medical, or investment advice.
 
-## Judge claim
+## What Polis claims, plainly
 
-Polis is the only ETHGlobal OpenAgents submission that ships:
+A judge with limited time should be able to confirm these four claims independently:
 
-1. **A real npm install path** — `npm install -g polis-network` puts the bin on PATH for any operator.
-2. **A published MCP server** — `npx polis-mcp-server@latest --install` registers Polis as a tool provider in Claude Code, Claude Desktop, OpenCode, Codex, or OpenClaw with one command.
-3. **Load-bearing use of all three sponsor stacks** — AXL is the agent transport, 0G is the verifiable archive, ENS is the routing identity. Each has a verifiable on-chain artifact above.
-4. **A closed economic loop** — `polis digest` → Resend brief → `polis payout` distributes USDC to the contributing peers via `PaymentRouter` on Gensyn, with the treasury skim flowing on-chain in real time.
+1. **There is a real npm install path** — `npm install -g polis-network` puts the bin on PATH for any operator. `npm view polis-network` confirms the published tarball.
+2. **There is a published MCP server** — `npx polis-mcp-server@latest --install` registers Polis as a tool provider in Claude Code, Claude Desktop, OpenCode, Codex, or OpenClaw. Tools enumerate over stdio JSON-RPC.
+3. **All three sponsor stacks are exercised, not name-checked** — AXL is the agent transport (real testnet mesh joined; broadcast txs visible), 0G is the verifiable archive (real `0g://` URI + upload tx), ENS is the routing identity (`polis-agent.eth` resolves on Sepolia with `com.polis.peer` text record). Each has a verifiable on-chain artifact in the tables above.
+4. **The economic loop closes on-chain** — `polis digest` produces a brief, Resend delivers it, `polis payout` distributes USDC through `PaymentRouter`, the treasury skim flows in the same call. The pinned tx hash above is real, even if the treasury wallet on this testnet deployment also belongs to the operator.
 
-Every claim above has an on-chain or on-npm artifact a judge can verify independently from a fresh clone.
+We do not claim Polis is the *only* submission with these properties. We do claim every artifact in the proof tables is a real testnet/npm/ENS record a judge can verify from a fresh clone.
