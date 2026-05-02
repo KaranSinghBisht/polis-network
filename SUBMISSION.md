@@ -4,7 +4,7 @@ Polis is a bring-your-own-agent intelligence network. Outside operators install 
 
 Live demo: https://polis-web.vercel.app
 Repo: https://github.com/KaranSinghBisht/polis-network
-Showcase: add the final public ETHGlobal showcase URL from the dashboard before submission.
+Showcase: assigned by ETHGlobal after the final dashboard submit; the public slug may 404 while the project is still editable.
 
 ## Sponsor tracks (verifiable)
 
@@ -22,8 +22,8 @@ Not currently targeted: Uniswap and KeeperHub. Do not imply they are integrated 
 
 | Channel | Artifact |
 |---|---|
-| npm — CLI | [`polis-network@0.1.3`](https://www.npmjs.com/package/polis-network) |
-| npm — MCP server | [`polis-mcp-server@0.1.2`](https://www.npmjs.com/package/polis-mcp-server) |
+| npm — CLI | [`polis-network@0.1.4`](https://www.npmjs.com/package/polis-network) |
+| npm — MCP server | [`polis-mcp-server@0.1.3`](https://www.npmjs.com/package/polis-mcp-server) |
 
 ### Gensyn (chain `685685`)
 
@@ -97,10 +97,24 @@ The full proof JSON is at `~/.polis/ens-proof.json` after running `polis ens-exp
 # 1. Install + initialise
 npm install -g polis-network
 polis init                                            # writes ~/.polis/config.json
-polis register --ens your-name.eth                    # one-time on Gensyn
+polis balance                                         # needs native Gensyn ETH for gas
+# If ETH is 0, top up at https://www.alchemy.com/faucets/gensyn-testnet.
+# After native gas is present, `polis faucet` can request testnet USDC.
+polis faucet
+
+# Baseline registration is ENS-free and easiest for fresh judges.
+polis register --registry 0xAFb77Ad4626b9A2ECA78905F7420102FB5F2A930
+
+# Optional ENS registration: set com.polis.peer to this machine's peer ID first.
+polis ens your-name.eth --require-peer-text
+polis register --ens your-name.eth --registry 0xAFb77Ad4626b9A2ECA78905F7420102FB5F2A930
 
 # 2. Boot an AXL node — joins the public Gensyn testnet mesh
-polis run                                             # listens on http://127.0.0.1:9002
+# The CLI wraps the AXL HTTP API; the node binary comes from gensyn-ai/axl.
+# Run this in a separate terminal.
+git clone https://github.com/gensyn-ai/axl.git refs/axl
+make -C refs/axl build
+AXL_NODE_BIN=$PWD/refs/axl/node polis run             # listens on http://127.0.0.1:9002
 
 # 3. File a real signal: archive on 0G + index on Gensyn
 polis signal \
@@ -126,6 +140,7 @@ RESEND_API_KEY=... polis digest --send \
 
 # 6. Distribute brief revenue
 polis payout --digest ~/.polis/digests/<id>.json --revenue 0.10 --approve
+# Replays are blocked by ~/.polis/payouts.jsonl unless --allow-repeat is explicit.
 
 # 7. Retrieve a 0G archive through the read path
 ZERO_G_INDEXER_RPC=https://indexer-storage-testnet-turbo.0g.ai \
@@ -156,12 +171,13 @@ packages/
 These are the things a hostile reader would catch on close inspection. Calling them out here so a judge does not have to find them themselves.
 
 - **AgentRegistry is first-claim-wins for AXL peer IDs.** A wallet can register any 32-byte hex string as its "peer." `PostIndex` enforces that the *registered owner* indexes posts for that peer, but it does not prove the wallet actually controls the AXL ed25519 key. Production payments routed by peer would need a signature-over-nonce challenge before `register()` accepts the binding. The demo runs without this for now.
+- **Digest economics separate paid contributors from reserves.** The digest JSON carries a 70/15/10/5 allocation model for contributors, reviewers, treasury, and referrals. The hackathon `polis payout` command settles the contributor pool only; reviewer/referral reserve routing is intentionally not claimed as shipped.
 - **Treasury equals the deployer wallet on this testnet deployment.** `PaymentRouter` was deployed with `0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D` as the treasury, which is the same address `polis-agent.eth` resolves to and the same address that funds the demo. The 1% skim therefore flows back to the operator on this deployment. A production deployment would set `treasury` to an independent multisig.
 - **Digest compilation currently reads the local archive mirror.** `polis signal --storage 0g` uploads to 0G Storage and `polis archive get <0g://...>` can retrieve the same object back through the 0G indexer, but `polis digest` still compiles from `~/.polis/archive` for speed and deterministic replay.
 - `~/.polis/config.json` stores a plaintext private key. Operator-grade only; rotate via `polis init --force`.
 - `PaymentRouter` caps platform fees at 10% (demo uses 1%).
-- MCP write tools are opt-in. `polis_signal` and `polis_post` refuse to run unless `POLIS_MCP_ALLOW_WRITE=1` is set, because they can write local archives, upload to 0G, or index on-chain depending on operator config. `polis_payout` also refuses live transactions unless `POLIS_MCP_ALLOW_PAYOUT=1` is set.
-- The hosted Next.js demo returns a public testnet proof snapshot when it cannot read `~/.polis`. Local operator data still only serves on `localhost` by default; set `POLIS_WEB_LOCAL_READ_TOKEN` and pass `x-polis-demo-token` to expose it through a trusted tunnel.
+- MCP side-effect tools are opt-in. `polis_signal` and `polis_post` refuse to run unless `POLIS_MCP_ALLOW_WRITE=1` is set, because they can write local archives, upload to 0G, or index on-chain depending on operator config. `polis_digest` also refuses unless `POLIS_MCP_ALLOW_DIGEST=1` or write mode is enabled because it reads local archives and can spend LLM credits. `polis_payout` refuses live transactions unless `POLIS_MCP_ALLOW_PAYOUT=1` is set.
+- The hosted Next.js demo returns a public testnet proof snapshot when it cannot read `~/.polis`. Local operator data only serves automatically for localhost in non-production; set `POLIS_WEB_LOCAL_READ_TOKEN` and pass `x-polis-demo-token` to expose it through a trusted tunnel.
 - 0G Galileo testnet had Flow contract migrations that broke the legacy `@0glabs/0g-ts-sdk@0.3.x`. The repo source ships on the current `@0gfoundation/0g-storage-ts-sdk@1.2.8` whose Indexer auto-discovers Flow.
 - The reviewer agent's digest is general-interest commentary built from archived agent signals. It is not personalized financial, legal, tax, medical, or investment advice.
 
@@ -172,6 +188,6 @@ A judge with limited time should be able to confirm these four claims independen
 1. **There is a real npm install path** — `npm install -g polis-network` puts the bin on PATH for any operator. `npm view polis-network` confirms the published tarball.
 2. **There is a published MCP server** — `npx polis-mcp-server@latest --install` registers Polis as a tool provider in Claude Code, Claude Desktop, OpenCode, Codex, or OpenClaw. Tools enumerate over stdio JSON-RPC.
 3. **All three sponsor stacks are exercised, not name-checked** — AXL is the agent transport (real testnet mesh joined; broadcast txs visible), 0G is the verifiable archive (real `0g://` URI + upload tx), ENS is the routing identity (`polis-agent.eth` resolves on Sepolia with `com.polis.peer` text record). Each has a verifiable on-chain artifact in the tables above.
-4. **The economic loop closes on-chain** — `polis digest` produces a brief, Resend delivers it, `polis payout` distributes USDC through `PaymentRouter`, the treasury skim flows in the same call. The pinned tx hash above is real, even if the treasury wallet on this testnet deployment also belongs to the operator.
+4. **The contributor payment loop closes on-chain** — `polis digest` produces a brief, Resend delivers it, `polis payout` distributes the contributor pool through `PaymentRouter`, and the router treasury skim flows in the same call. The pinned tx hash above is real, even if the treasury wallet on this testnet deployment also belongs to the operator.
 
 We do not claim Polis is the *only* submission with these properties. We do claim every artifact in the proof tables is a real testnet/npm/ENS record a judge can verify from a fresh clone.

@@ -21,11 +21,19 @@ function withEnv<T>(patch: Record<string, string | undefined>, fn: () => T): T {
 }
 
 test("local-file gate allows localhost by default and rejects public hosts", () => {
-  withEnv({ POLIS_WEB_LOCAL_READ_TOKEN: undefined, POLIS_WEB_EXPOSE_LOCAL_FILES: undefined }, () => {
+  withEnv({ NODE_ENV: "test", POLIS_WEB_LOCAL_READ_TOKEN: undefined, POLIS_WEB_EXPOSE_LOCAL_FILES: undefined }, () => {
     assert.equal(canReadLocalFilesFromParts({ host: "localhost:3000" }), true);
     assert.equal(canReadLocalFilesFromParts({ host: "127.0.0.1:3000" }), true);
     assert.equal(canReadLocalFilesFromParts({ host: "[::1]:3000" }), true);
     assert.equal(canReadLocalFilesFromParts({ host: "polis-web.vercel.app" }), false);
+  });
+});
+
+test("local-file gate does not trust localhost Host headers in production", () => {
+  withEnv({ NODE_ENV: "production", POLIS_WEB_LOCAL_READ_TOKEN: undefined, POLIS_WEB_EXPOSE_LOCAL_FILES: undefined }, () => {
+    assert.equal(canReadLocalFilesFromParts({ host: "localhost:3000" }), false);
+    assert.equal(canReadLocalFilesFromParts({ host: "127.0.0.1:3000" }), false);
+    assert.equal(canReadLocalFilesFromParts({ host: "[::1]:3000" }), false);
   });
 });
 

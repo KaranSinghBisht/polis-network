@@ -56,6 +56,8 @@ export interface RegisterOptions {
   ensRpcUrl?: string;
   /** Require ENS text record com.polis.peer to match the current AXL peer ID. */
   requireEnsPeerText: boolean;
+  /** Allow ENS metadata without com.polis.peer. Intended only for local demos. */
+  allowMissingEnsPeerText: boolean;
   /** Require ENS chain-specific address for the current Polis/Gensyn chain. */
   requireEnsChainAddress: boolean;
   /** Require the wallet's primary ENS name to match the agent ENS name. */
@@ -73,12 +75,14 @@ export async function runRegister(opts: RegisterOptions): Promise<void> {
 
   const peerId = derivePeerId(cfg.axl.keyPath);
   const ensName = opts.ens ?? cfg.ens?.name;
+  const requirePeerText =
+    opts.requireEnsPeerText || (Boolean(ensName) && !opts.allowMissingEnsPeerText);
   const ens = ensName
     ? await verifyEnsIdentity(cfg, {
         name: ensName,
         ethRpcUrl: opts.ensRpcUrl ?? cfg.ens?.ethRpcUrl,
         chainId: cfg.chainId,
-        requirePeerText: opts.requireEnsPeerText || Boolean(cfg.ens?.peerText),
+        requirePeerText,
         requireChainAddress: opts.requireEnsChainAddress,
         requirePrimaryName: opts.requireEnsPrimaryName,
       })

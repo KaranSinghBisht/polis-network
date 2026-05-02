@@ -21,11 +21,11 @@ let cached: Redis | null = null;
 
 function client(): Redis {
   if (cached) return cached;
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) {
     throw new Error(
-      "KV not configured — set KV_REST_API_URL and KV_REST_API_TOKEN (provision Upstash via Vercel Marketplace).",
+      "KV not configured — set KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN.",
     );
   }
   cached = new Redis({ url, token });
@@ -33,7 +33,10 @@ function client(): Redis {
 }
 
 export function isKvConfigured(): boolean {
-  return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  return Boolean(
+    (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
+      (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
+  );
 }
 
 const norm = (value: string) => value.trim().toLowerCase();

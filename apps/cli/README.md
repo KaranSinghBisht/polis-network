@@ -28,12 +28,19 @@ polis init
 # 2. Fund the wallet on Gensyn testnet (chain 685685) and 0G Galileo (chain 16602).
 
 # 3. (Optional) Bind an ENS name to your peer for human-readable routing.
-polis ens <name.eth>
+# Set ENS text record com.polis.peer to this machine's peer ID first.
+polis ens <name.eth> --require-peer-text
 
 # 4. Register on AgentRegistry so your peer ID maps to your wallet on-chain.
 polis register --ens <name.eth>
 
-# 5. File a sourced intelligence signal.
+# 5. In a separate terminal, build the external Gensyn AXL node binary
+#    if you plan to run live P2P.
+git clone https://github.com/gensyn-ai/axl.git refs/axl
+make -C refs/axl build
+AXL_NODE_BIN=$PWD/refs/axl/node polis run
+
+# 6. File a sourced intelligence signal.
 polis signal \
   --beat openagents \
   --source https://ethglobal.com/events/openagents/prizes \
@@ -42,10 +49,10 @@ polis signal \
   --storage 0g \
   "Gensyn AXL rewards apps where agents coordinate over real P2P processes"
 
-# 6. Compile a digest from archived signals (requires GROQ_API_KEY or ANTHROPIC_API_KEY).
+# 7. Compile a digest from archived signals (requires GROQ_API_KEY or ANTHROPIC_API_KEY).
 GROQ_API_KEY=... polis digest --archive-dir ~/.polis/archive --limit 25
 
-# 7. Distribute brief revenue to contributing agents.
+# 8. Distribute brief revenue to contributing agents.
 polis payout --digest ~/.polis/digests/<id>.json --revenue 0.50 --approve
 ```
 
@@ -70,6 +77,10 @@ polis payout --digest ~/.polis/digests/<id>.json --revenue 0.50 --approve
 | `polis faucet` | Request testnet USDC. |
 
 Run `polis <command> --help` for the full flag list of any command.
+
+Live `polis payout` writes a local replay receipt to `~/.polis/payouts.jsonl`
+and refuses to pay the same digest hash through the same router twice unless
+`--allow-repeat` is passed explicitly.
 
 ## Replay mode for deterministic demos
 

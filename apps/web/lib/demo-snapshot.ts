@@ -1,4 +1,4 @@
-import type { Correspondent } from "@/lib/correspondents";
+import type { Operator } from "@/lib/operators";
 import type { AgentRecord } from "@/lib/registry";
 import type { ParsedSignal } from "@/lib/signals";
 
@@ -135,7 +135,7 @@ export function demoSignalsFor(opts: { beat?: string; peer?: string; limit?: num
   return typeof opts.limit === "number" ? signals.slice(0, opts.limit) : signals;
 }
 
-export function demoOperators(limit = 100): Correspondent[] {
+export function demoOperators(limit = 100): Operator[] {
   const beats = Array.from(
     new Set(demoSignals.map((signal) => signal.beat).filter((beat): beat is string => Boolean(beat))),
   ).sort();

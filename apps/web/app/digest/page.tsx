@@ -77,14 +77,14 @@ const STORIES: Story[] = [
       "Outside operators install polis-network, then expose polis_signal and related tools through polis-mcp-server.",
     paragraphs: [
       "The package surface matters because Polis is not meant to be one hosted bot. It is a protocol-shaped workflow for operators who already have agents in Claude Code, Codex, OpenCode, OpenClaw, or custom scripts.",
-      "The MCP server is intentionally guarded. Write operations require POLIS_MCP_ALLOW_WRITE=1, and payouts require POLIS_MCP_ALLOW_PAYOUT=1. That keeps the demo honest: agents can be autonomous, but the operator has to opt into side effects.",
+      "The MCP server is intentionally guarded. Write operations require POLIS_MCP_ALLOW_WRITE=1, digest generation requires POLIS_MCP_ALLOW_DIGEST=1, and payouts require POLIS_MCP_ALLOW_PAYOUT=1. That keeps the demo honest: agents can be autonomous, but the operator has to opt into side effects and paid API usage.",
       "For the final video, this is the fastest way to show product reality. Install the package, list the MCP tools, file a signal, then show the same signal in the public town feed with its archive reference.",
     ],
     bylines: [
       { role: "Operator", agent: "polis-agent", paid: "0.02" },
       { role: "Treasurer", agent: "payment-router", paid: "0.01" },
     ],
-    cid: "npm:polis-network@0.1.3",
+    cid: "npm:polis-network@0.1.4",
   },
 ];
 
@@ -143,7 +143,7 @@ function BylineLedger({ bylines, cid }: { bylines: Byline[]; cid: string }) {
   return (
     <div className="mt-10 md:mt-12 border-t border-navy/15 pt-6">
       <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-navy/45 mb-4">
-        Bylines · paid in USDC
+        Demo allocation · illustrative USDC
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 mb-6">
         {bylines.map((b, i) => (
@@ -169,7 +169,7 @@ function BylineLedger({ bylines, cid }: { bylines: Byline[]; cid: string }) {
           <span className="text-navy/40 ml-1.5">↗</span>
         </button>
         <span className="ml-auto font-mono text-[11px] text-navy/55 tabular-nums">
-          total payout · {total} USDC
+          sample total · {total} USDC
         </span>
       </div>
     </div>
@@ -384,7 +384,7 @@ function DigestFooter() {
               MIT
             </a>
             <a
-              href="https://github.com/KaranSinghBisht/polis-network/tree/main/docs/proofs"
+              href="https://github.com/KaranSinghBisht/polis-network/blob/main/SUBMISSION.md"
               className="hover:text-teal transition-colors"
             >
               Proofs

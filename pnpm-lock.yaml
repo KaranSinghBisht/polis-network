@@ -76,8 +76,8 @@ importers:
         specifier: ^1.27.1
         version: 1.29.0(zod@3.25.76)
       polis-network:
-        specifier: ^0.1.2
-        version: 0.1.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)
+        specifier: '>=0.1.3 <1'
+        version: 0.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -1543,8 +1543,8 @@ packages:
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
 
-  polis-network@0.1.2:
-    resolution: {integrity: sha512-ujXGftnrR6JQrDdAB2AQ16n43gSLnPulxPjFALYWl0PcsgssZch2FgGVUmcYYakbKlE3jvjWryPv/MONc968oQ==}
+  polis-network@0.1.3:
+    resolution: {integrity: sha512-iigrbKnRwb/NMskQ7nApxX/2hPNQ65y0voNh8DseipKLGkTCr+HpvW8sT0oXW45hI75TW4jhFoWLJKyct/MhzA==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -3198,7 +3198,7 @@ snapshots:
       mlly: 1.8.2
       pathe: 2.0.3
 
-  polis-network@0.1.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76):
+  polis-network@0.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76):
     dependencies:
       '@0gfoundation/0g-storage-ts-sdk': 1.2.8(bufferutil@4.1.0)(ethers@6.13.1(bufferutil@4.1.0)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
       '@anthropic-ai/sdk': 0.92.0(zod@3.25.76)

@@ -84,7 +84,7 @@ export function resolveAxlNodeBinary(explicit?: string): string {
   }
 
   throw new Error(
-    "AXL node binary not found. Build refs/axl with `make build`, then run with `AXL_NODE_BIN=/path/to/refs/axl/node polis run`.",
+    "AXL node binary not found. Build gensyn-ai/axl with `git clone https://github.com/gensyn-ai/axl.git refs/axl && make -C refs/axl build`, then run with `AXL_NODE_BIN=/path/to/refs/axl/node polis run`.",
   );
 }
 

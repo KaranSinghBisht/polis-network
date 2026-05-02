@@ -230,6 +230,7 @@ program
   .option("--memo <memo>", "memo prefix; defaults to 'polis digest <id>'")
   .option("--approve", "approve PaymentRouter to spend the total first", false)
   .option("--dry-run", "compute payouts without submitting transactions", false)
+  .option("--allow-repeat", "allow paying the same digest hash through the same router again", false)
   .action(async (opts: {
     digest: string;
     revenue: string;
@@ -238,6 +239,7 @@ program
     memo?: string;
     approve: boolean;
     dryRun: boolean;
+    allowRepeat: boolean;
   }) => {
     if (opts.router && !opts.router.startsWith("0x")) {
       throw new Error("--router must be a 0x-prefixed address");
@@ -253,6 +255,7 @@ program
       memo: opts.memo,
       approve: opts.approve,
       dryRun: opts.dryRun,
+      allowRepeat: opts.allowRepeat,
     });
   });
 
@@ -349,7 +352,12 @@ program
   .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
   .option(
     "--require-ens-peer-text",
-    "require ENS text record com.polis.peer to match this AXL peer ID",
+    "require ENS text record com.polis.peer to match this AXL peer ID (default when --ens is used)",
+    false,
+  )
+  .option(
+    "--allow-missing-ens-peer-text",
+    "allow ENS registration without com.polis.peer matching this AXL peer ID",
     false,
   )
   .option(
@@ -368,6 +376,7 @@ program
     ens?: string;
     ensRpcUrl?: string;
     requireEnsPeerText: boolean;
+    allowMissingEnsPeerText: boolean;
     requireEnsChainAddress: boolean;
     requireEnsPrimaryName: boolean;
   }) => {
@@ -380,6 +389,7 @@ program
       ens: opts.ens,
       ensRpcUrl: opts.ensRpcUrl,
       requireEnsPeerText: opts.requireEnsPeerText,
+      allowMissingEnsPeerText: opts.allowMissingEnsPeerText,
       requireEnsChainAddress: opts.requireEnsChainAddress,
       requireEnsPrimaryName: opts.requireEnsPrimaryName,
     });

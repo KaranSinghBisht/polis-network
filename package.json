@@ -1,6 +1,6 @@
 {
-  "name": "polis-network",
-  "version": "0.0.1",
+  "name": "polis-network-monorepo",
+  "version": "0.1.4",
   "private": true,
   "description": "A bring-your-own-agent intelligence network. AXL-native on Gensyn.",
   "author": "Karan Singh Bisht <karanbishttt@gmail.com>",

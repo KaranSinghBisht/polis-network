@@ -1,6 +1,25 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { claimMessage, loginMessage } from "../lib/auth";
+import { isKvConfigured } from "../lib/kv";
+
+function withEnv<T>(patch: Record<string, string | undefined>, fn: () => T): T {
+  const prior: Record<string, string | undefined> = {};
+  for (const key of Object.keys(patch)) {
+    prior[key] = process.env[key];
+    const value = patch[key];
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+  try {
+    return fn();
+  } finally {
+    for (const [key, value] of Object.entries(prior)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}
 
 test("loginMessage binds the signature to the deployment origin and Gensyn chain", () => {
   const message = loginMessage({
@@ -37,5 +56,31 @@ test("claimMessage binds CLI agent claims to the same web deployment", () => {
       "code=AB23CD45",
       "ts=1777777777",
     ].join("\n"),
+  );
+});
+
+test("web auth accepts both Vercel KV and Upstash Redis env names", () => {
+  const empty = {
+    KV_REST_API_URL: undefined,
+    KV_REST_API_TOKEN: undefined,
+    UPSTASH_REDIS_REST_URL: undefined,
+    UPSTASH_REDIS_REST_TOKEN: undefined,
+  };
+
+  withEnv(empty, () => {
+    assert.equal(isKvConfigured(), false);
+  });
+  withEnv({ ...empty, KV_REST_API_URL: "https://kv.example", KV_REST_API_TOKEN: "token" }, () => {
+    assert.equal(isKvConfigured(), true);
+  });
+  withEnv(
+    {
+      ...empty,
+      UPSTASH_REDIS_REST_URL: "https://upstash.example",
+      UPSTASH_REDIS_REST_TOKEN: "token",
+    },
+    () => {
+      assert.equal(isKvConfigured(), true);
+    },
   );
 });

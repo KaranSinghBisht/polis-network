@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { createHash } from "node:crypto";
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { formatUnits, parseUnits, zeroAddress } from "viem";
-import { readConfig, writeConfig, type PolisConfig } from "../config.js";
+import { ensurePolisDir, readConfig, writeConfig, type PolisConfig } from "../config.js";
 import { buildClients } from "../viem.js";
 
 const AGENT_REGISTRY_ABI = [
@@ -57,6 +58,7 @@ export interface PayoutOptions {
   memo?: string;
   approve: boolean;
   dryRun: boolean;
+  allowRepeat: boolean;
 }
 
 interface DigestEconomics {
@@ -84,6 +86,25 @@ interface PayoutPlanItem {
   signalCount: number;
 }
 
+interface PayoutReceipt {
+  key: string;
+  digestId: string;
+  digestHash: string;
+  chainId: number;
+  registry: `0x${string}`;
+  router: `0x${string}`;
+  revenueUsdc: string;
+  totalAmount: string;
+  paidAt: string;
+  receipts: Array<{
+    peer: string;
+    owner: `0x${string}`;
+    amount: string;
+    hash: `0x${string}`;
+    block: string;
+  }>;
+}
+
 export async function runPayout(opts: PayoutOptions): Promise<void> {
   const cfg = readConfig();
   const registryAddress = opts.registry ?? cfg.registryAddress;
@@ -96,6 +117,7 @@ export async function runPayout(opts: PayoutOptions): Promise<void> {
   }
 
   const digest = loadDigest(opts.digest);
+  const digestRef = digestFingerprint(opts.digest);
   const splits = digest.economics.splitBps;
   const splitSum = splits.contributors + splits.reviewers + splits.treasury + splits.referrals;
   if (splitSum !== 10000) {
@@ -119,11 +141,13 @@ export async function runPayout(opts: PayoutOptions): Promise<void> {
   console.log(`digest:    ${digest.id}`);
   console.log(`revenue:   ${formatUnits(revenue, 6)} USDC`);
   console.log(
-    `splits:    contributors ${splits.contributors / 100}% / reviewers ${splits.reviewers / 100}% / treasury ${splits.treasury / 100}% / referrals ${splits.referrals / 100}%`,
+    `splits:    contributor payout pool ${splits.contributors / 100}% / reviewer reserve ${splits.reviewers / 100}% / treasury reserve ${splits.treasury / 100}% / referral reserve ${splits.referrals / 100}%`,
   );
+  console.log("settles:  contributorShares only; other buckets are reserved for production routing");
   console.log(`registry:  ${registryAddress}`);
   console.log(`router:    ${routerAddress}`);
   console.log(`mode:      ${opts.dryRun ? "dry-run" : "live"}`);
+  console.log(`digest sha256: ${digestRef.sha256}`);
 
   const { account, publicClient, walletClient } = buildClients(cfg);
 
@@ -175,6 +199,34 @@ export async function runPayout(opts: PayoutOptions): Promise<void> {
     return;
   }
 
+  const replayKey = payoutReplayKey({
+    chainId: cfg.chainId,
+    router: routerAddress,
+    digestHash: digestRef.sha256,
+  });
+  if (!opts.allowRepeat && hasPayoutReceipt(replayKey)) {
+    throw new Error(
+      `digest ${digest.id} has already been paid through this router on chain ${cfg.chainId}. Pass --allow-repeat only if this is an intentional second distribution.`,
+    );
+  }
+  if (!opts.allowRepeat) {
+    const alreadyPaid = plan.filter((item) =>
+      hasPayoutReceipt(
+        payoutItemReplayKey({
+          chainId: cfg.chainId,
+          router: routerAddress,
+          digestHash: digestRef.sha256,
+          item,
+        }),
+      ),
+    );
+    if (alreadyPaid.length > 0) {
+      throw new Error(
+        `digest ${digest.id} has already paid ${alreadyPaid.map((item) => shortPeer(item.peer)).join(", ")} through this router. Pass --allow-repeat only if this is an intentional second distribution.`,
+      );
+    }
+  }
+
   console.log(`\npayer: ${account.address}`);
 
   if (opts.approve) {
@@ -215,6 +267,31 @@ export async function runPayout(opts: PayoutOptions): Promise<void> {
       hash,
       block: receipt.blockNumber,
     });
+    appendPayoutReceipt({
+      key: payoutItemReplayKey({
+        chainId: cfg.chainId,
+        router: routerAddress,
+        digestHash: digestRef.sha256,
+        item,
+      }),
+      digestId: digest.id,
+      digestHash: digestRef.sha256,
+      chainId: cfg.chainId,
+      registry: registryAddress,
+      router: routerAddress,
+      revenueUsdc: opts.revenue,
+      totalAmount: item.amount.toString(),
+      paidAt: new Date().toISOString(),
+      receipts: [
+        {
+          peer: item.peer,
+          owner: item.owner,
+          amount: item.amount.toString(),
+          hash,
+          block: receipt.blockNumber.toString(),
+        },
+      ],
+    });
   }
 
   console.log(`\ndone. ${receipts.length} payout${receipts.length === 1 ? "" : "s"} confirmed.`);
@@ -225,6 +302,25 @@ export async function runPayout(opts: PayoutOptions): Promise<void> {
   }
 
   persistRouter(cfg, routerAddress);
+  appendPayoutReceipt({
+    key: replayKey,
+    digestId: digest.id,
+    digestHash: digestRef.sha256,
+    chainId: cfg.chainId,
+    registry: registryAddress,
+    router: routerAddress,
+    revenueUsdc: opts.revenue,
+    totalAmount: totalAmount.toString(),
+    paidAt: new Date().toISOString(),
+    receipts: receipts.map((receipt) => ({
+      peer: receipt.peer,
+      owner: receipt.owner,
+      amount: receipt.amount.toString(),
+      hash: receipt.hash,
+      block: receipt.block.toString(),
+    })),
+  });
+  console.log("saved payout receipt to ~/.polis/payouts.jsonl");
 }
 
 export function loadDigest(path: string): DigestSummary {
@@ -306,4 +402,68 @@ function persistRouter(cfg: PolisConfig, addr: `0x${string}`): void {
   if (cfg.paymentRouterAddress === addr) return;
   writeConfig({ ...cfg, paymentRouterAddress: addr });
   console.log("saved PaymentRouter address to ~/.polis/config.json");
+}
+
+function digestFingerprint(path: string): { resolved: string; sha256: string } {
+  const resolved = resolve(path);
+  const raw = readFileSync(resolved);
+  return {
+    resolved,
+    sha256: createHash("sha256").update(raw).digest("hex"),
+  };
+}
+
+function payoutReplayKey({
+  chainId,
+  router,
+  digestHash,
+}: {
+  chainId: number;
+  router: `0x${string}`;
+  digestHash: string;
+}): string {
+  return `${chainId}:${router.toLowerCase()}:${digestHash}`;
+}
+
+function payoutItemReplayKey({
+  chainId,
+  router,
+  digestHash,
+  item,
+}: {
+  chainId: number;
+  router: `0x${string}`;
+  digestHash: string;
+  item: Pick<PayoutPlanItem, "peer" | "owner">;
+}): string {
+  return [
+    chainId,
+    router.toLowerCase(),
+    digestHash,
+    item.peer.toLowerCase(),
+    item.owner.toLowerCase(),
+  ].join(":");
+}
+
+function payoutLedgerPath(): string {
+  return join(ensurePolisDir(), "payouts.jsonl");
+}
+
+function hasPayoutReceipt(key: string): boolean {
+  const path = payoutLedgerPath();
+  if (!existsSync(path)) return false;
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const receipt = JSON.parse(line) as Partial<PayoutReceipt>;
+      if (receipt.key === key) return true;
+    } catch {
+      continue;
+    }
+  }
+  return false;
+}
+
+function appendPayoutReceipt(receipt: PayoutReceipt): void {
+  appendFileSync(payoutLedgerPath(), `${JSON.stringify(receipt)}\n`, { mode: 0o600 });
 }

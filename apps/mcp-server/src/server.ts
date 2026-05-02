@@ -1,5 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { homedir } from "node:os";
+import { resolve, sep } from "node:path";
 import { z } from "zod";
 import { spawnPolis } from "./spawn-polis.js";
 
@@ -19,6 +21,43 @@ function writeToolDisabled(tool: "polis_signal" | "polis_post") {
   return textResult(
     "",
     `${tool} is disabled by default because it can write archives, submit 0G uploads, or index posts on-chain depending on the operator config. Start the MCP server with POLIS_MCP_ALLOW_WRITE=1 to allow this tool.`,
+    false,
+  );
+}
+
+function digestToolEnabled(): boolean {
+  return process.env.POLIS_MCP_ALLOW_DIGEST === "1" || writeToolsEnabled();
+}
+
+function digestToolDisabled() {
+  return textResult(
+    "",
+    "polis_digest is disabled by default because it reads local archives and can spend LLM API credits. Start the MCP server with POLIS_MCP_ALLOW_DIGEST=1, or POLIS_MCP_ALLOW_WRITE=1, to allow this tool.",
+    false,
+  );
+}
+
+function arbitraryPathsEnabled(): boolean {
+  return process.env.POLIS_MCP_ALLOW_ARBITRARY_PATHS === "1";
+}
+
+function expandHomePath(path: string): string {
+  if (path === "~") return homedir();
+  if (path.startsWith("~/")) return resolve(homedir(), path.slice(2));
+  return path;
+}
+
+function isPolisPath(path: string): boolean {
+  const resolved = resolve(expandHomePath(path));
+  const polisRoot = resolve(homedir(), ".polis");
+  return resolved === polisRoot || resolved.startsWith(`${polisRoot}${sep}`);
+}
+
+function assertPolisPath(path: string, label: string) {
+  if (arbitraryPathsEnabled() || isPolisPath(path)) return null;
+  return textResult(
+    "",
+    `${label} must stay under ~/.polis when called through MCP. Set POLIS_MCP_ALLOW_ARBITRARY_PATHS=1 only if this MCP host is trusted to read/write arbitrary local paths.`,
     false,
   );
 }
@@ -97,7 +136,7 @@ export async function startServer(version: string): Promise<void> {
 
   server.tool(
     "polis_digest",
-    "Compile archived agent signals into a reviewer-agent intelligence brief. Requires GROQ_API_KEY or ANTHROPIC_API_KEY in the environment.",
+    "Compile archived agent signals into a reviewer-agent intelligence brief. Requires POLIS_MCP_ALLOW_DIGEST=1 plus GROQ_API_KEY or ANTHROPIC_API_KEY in the environment.",
     {
       topic: z.string().optional().describe("Filter archived signals by town topic."),
       archiveDir: z.string().optional().describe("Directory containing archived TownMessage JSON."),
@@ -106,10 +145,19 @@ export async function startServer(version: string): Promise<void> {
       generatedAt: z.string().optional().describe("Fixed digest timestamp (ISO) for replayable demos."),
     },
     async (args) => {
+      if (!digestToolEnabled()) return digestToolDisabled();
+      if (args.archiveDir) {
+        const blocked = assertPolisPath(args.archiveDir, "archiveDir");
+        if (blocked) return blocked;
+      }
+      if (args.outDir) {
+        const blocked = assertPolisPath(args.outDir, "outDir");
+        if (blocked) return blocked;
+      }
       const argv = ["digest"];
       if (args.topic) argv.push("--topic", args.topic);
-      if (args.archiveDir) argv.push("--archive-dir", args.archiveDir);
-      if (args.outDir) argv.push("--out-dir", args.outDir);
+      if (args.archiveDir) argv.push("--archive-dir", expandHomePath(args.archiveDir));
+      if (args.outDir) argv.push("--out-dir", expandHomePath(args.outDir));
       if (args.limit !== undefined) argv.push("--limit", String(args.limit));
       if (args.generatedAt) argv.push("--generated-at", args.generatedAt);
       const r = await spawnPolis(argv);
@@ -128,8 +176,11 @@ export async function startServer(version: string): Promise<void> {
       memo: z.string().optional().describe("Memo prefix; defaults to 'polis digest <id>'."),
       approve: z.boolean().optional().describe("Approve PaymentRouter for the total before paying."),
       dryRun: z.boolean().optional().describe("Compute payouts without submitting transactions."),
+      allowRepeat: z.boolean().optional().describe("Allow paying the same digest hash through the same router again."),
     },
     async (args) => {
+      const blocked = assertPolisPath(args.digest, "digest");
+      if (blocked) return blocked;
       if (!args.dryRun && process.env.POLIS_MCP_ALLOW_PAYOUT !== "1") {
         return textResult(
           "",
@@ -137,12 +188,13 @@ export async function startServer(version: string): Promise<void> {
           false,
         );
       }
-      const argv = ["payout", "--digest", args.digest, "--revenue", args.revenue];
+      const argv = ["payout", "--digest", expandHomePath(args.digest), "--revenue", args.revenue];
       if (args.router) argv.push("--router", args.router);
       if (args.registry) argv.push("--registry", args.registry);
       if (args.memo) argv.push("--memo", args.memo);
       if (args.approve) argv.push("--approve");
       if (args.dryRun) argv.push("--dry-run");
+      if (args.allowRepeat) argv.push("--allow-repeat");
       const r = await spawnPolis(argv);
       return textResult(r.stdout, r.stderr, r.ok);
     },
