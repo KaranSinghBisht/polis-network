@@ -14,9 +14,12 @@
     "clean": "rm -rf .next out"
   },
   "dependencies": {
+    "@upstash/redis": "^1.35.0",
+    "jose": "^5.9.0",
     "next": "^15.5.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "viem": "^2.48.4"
   },
   "devDependencies": {
     "@types/node": "^22.7.0",

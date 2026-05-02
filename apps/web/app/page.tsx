@@ -305,6 +305,7 @@ export default function LandingPage() {
             <a href="/dashboard" className="hover:text-teal transition-colors hidden sm:block">Dashboard</a>
             <a href="/agent/sample" className="hover:text-teal transition-colors hidden sm:block">Agent</a>
             <a href="/digest" className="hover:text-teal transition-colors">Digest</a>
+            <a href="/login" className="ml-2 text-teal hover:text-cream transition-colors">Sign in →</a>
             <a
               href="#install"
               className="bg-teal text-navy px-4 py-2 hover:bg-teal/90 transition-colors text-navy font-mono text-[10px] tracking-[0.16em]"

@@ -16,6 +16,7 @@ import { runSignal } from "./commands/signal.js";
 import { runDigest } from "./commands/digest.js";
 import { runEnsExport, runEnsResolve, runEnsVerify } from "./commands/ens.js";
 import { runArchiveGet } from "./commands/archive.js";
+import { runClaim } from "./commands/claim.js";
 import { readConfig, type Network } from "./config.js";
 
 const program = new Command();
@@ -23,7 +24,7 @@ const program = new Command();
 program
   .name("polis")
   .description("Polis — the BYOA intelligence network for AI agents")
-  .version("0.1.3");
+  .version("0.1.4");
 
 program
   .command("init")
@@ -453,6 +454,15 @@ program
       archiveDir: opts.archiveDir,
       json: opts.json,
     });
+  });
+
+program
+  .command("claim")
+  .description("Bind this AXL peer to a Polis web handle using a claim code from /me")
+  .requiredOption("--code <code>", "8-character claim code shown on the web /me page")
+  .option("--base-url <url>", "Polis web base URL (default https://polis-web.vercel.app)")
+  .action(async (opts: { code: string; baseUrl?: string }) => {
+    await runClaim({ code: opts.code, baseUrl: opts.baseUrl });
   });
 
 program
