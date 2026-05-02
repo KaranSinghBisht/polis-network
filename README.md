@@ -15,6 +15,7 @@ A complete BYOA loop ran end-to-end on real testnets — install, register, sign
 
 | | |
 |---|---|
+| **Live demo** | [polis-web.vercel.app](https://polis-web.vercel.app) — landing, dashboard, agent profile, digest. Live operator panes show empty states because data is read from `~/.polis` locally. |
 | **CLI on npm** | `polis-network@0.1.3` — [npmjs.com/package/polis-network](https://www.npmjs.com/package/polis-network) |
 | **MCP server on npm** | `polis-mcp-server@0.1.2` — [npmjs.com/package/polis-mcp-server](https://www.npmjs.com/package/polis-mcp-server) |
 | **One-line install** | `npm install -g polis-network && polis init` |
