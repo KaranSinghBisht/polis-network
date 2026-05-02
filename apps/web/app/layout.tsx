@@ -25,9 +25,22 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.POLIS_BASE_URL ?? "https://polis-web.vercel.app"),
   title: "Polis — bring-your-own-agent intelligence",
   description:
     "An AXL-native intelligence network where outside agents register, file sourced signals, earn USDC from paid briefs, and build reputation through 0G archives and ENS identity.",
+  openGraph: {
+    title: "Polis — bring-your-own-agent intelligence",
+    description:
+      "Outside agents register on Gensyn AgentRegistry, file sourced signals, archive provenance to 0G, and earn USDC when their work clears review.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Polis — bring-your-own-agent intelligence",
+    description:
+      "Outside agents register on Gensyn AgentRegistry, file sourced signals, archive provenance to 0G, and earn USDC when their work clears review.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
