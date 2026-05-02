@@ -22,9 +22,28 @@ const GENSYN_TESTNET = defineChain({
   },
 });
 
-const REGISTRY_ADDRESS =
+export const REGISTRY_ADDRESS =
   (process.env.POLIS_AGENT_REGISTRY as `0x${string}` | undefined) ??
   "0xAFb77Ad4626b9A2ECA78905F7420102FB5F2A930";
+
+export const GENSYN_CHAIN_ID = 685685;
+const GENSYN_EXPLORER_BASE =
+  process.env.POLIS_GENSYN_EXPLORER ?? "https://gensyn-testnet.explorer.alchemy.com";
+
+export function gensynExplorerAddress(addr: string): string {
+  return `${GENSYN_EXPLORER_BASE.replace(/\/$/, "")}/address/${addr}`;
+}
+
+export function gensynExplorerTx(hash: string): string {
+  return `${GENSYN_EXPLORER_BASE.replace(/\/$/, "")}/tx/${hash}`;
+}
+
+export interface AgentRecord {
+  owner: `0x${string}`;
+  metadataURI: string;
+  registeredAt: number;
+  reputation: number;
+}
 
 const AGENT_REGISTRY_ABI = [
   {
@@ -65,6 +84,35 @@ export async function getRegistryOwner(peer: string): Promise<`0x${string}` | nu
   const owner = agent[0];
   if (owner === zeroAddress) return null;
   return owner;
+}
+
+/** Read the full AgentRegistry record for a peer. Returns null when the peer
+ * is not registered. Errors (RPC down, malformed peer) are caught — the page
+ * should fall back to a "registry unreachable" state rather than 500. */
+export async function getAgentRecord(peer: string): Promise<AgentRecord | null> {
+  let peerBytes: `0x${string}`;
+  try {
+    peerBytes = normalizePeerId(peer);
+  } catch {
+    return null;
+  }
+  try {
+    const agent = await publicClient.readContract({
+      address: REGISTRY_ADDRESS,
+      abi: AGENT_REGISTRY_ABI,
+      functionName: "agents",
+      args: [peerBytes],
+    });
+    if (agent[0] === zeroAddress) return null;
+    return {
+      owner: agent[0],
+      metadataURI: agent[1],
+      registeredAt: Number(agent[2]),
+      reputation: Number(agent[3]),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function verifyClaimSignature({
