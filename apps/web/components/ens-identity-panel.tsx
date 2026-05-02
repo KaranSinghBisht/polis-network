@@ -9,6 +9,11 @@ interface ProofStep {
   detail?: string;
 }
 
+function demoTokenHeaders(): HeadersInit | undefined {
+  const token = new URLSearchParams(window.location.search).get("token");
+  return token ? { "x-polis-demo-token": token } : undefined;
+}
+
 interface EnsIdentity {
   generatedAt: string;
   ens: {
@@ -74,7 +79,7 @@ export function EnsIdentityPanel({ variant = "navy" }: PanelProps) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/ens/identity", { cache: "no-store" })
+    fetch("/api/ens/identity", { cache: "no-store", headers: demoTokenHeaders() })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((json: ApiResponse) => {
         if (!cancelled) setData(json);

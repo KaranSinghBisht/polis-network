@@ -13,11 +13,24 @@
  */
 
 export function canReadLocalFiles(request: Request): boolean {
+  return canReadLocalFilesFromParts({
+    host: request.headers.get("host"),
+    token: readRequestToken(request),
+  });
+}
+
+export function canReadLocalFilesFromParts({
+  host,
+  token: requestToken,
+}: {
+  host: string | null | undefined;
+  token?: string | null;
+}): boolean {
   const token = process.env.POLIS_WEB_LOCAL_READ_TOKEN;
-  if (token) return readRequestToken(request) === token;
+  if (token) return requestToken === token;
   if (process.env.POLIS_WEB_EXPOSE_LOCAL_FILES === "1") return true;
-  const host = hostnameOnly(request.headers.get("host"));
-  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  const hostname = hostnameOnly(host ?? null);
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
 }
 
 function readRequestToken(request: Request): string | undefined {

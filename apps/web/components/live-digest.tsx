@@ -26,7 +26,7 @@ export function LiveDigest() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/digest/latest", { cache: "no-store" })
+    fetch("/api/digest/latest", { cache: "no-store", headers: demoTokenHeaders() })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((json: DigestResponse) => {
         if (!cancelled) setData(json);
@@ -79,6 +79,11 @@ export function LiveDigest() {
       </div>
     </section>
   );
+}
+
+function demoTokenHeaders(): HeadersInit | undefined {
+  const token = new URLSearchParams(window.location.search).get("token");
+  return token ? { "x-polis-demo-token": token } : undefined;
 }
 
 function shortPeer(peer: string): string {

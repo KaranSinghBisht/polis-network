@@ -1,14 +1,15 @@
+import { headers } from "next/headers";
 import { Amphitheater } from "@/components/amphitheater";
 import { TownMesh } from "@/components/town-mesh";
 import { getAgentClaim, getUserByWallet, isKvConfigured } from "@/lib/kv";
-import { canReadLocalFiles } from "@/lib/local-files";
+import { canReadLocalFilesFromParts } from "@/lib/local-files";
 import { displayArchiveDir, loadArchivedSignals, type ParsedSignal } from "@/lib/signals";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: Promise<{ beat?: string }>;
+  searchParams: Promise<{ beat?: string; token?: string }>;
 }
 
 interface ContributorSummary {
@@ -18,11 +19,12 @@ interface ContributorSummary {
 }
 
 export default async function TownPage({ searchParams }: PageProps) {
-  const { beat } = await searchParams;
-  // Fake `request` only used to short-circuit the gate when called from a
-  // server component during render — server components have no http req.
-  // We bypass the gate here because page reads happen on the trusted host.
-  const all = loadArchivedSignals({ limit: 200 });
+  const [{ beat, token }, requestHeaders] = await Promise.all([searchParams, headers()]);
+  const canReadArchive = canReadLocalFilesFromParts({
+    host: requestHeaders.get("host") ?? requestHeaders.get("x-forwarded-host"),
+    token,
+  });
+  const all = canReadArchive ? loadArchivedSignals({ limit: 200 }) : [];
   const filtered = beat ? all.filter((s) => s.beat === beat) : all;
   const signals = filtered.slice(0, 50);
 
@@ -31,7 +33,7 @@ export default async function TownPage({ searchParams }: PageProps) {
 
   const totalSignals = all.length;
   const uniqueAgents = new Set(all.map((s) => s.from)).size;
-  const archiveDir = displayArchiveDir();
+  const archiveDir = canReadArchive ? displayArchiveDir() : "local file access disabled";
 
   return (
     <div className="min-h-screen bg-navy text-cream flex flex-col antialiased">
@@ -307,8 +309,14 @@ function EmptyFeed({ beat, archiveDir }: { beat: string | undefined; archiveDir:
         {beat ? `No signals on the ${beat} beat yet.` : "No signals filed yet."}
       </div>
       <p className="text-cream/55 text-[13.5px] leading-[1.6] max-w-md mx-auto mb-6">
-        Operators file intelligence with the <code className="text-teal/85">polis signal</code> command.
-        Signals land in <code className="text-cream/65">{archiveDir}</code> and propagate over the AXL mesh.
+        {archiveDir === "local file access disabled"
+          ? "The public deploy is in offline mode. Add the demo token on a trusted tunnel or run locally to read the operator archive."
+          : (
+              <>
+                Operators file intelligence with the <code className="text-teal/85">polis signal</code> command.
+                Signals land in <code className="text-cream/65">{archiveDir}</code> and propagate over the AXL mesh.
+              </>
+            )}
       </p>
       <pre className="inline-block text-left font-mono text-[12px] text-cream/85 bg-[#0E1B30] border border-cream/10 px-4 py-3 overflow-x-auto whitespace-pre">
 {`polis signal \\
@@ -365,7 +373,7 @@ function formatArchiveLink(uri: string): string {
     const tail = uri.slice("0g://".length);
     return `0g · ${tail.slice(0, 6)}…${tail.slice(-4)}`;
   }
-  if (uri.startsWith("local://")) return "local archive";
+  if (uri.startsWith("local://") || uri.startsWith("polis-local://")) return "local archive";
   if (uri.startsWith("http")) {
     try {
       const u = new URL(uri);
@@ -376,8 +384,3 @@ function formatArchiveLink(uri: string): string {
   }
   return "archive";
 }
-
-// Suppress unused warning for the gate import; the page reads from the trusted
-// host directly. The api route at /api/town/signals applies the gate when the
-// data is requested over HTTP.
-void canReadLocalFiles;

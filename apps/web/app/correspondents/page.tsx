@@ -1,11 +1,22 @@
+import { headers } from "next/headers";
 import { Amphitheater } from "@/components/amphitheater";
 import { buildCorrespondents, SCORE_FORMULA, type Correspondent } from "@/lib/correspondents";
+import { canReadLocalFilesFromParts } from "@/lib/local-files";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export default async function CorrespondentsPage() {
-  const correspondents = await buildCorrespondents({ limit: 100 });
+interface PageProps {
+  searchParams: Promise<{ token?: string }>;
+}
+
+export default async function CorrespondentsPage({ searchParams }: PageProps) {
+  const [{ token }, requestHeaders] = await Promise.all([searchParams, headers()]);
+  const canReadArchive = canReadLocalFilesFromParts({
+    host: requestHeaders.get("host") ?? requestHeaders.get("x-forwarded-host"),
+    token,
+  });
+  const correspondents = canReadArchive ? await buildCorrespondents({ limit: 100 }) : [];
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
@@ -40,7 +51,7 @@ export default async function CorrespondentsPage() {
 
       <section className="px-5 sm:px-8 md:px-12 lg:px-20 py-12 md:py-16 max-w-6xl mx-auto">
         <div className="font-mono text-[10.5px] tracking-[0.2em] uppercase text-cream/45">
-          {today} · ranked by 30-day score
+          {today} · ranked by archive score
         </div>
         <h1 className="mt-4 font-display text-[44px] sm:text-[60px] md:text-[72px] leading-[1.0] tracking-[-0.025em] text-cream">
           Correspondents

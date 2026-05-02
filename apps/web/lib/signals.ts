@@ -75,6 +75,7 @@ export function loadArchivedSignals(opts: LoadSignalsOptions = {}): ParsedSignal
       continue;
     }
     if (!isArchivedSignalRecord(parsed)) continue;
+    if (parsed.kind !== "signal") continue;
     if (opts.topic && parsed.topic !== opts.topic) continue;
     if (opts.peer && parsed.from !== opts.peer) continue;
     if (opts.sinceTs && parsed.ts < opts.sinceTs) continue;
@@ -103,7 +104,7 @@ export function parseSignal(record: ArchivedSignalRecord, id: string): ParsedSig
     topic: record.topic,
     from: record.from,
     content: record.content,
-    archiveUri: record.archiveUri,
+    archiveUri: record.archiveUri ?? localArchiveUri(id),
     archiveTxHash: record.archiveTxHash,
     beat:
       typeof top.beat === "string" && top.beat
@@ -118,6 +119,12 @@ export function parseSignal(record: ArchivedSignalRecord, id: string): ParsedSig
     confidence: typeof top.confidence === "string" ? top.confidence : meta.confidence,
     headline: meta.headline,
   };
+}
+
+function localArchiveUri(id: string): string | undefined {
+  return /^[0-9a-fA-F]{64}$/.test(id)
+    ? `polis-local://sha256/${id.toLowerCase()}`
+    : undefined;
 }
 
 export function isArchivedSignalRecord(value: unknown): value is ArchivedSignalRecord {

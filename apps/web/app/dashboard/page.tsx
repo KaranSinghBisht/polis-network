@@ -64,7 +64,7 @@ function useOperatorProfile() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let alive = true;
-    fetch("/api/operator/profile")
+    fetch("/api/operator/profile", { headers: demoTokenHeaders() })
       .then((r) => r.json())
       .then((d: { profile: OperatorProfile | null }) => {
         if (alive) setProfile(d.profile ?? null);
@@ -82,6 +82,11 @@ function useOperatorProfile() {
   return { profile, loading };
 }
 
+function demoTokenHeaders(): HeadersInit | undefined {
+  const token = new URLSearchParams(window.location.search).get("token");
+  return token ? { "x-polis-demo-token": token } : undefined;
+}
+
 function useOperatorPosts(peer: string | undefined, limit = 30) {
   const [posts, setPosts] = useState<PostEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +96,7 @@ function useOperatorPosts(peer: string | undefined, limit = 30) {
       return;
     }
     let alive = true;
-    fetch(`/api/operator/posts?peer=${peer}&limit=${limit}`)
+    fetch(`/api/operator/posts?peer=${peer}&limit=${limit}`, { headers: demoTokenHeaders() })
       .then((r) => r.json())
       .then((d: { posts: PostEntry[] }) => {
         if (alive) setPosts(d.posts ?? []);
@@ -119,7 +124,7 @@ function useOperatorDigests(peer: string | undefined) {
       return;
     }
     let alive = true;
-    fetch(`/api/operator/digests?peer=${peer}`)
+    fetch(`/api/operator/digests?peer=${peer}`, { headers: demoTokenHeaders() })
       .then((r) => r.json())
       .then((d: { digests: DigestSummary[]; totalShareBps?: number }) => {
         if (!alive) return;

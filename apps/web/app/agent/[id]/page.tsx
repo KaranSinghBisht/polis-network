@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { Amphitheater } from "@/components/amphitheater";
 import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 import { getAgentClaim, getUserByWallet, isKvConfigured } from "@/lib/kv";
+import { canReadLocalFilesFromParts } from "@/lib/local-files";
 import {
   AgentRecord,
   GENSYN_CHAIN_ID,
@@ -16,6 +18,7 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ token?: string }>;
 }
 
 interface AgentClaimSummary {
@@ -25,17 +28,21 @@ interface AgentClaimSummary {
   claimedAt: number;
 }
 
-export default async function AgentProfilePage({ params }: PageProps) {
-  const { id } = await params;
+export default async function AgentProfilePage({ params, searchParams }: PageProps) {
+  const [{ id }, { token }, requestHeaders] = await Promise.all([params, searchParams, headers()]);
   const peer = id.trim().toLowerCase();
   if (!/^[0-9a-f]{64}$/.test(peer)) {
     notFound();
   }
+  const canReadArchive = canReadLocalFilesFromParts({
+    host: requestHeaders.get("host") ?? requestHeaders.get("x-forwarded-host"),
+    token,
+  });
 
   const [record, claim, signals] = await Promise.all([
     getAgentRecord(peer),
     isKvConfigured() ? getAgentClaim(peer) : Promise.resolve(null),
-    Promise.resolve(loadArchivedSignals({ peer, limit: 12 })),
+    Promise.resolve(canReadArchive ? loadArchivedSignals({ peer, limit: 12 }) : []),
   ]);
 
   let claimSummary: AgentClaimSummary | null = null;

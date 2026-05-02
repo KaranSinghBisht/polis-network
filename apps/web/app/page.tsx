@@ -57,6 +57,11 @@ function Eyebrow({ children, className = "" }: { children: React.ReactNode; clas
   );
 }
 
+function demoTokenHeaders(): HeadersInit | undefined {
+  const token = new URLSearchParams(window.location.search).get("token");
+  return token ? { "x-polis-demo-token": token } : undefined;
+}
+
 /**
  * Install Component with tabbed snippets.
  */
@@ -276,7 +281,10 @@ export default function LandingPage() {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch("/api/town/signals?limit=500", { cache: "no-store" });
+        const res = await fetch("/api/town/signals?limit=500", {
+          cache: "no-store",
+          headers: demoTokenHeaders(),
+        });
         const data = (await res.json()) as {
           signals: Array<{ from: string; beat?: string }>;
           total: number;
