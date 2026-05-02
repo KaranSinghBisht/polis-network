@@ -1,10 +1,11 @@
 /**
- * Magic-link auth + JWT session helpers.
+ * SIWE wallet auth + JWT session helpers.
  *
- * - Magic-link tokens are random 32-byte url-safe strings stored in KV with
- *   a 15-minute TTL. Hitting `/auth/callback?token=…` consumes the token,
- *   resolves to an email, and sets a signed session cookie.
- * - The session cookie is an HS256 JWT (jose) with `{ email, iat, exp }`,
+ * - Login flow: POST /api/auth/nonce returns a random nonce; the browser signs
+ *   `loginMessage({ wallet, nonce, timestamp })` via personal_sign and POSTs
+ *   the signature to /api/auth/verify, which validates and sets the session
+ *   cookie.
+ * - The session cookie is an HS256 JWT (jose) with `{ wallet, iat, exp }`,
  *   signed by POLIS_AUTH_SECRET. Cookie is httpOnly + secure + sameSite=lax.
  */
 
@@ -21,8 +22,8 @@ function secretKey(): Uint8Array {
   return new TextEncoder().encode(raw);
 }
 
-export function generateMagicToken(): string {
-  return randomBytes(32).toString("base64url");
+export function generateLoginNonce(): string {
+  return randomBytes(16).toString("hex");
 }
 
 export function generateClaimCode(): string {
@@ -38,9 +39,9 @@ export function generateRequestId(): string {
   return randomUUID();
 }
 
-export async function createSessionToken(email: string): Promise<string> {
+export async function createSessionToken(wallet: `0x${string}`): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  return new SignJWT({ email })
+  return new SignJWT({ wallet: wallet.toLowerCase() })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt(now)
     .setExpirationTime(now + SESSION_TTL_SECONDS)
@@ -55,10 +56,19 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       issuer: "polis-web",
       audience: "polis-web",
     });
-    if (typeof payload.email !== "string" || typeof payload.iat !== "number" || typeof payload.exp !== "number") {
+    if (
+      typeof payload.wallet !== "string" ||
+      typeof payload.iat !== "number" ||
+      typeof payload.exp !== "number" ||
+      !/^0x[0-9a-f]{40}$/.test(payload.wallet)
+    ) {
       return null;
     }
-    return { email: payload.email, iat: payload.iat, exp: payload.exp };
+    return {
+      wallet: payload.wallet as `0x${string}`,
+      iat: payload.iat,
+      exp: payload.exp,
+    };
   } catch {
     return null;
   }
@@ -80,11 +90,30 @@ export function sessionMaxAge(): number {
 }
 
 /**
+ * Login message signed by the wallet. Human-readable so users can verify what
+ * they're authorizing in their wallet UI.
+ */
+export function loginMessage({
+  wallet,
+  nonce,
+  timestamp,
+}: {
+  wallet: `0x${string}`;
+  nonce: string;
+  timestamp: number;
+}): string {
+  return [
+    "polis:login:v1",
+    `wallet=${wallet.toLowerCase()}`,
+    `nonce=${nonce}`,
+    `ts=${timestamp}`,
+  ].join("\n");
+}
+
+export const LOGIN_FRESHNESS_SECONDS = 5 * 60;
+
+/**
  * Construct the signed-message body the CLI must sign to claim an agent.
- * Format intentionally human-readable so an operator can verify what's
- * being signed before approving. Email is intentionally NOT in the message:
- * the server resolves it from the claim code, which is the single source of
- * truth for the (code → email) mapping.
  */
 export function claimMessage({
   peer,

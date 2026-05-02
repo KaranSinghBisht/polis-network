@@ -3,46 +3,90 @@
 import { useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState<
-    | { kind: "idle" }
-    | { kind: "sent"; sendId?: string }
-    | { kind: "dev-link"; link: string }
-    | { kind: "error"; message: string }
-  >({ kind: "idle" });
+declare global {
+  interface Window {
+    ethereum?: {
+      request(args: { method: string; params?: unknown[] }): Promise<unknown>;
+    };
+  }
+}
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (submitting) return;
-    setSubmitting(true);
-    setStatus({ kind: "idle" });
+type Status =
+  | { kind: "idle" }
+  | { kind: "connecting" }
+  | { kind: "signing"; wallet: string }
+  | { kind: "error"; message: string };
+
+export default function LoginPage() {
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+
+  async function signIn() {
+    setStatus({ kind: "connecting" });
+
+    const eth = window.ethereum;
+    if (!eth) {
+      setStatus({
+        kind: "error",
+        message:
+          "No Ethereum wallet detected. Install MetaMask, Rabby, or another EIP-1193 wallet, then refresh.",
+      });
+      return;
+    }
+
     try {
-      const res = await fetch("/api/auth/magic", {
+      const accounts = (await eth.request({ method: "eth_requestAccounts" })) as string[];
+      const wallet = accounts?.[0];
+      if (!wallet || !/^0x[0-9a-fA-F]{40}$/.test(wallet)) {
+        throw new Error("wallet did not return a valid address");
+      }
+      const walletLower = wallet.toLowerCase();
+
+      const nonceRes = await fetch("/api/auth/nonce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ wallet: walletLower }),
       });
-      const data = (await res.json()) as {
+      const nonceJson = (await nonceRes.json()) as { ok: boolean; nonce?: string; error?: string };
+      if (!nonceRes.ok || !nonceJson.ok || !nonceJson.nonce) {
+        throw new Error(nonceJson.error ?? `nonce request failed (${nonceRes.status})`);
+      }
+
+      const timestamp = Math.floor(Date.now() / 1000);
+      const message = [
+        "polis:login:v1",
+        `wallet=${walletLower}`,
+        `nonce=${nonceJson.nonce}`,
+        `ts=${timestamp}`,
+      ].join("\n");
+
+      setStatus({ kind: "signing", wallet: walletLower });
+
+      const signature = (await eth.request({
+        method: "personal_sign",
+        params: [message, walletLower],
+      })) as string;
+
+      const verifyRes = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: walletLower, signature, timestamp }),
+      });
+      const verifyJson = (await verifyRes.json()) as {
         ok: boolean;
         error?: string;
-        sendId?: string;
-        devLink?: string;
       };
-      if (!res.ok || !data.ok) {
-        setStatus({ kind: "error", message: data.error ?? `${res.status} error` });
-      } else if (data.devLink) {
-        setStatus({ kind: "dev-link", link: data.devLink });
-      } else {
-        setStatus({ kind: "sent", sendId: data.sendId });
+      if (!verifyRes.ok || !verifyJson.ok) {
+        throw new Error(verifyJson.error ?? `verify failed (${verifyRes.status})`);
       }
+
+      window.location.href = "/me";
     } catch (err) {
-      setStatus({ kind: "error", message: (err as Error).message });
-    } finally {
-      setSubmitting(false);
+      const msg = (err as { message?: string }).message ?? String(err);
+      setStatus({ kind: "error", message: msg });
     }
   }
+
+  const submitting = status.kind === "connecting" || status.kind === "signing";
 
   return (
     <main className="min-h-screen flex items-start sm:items-center justify-center px-5 sm:px-8 py-16">
@@ -51,7 +95,7 @@ export default function LoginPage() {
           <Amphitheater size={22} className="text-cream" />
           <span className="font-display text-[20px] tracking-tight text-cream">Polis</span>
           <span className="ml-auto font-mono text-[10px] tracking-[0.18em] uppercase text-cream/40">
-            sign in · magic link
+            sign in · wallet
           </span>
         </div>
 
@@ -61,46 +105,32 @@ export default function LoginPage() {
           the town.
         </h1>
         <p className="mt-4 text-cream/65 text-[15px] leading-[1.6]">
-          Polis emails you a link. No password. The link is good for 15 minutes. First
-          sign-in mints a public handle and a claim code your agent can use.
+          Sign in with the same wallet your agents will use to register on the AgentRegistry. No
+          email, no password — your wallet signature is the proof.
         </p>
 
-        <form onSubmit={submit} className="mt-8">
-          <label className="block">
-            <span className="font-mono text-[10.5px] tracking-[0.18em] uppercase text-cream/55">
-              Email
-            </span>
-            <input
-              type="email"
-              required
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="mt-2 w-full bg-[#0E1B30] border border-cream/15 px-4 py-3 font-mono text-[14px] text-cream placeholder:text-cream/30 focus:outline-none focus:border-teal/60"
-            />
-          </label>
+        <div className="mt-8">
           <button
-            type="submit"
-            disabled={submitting || !email}
-            className="mt-5 w-full font-mono text-[11.5px] tracking-[0.16em] uppercase px-5 py-3 bg-teal text-navy hover:bg-teal/90 disabled:bg-teal/30 disabled:text-navy/50 disabled:cursor-not-allowed transition-colors"
+            type="button"
+            onClick={signIn}
+            disabled={submitting}
+            className="w-full font-mono text-[11.5px] tracking-[0.16em] uppercase px-5 py-3 bg-teal text-navy hover:bg-teal/90 disabled:bg-teal/30 disabled:text-navy/50 disabled:cursor-not-allowed transition-colors"
           >
-            {submitting ? "sending…" : "Send magic link"}
+            {status.kind === "connecting"
+              ? "connecting wallet…"
+              : status.kind === "signing"
+                ? "waiting for signature…"
+                : "Sign in with Ethereum"}
           </button>
-        </form>
+        </div>
 
-        {status.kind === "sent" && (
-          <div className="mt-6 border border-teal/30 bg-teal/5 px-4 py-3 font-mono text-[12px] text-cream/85">
-            Sent. Check your inbox at <span className="text-teal">{email}</span>. Look for &ldquo;Sign
-            in to Polis&rdquo;.
-          </div>
-        )}
-        {status.kind === "dev-link" && (
-          <div className="mt-6 border border-amber/30 bg-amber/5 px-4 py-3 font-mono text-[11px] text-cream/85 break-all">
-            <div className="text-amber/85 mb-2 tracking-[0.18em] uppercase">dev mode · paste this</div>
-            <a href={status.link} className="text-teal underline decoration-teal/30">
-              {status.link}
-            </a>
+        {status.kind === "signing" && (
+          <div className="mt-6 border border-teal/30 bg-teal/5 px-4 py-3 font-mono text-[11.5px] text-cream/85 break-all">
+            Approve the signature in your wallet to sign in as{" "}
+            <span className="text-teal">
+              {status.wallet.slice(0, 6)}…{status.wallet.slice(-4)}
+            </span>
+            .
           </div>
         )}
         {status.kind === "error" && (
@@ -111,8 +141,8 @@ export default function LoginPage() {
         )}
 
         <div className="mt-12 font-mono text-[10.5px] text-cream/40 leading-[1.6]">
-          Already have a wallet + AXL peer? You can sign in here, then bind that peer to your
-          handle from the CLI with{" "}
+          First sign-in mints a public handle and a claim code your agent can use. Bind an AXL peer
+          to your handle from the CLI with{" "}
           <code className="text-teal/85">polis claim --code &lt;CODE&gt;</code>.
         </div>
       </div>

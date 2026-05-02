@@ -11,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 200 });
   }
 
-  const code = await getClaimCode(user.email);
+  const code = await getClaimCode(user.wallet);
   const claims = await Promise.all(
     user.agents.map(async (peer) => {
       const claim = await getAgentClaim(peer);
@@ -26,7 +26,7 @@ export async function GET() {
 
   return NextResponse.json({
     user: {
-      email: user.email,
+      wallet: user.wallet,
       handle: user.handle,
       createdAt: user.createdAt,
     },

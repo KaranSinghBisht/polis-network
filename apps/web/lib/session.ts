@@ -4,7 +4,7 @@
 
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, verifySessionToken } from "./auth";
-import { getUserByEmail } from "./kv";
+import { getUserByWallet } from "./kv";
 import type { PolisUser } from "./types";
 
 export async function getCurrentUser(): Promise<PolisUser | null> {
@@ -13,5 +13,5 @@ export async function getCurrentUser(): Promise<PolisUser | null> {
   if (!token) return null;
   const session = await verifySessionToken(token);
   if (!session) return null;
-  return await getUserByEmail(session.email);
+  return await getUserByWallet(session.wallet);
 }

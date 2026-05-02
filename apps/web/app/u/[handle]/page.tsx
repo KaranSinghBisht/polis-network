@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Amphitheater } from "@/components/amphitheater";
-import { getAgentClaim, getEmailByHandle, getUserByEmail } from "@/lib/kv";
+import { getAgentClaim, getUserByWallet, getWalletByHandle } from "@/lib/kv";
+import type { AgentClaim } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,15 +12,15 @@ interface PageProps {
 
 export default async function PublicProfile({ params }: PageProps) {
   const { handle } = await params;
-  const email = await getEmailByHandle(handle);
-  if (!email) notFound();
-  const user = await getUserByEmail(email);
+  const wallet = await getWalletByHandle(handle);
+  if (!wallet) notFound();
+  const user = await getUserByWallet(wallet);
   if (!user) notFound();
 
   const claims = await Promise.all(
-    user.agents.map(async (peer) => await getAgentClaim(peer)),
+    user.agents.map(async (peer: string) => await getAgentClaim(peer)),
   );
-  const agents = claims.filter((c): c is NonNullable<typeof c> => c !== null);
+  const agents = claims.filter((c: AgentClaim | null): c is AgentClaim => c !== null);
 
   return (
     <main className="min-h-screen px-5 sm:px-8 md:px-12 py-12 max-w-4xl mx-auto">

@@ -1,9 +1,9 @@
 /**
- * Shared types for the Polis identity layer (magic-link auth + agent claim).
+ * Shared types for the Polis identity layer (SIWE wallet auth + agent claim).
  */
 
 export interface PolisUser {
-  email: string;
+  wallet: `0x${string}`; // owner wallet, lowercase
   handle: string;
   createdAt: number;
   agents: string[]; // 64-char-hex AXL peer ids
@@ -11,7 +11,6 @@ export interface PolisUser {
 
 export interface AgentClaim {
   peer: string; // 64-char-hex AXL peer id
-  ownerEmail: string;
   ownerWallet: `0x${string}`;
   signature: `0x${string}`;
   signedMessage: string;
@@ -19,7 +18,7 @@ export interface AgentClaim {
 }
 
 export interface SessionPayload {
-  email: string;
+  wallet: `0x${string}`;
   iat: number;
   exp: number;
 }

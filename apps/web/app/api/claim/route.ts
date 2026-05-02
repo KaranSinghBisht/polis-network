@@ -4,7 +4,7 @@ import {
   claimMessage,
 } from "@/lib/auth";
 import {
-  getEmailByClaimCode,
+  getWalletByClaimCode,
   isKvConfigured,
   setAgentClaim,
 } from "@/lib/kv";
@@ -67,9 +67,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: (err as Error).message }, { status: 400 });
   }
 
-  const email = await getEmailByClaimCode(code);
-  if (!email) {
+  const ownerWalletFromCode = await getWalletByClaimCode(code);
+  if (!ownerWalletFromCode) {
     return NextResponse.json({ ok: false, error: "claim code unknown or revoked" }, { status: 404 });
+  }
+  if (ownerWalletFromCode.toLowerCase() !== signerAddress.toLowerCase()) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `signerAddress ${signerAddress} does not match the wallet that owns this claim code`,
+      },
+      { status: 401 },
+    );
   }
 
   const message = claimMessage({ peer: normalizedPeer, code, timestamp });
@@ -101,7 +110,6 @@ export async function POST(request: Request) {
 
   const claim: AgentClaim = {
     peer: normalizedPeer.slice(2), // store as 64-char hex without 0x
-    ownerEmail: email,
     ownerWallet: signerAddress,
     signature,
     signedMessage: message,
@@ -113,7 +121,6 @@ export async function POST(request: Request) {
     ok: true,
     claim: {
       peer: claim.peer,
-      ownerEmail: claim.ownerEmail,
       ownerWallet: claim.ownerWallet,
       claimedAt: claim.claimedAt,
     },

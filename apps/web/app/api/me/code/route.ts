@@ -12,6 +12,6 @@ export async function POST() {
     return NextResponse.json({ ok: false, error: "not signed in" }, { status: 401 });
   }
   const code = generateClaimCode();
-  await setClaimCode(user.email, code);
+  await setClaimCode(user.wallet, code);
   return NextResponse.json({ ok: true, code });
 }

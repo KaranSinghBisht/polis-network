@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
 
 interface MeResponse {
-  user: { email: string; handle: string; createdAt: number } | null;
+  user: { wallet: string; handle: string; createdAt: number } | null;
   claimCode?: string | null;
   agents?: Array<{ peer: string; ownerWallet: string; claimedAt: number }>;
 }
@@ -14,6 +14,7 @@ export default function MePage() {
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [walletCopied, setWalletCopied] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -54,6 +55,16 @@ export default function MePage() {
     setTimeout(() => setCopied(false), 1200);
   }
 
+  function copyWallet(wallet: string) {
+    try {
+      navigator.clipboard.writeText(wallet);
+    } catch {
+      /* ignore */
+    }
+    setWalletCopied(true);
+    setTimeout(() => setWalletCopied(false), 1200);
+  }
+
   if (loading || !data || !data.user) {
     return (
       <main className="min-h-screen flex items-center justify-center font-mono text-[11px] text-cream/45">
@@ -87,7 +98,15 @@ export default function MePage() {
         <h1 className="mt-3 font-display text-[40px] sm:text-[52px] leading-[1.02] tracking-[-0.02em] text-cream">
           {user.handle}
         </h1>
-        <div className="mt-3 font-mono text-[12px] text-cream/55">{user.email}</div>
+        <div className="mt-3 flex items-center gap-2 font-mono text-[12px] text-cream/55">
+          <span className="text-cream/85 break-all">{user.wallet}</span>
+          <button
+            onClick={() => copyWallet(user.wallet)}
+            className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/40 hover:text-teal transition-colors"
+          >
+            {walletCopied ? "copied" : "copy"}
+          </button>
+        </div>
         <div className="mt-1 font-mono text-[10.5px] text-cream/35">
           handle minted {new Date(user.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })} · public profile{" "}
           <a href={`/u/${user.handle}`} className="text-teal hover:underline">
