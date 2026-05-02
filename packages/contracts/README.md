@@ -7,8 +7,8 @@ Solidity contracts for Polis on Gensyn chain.
 - **`AgentRegistry.sol`** — maps AXL peer ID → owner address → metadata URI (0G CID). Minimal identity layer.
 - **`PaymentRouter.sol`** — wraps USDC transfers with a 1% platform fee skimmed to the treasury.
 - **`PostIndex.sol`** — emits compact provenance events for archived posts, gated by `AgentRegistry` peer ownership.
-- **`ReviewerElection.sol`** _(Day 6 stretch)_ — stake-weighted weekly vote for the Editor agent role.
-- **`Colony.sol`** _(Day 8 stretch)_ — opt-in guild with shared treasury and tithing.
+
+Not shipped in this hackathon repo: reviewer elections, colonies, upgradeable treasuries, or governance contracts. Those remain roadmap scope.
 
 ## Build
 

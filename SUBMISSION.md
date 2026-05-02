@@ -10,7 +10,7 @@ Repo: https://github.com/KaranSinghBisht/polis-network
 | Sponsor | Track fit | Load-bearing proof |
 |---|---|---|
 | **Gensyn** | Best Application of AXL | `polis run` joins the live AXL testnet mesh; `polis signal` / `polis post` / `polis pay` route over AXL `/send` and `/recv`; `AgentRegistry`, `PaymentRouter`, `PostIndex` are deployed and exercised on Gensyn chain `685685`. |
-| **0G** | Autonomous Agents, Swarms & iNFT Innovations | `polis signal --storage 0g` archives a real `TownMessage` to 0G Storage on Galileo (chain `16602`) via `@0gfoundation/0g-storage-ts-sdk@1.2.8`; `PostIndex` anchors the resulting `0g://` URI on Gensyn. |
+| **0G** | Best Agent Framework, Tooling & Core Extensions | Polis is framework/tooling for bring-your-own agents: CLI, MCP server, storage adapter, and working reference agents. `polis signal --storage 0g` archives a real `TownMessage` to 0G Storage on Galileo (chain `16602`) via `@0gfoundation/0g-storage-ts-sdk@1.2.8`; `PostIndex` anchors the resulting `0g://` URI on Gensyn. |
 | **ENS** | Best ENS Integration for AI Agents / Creative ENS | `polis-agent.eth` (Sepolia) is the canonical demo identity. Its address record points at the Polis main wallet, `com.polis.peer` text record points at the AXL peer, and `polis register --ens` writes `ens://polis-agent.eth?peer=…` as the AgentRegistry metadataURI. |
 
 Not currently targeted: Uniswap and KeeperHub. Do not imply they are integrated unless separate working code lands.
@@ -21,8 +21,8 @@ Not currently targeted: Uniswap and KeeperHub. Do not imply they are integrated 
 
 | Channel | Artifact |
 |---|---|
-| npm — CLI | [`polis-network@0.1.2`](https://www.npmjs.com/package/polis-network) |
-| npm — MCP server | [`polis-mcp-server@0.1.1`](https://www.npmjs.com/package/polis-mcp-server) |
+| npm — CLI | [`polis-network@0.1.3`](https://www.npmjs.com/package/polis-network) |
+| npm — MCP server | [`polis-mcp-server@0.1.2`](https://www.npmjs.com/package/polis-mcp-server) |
 
 ### Gensyn (chain `685685`)
 
@@ -73,7 +73,7 @@ Migration note: `@0glabs/0g-ts-sdk@0.3.x` hardcodes a deprecated Flow contract t
 | `description` | `Polis BYOA agent — files sourced intelligence over Gensyn AXL.` |
 | `url` | `https://github.com/KaranSinghBisht/polis-network` |
 | Records-update tx | `0xb5927e710ff4ca87ad804aa747f348e28d3d6a9442f7a6295e3eb6917cd17e60` (block 10771174) |
-| CLI proof chain | 4/4 checks `ok: true` (wallet match, peer text match, registry owner match, 0G archive present) |
+| CLI proof chain | Demo-operator proof snapshot reported 4/4 checks `ok: true` (wallet match, peer text match, registry owner match, 0G archive present). The ENS/wallet/peer checks are public; the archive-present check reads the local demo archive mirror. |
 
 The full proof JSON is at `~/.polis/ens-proof.json` after running `polis ens-export polis-agent.eth --eth-rpc-url https://ethereum-sepolia-rpc.publicnode.com`. The web demo's `/api/ens/identity` route surfaces it automatically.
 
@@ -159,7 +159,7 @@ These are the things a hostile reader would catch on close inspection. Calling t
 - **Digest compilation currently reads the local archive mirror.** `polis signal --storage 0g` uploads to 0G Storage and `polis archive get <0g://...>` can retrieve the same object back through the 0G indexer, but `polis digest` still compiles from `~/.polis/archive` for speed and deterministic replay.
 - `~/.polis/config.json` stores a plaintext private key. Operator-grade only; rotate via `polis init --force`.
 - `PaymentRouter` caps platform fees at 10% (demo uses 1%).
-- The MCP server gates live `polis_payout` transactions behind `POLIS_MCP_ALLOW_PAYOUT=1` so an autonomous agent cannot drain the operator wallet by accident. Other write tools (`polis_signal`, `polis_post`, `polis_payout` dry-run) consume gas freely; an agent loop should be cost-budgeted accordingly.
+- MCP write tools are opt-in. `polis_signal` and `polis_post` refuse to run unless `POLIS_MCP_ALLOW_WRITE=1` is set, because they can write local archives, upload to 0G, or index on-chain depending on operator config. `polis_payout` also refuses live transactions unless `POLIS_MCP_ALLOW_PAYOUT=1` is set.
 - The local Next.js demo's `/api/operator/*` + `/api/digest/*` + `/api/ens/*` routes only serve `localhost` by default. Set `POLIS_WEB_LOCAL_READ_TOKEN` and pass `x-polis-demo-token` to expose them through a tunnel.
 - 0G Galileo testnet had Flow contract migrations that broke the legacy `@0glabs/0g-ts-sdk@0.3.x`. The repo source ships on the current `@0gfoundation/0g-storage-ts-sdk@1.2.8` whose Indexer auto-discovers Flow.
 - The reviewer agent's digest is general-interest commentary built from archived agent signals. It is not personalized financial, legal, tax, medical, or investment advice.
