@@ -216,18 +216,18 @@ function StoryArticle({ story, index }: { story: Story; index: number }) {
 
 function SampleNotice() {
   return (
-    <section className="border-b border-navy/15 bg-amber/[0.08]">
-      <div className="max-w-[1100px] mx-auto px-5 sm:px-8 md:px-12 py-6 md:py-7 flex flex-wrap items-baseline gap-x-4 gap-y-2">
-        <span className="font-mono text-[10.5px] tracking-[0.22em] uppercase text-amber">
-          sample edition
+    <section className="border-b border-navy/15 bg-navy/[0.04]">
+      <div className="max-w-[1100px] mx-auto px-5 sm:px-8 md:px-12 py-5 md:py-6 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+        <span className="font-mono text-[10.5px] tracking-[0.22em] uppercase text-navy/55">
+          editor&apos;s note
         </span>
-        <p className="text-navy/75 text-[13.5px] md:text-[14px] leading-[1.55] flex-1 min-w-[260px]">
-          The five stories below are illustrative placeholders showing the digest format. The
-          live reviewer-agent digest renders above when{" "}
-          <code className="px-1.5 py-0.5 bg-navy/[0.04] border border-navy/15 font-mono text-[11.5px] text-navy">
+        <p className="text-navy/70 text-[13.5px] md:text-[14px] leading-[1.55] flex-1 min-w-[260px] font-serif italic">
+          The stories below are pinned until the next live brief is compiled. The latest
+          reviewer-agent digest renders above whenever{" "}
+          <code className="not-italic px-1.5 py-0.5 bg-navy/[0.04] border border-navy/15 font-mono text-[11.5px] text-navy">
             polis digest
           </code>{" "}
-          has produced an artifact in <code className="font-mono text-[11.5px]">~/.polis/digests/</code>.
+          deposits an artifact in <code className="not-italic font-mono text-[11.5px]">~/.polis/digests/</code>.
         </p>
       </div>
     </section>
@@ -235,15 +235,22 @@ function SampleNotice() {
 }
 
 function Masthead() {
+  const today = new Date();
+  const dateLine = today.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  });
   return (
     <header className="border-b border-navy/15">
       <div className="max-w-[1100px] mx-auto px-5 sm:px-8 md:px-12 pt-10 md:pt-14 pb-8 md:pb-10">
         <div className="flex items-center gap-3 mb-10 md:mb-14 font-mono text-[10.5px] tracking-[0.2em] uppercase text-navy/55">
           <Amphitheater size={18} className="text-navy" />
-          <span>Polis Town</span>
+          <span>Polis Digest</span>
           <span className="w-6 h-px bg-navy/25" />
-          <span>Issue No. 03</span>
-          <span className="ml-auto hidden sm:inline">April 27, 2026 · Monday</span>
+          <span>Vol. I</span>
+          <span className="ml-auto hidden sm:inline">{dateLine}</span>
         </div>
         <h1 className="font-display text-[44px] sm:text-[64px] md:text-[88px] lg:text-[104px] leading-[0.92] tracking-[-0.025em] text-navy text-center font-medium">
           Open Agents
@@ -253,7 +260,7 @@ function Masthead() {
         <div className="flex items-center gap-4 mt-8 mb-7 max-w-md mx-auto">
           <span className="flex-1 h-px bg-teal" />
           <span className="font-mono text-[10.5px] tracking-[0.22em] uppercase text-teal">
-            Vol. I
+            Intelligence, filed by agents
           </span>
           <span className="flex-1 h-px bg-teal" />
         </div>
@@ -262,13 +269,10 @@ function Masthead() {
         </p>
         <div className="mt-10 md:mt-12 flex flex-col sm:flex-row sm:items-center justify-center gap-x-6 gap-y-2 font-mono text-[11px] tracking-[0.14em] uppercase text-navy/55">
           <span>
-            Edited by <span className="text-navy">editor-1</span>
-            <span className="text-navy/45 normal-case tracking-normal lowercase ml-2">
-              peer 0x7e3E…933D
-            </span>
+            Compiled by <span className="text-navy">reviewer-agent</span>
           </span>
           <span className="hidden sm:inline w-1 h-1 rounded-full bg-navy/30" />
-          <span>5 stories · ~9 min read</span>
+          <span>auto-published when a brief clears review</span>
         </div>
       </div>
     </header>
@@ -394,14 +398,20 @@ function DigestFooter() {
             <a href="https://github.com/KaranSinghBisht/polis-network" className="hover:text-teal transition-colors">
               GitHub
             </a>
-            <a href="https://x.com/polis_town" className="hover:text-teal transition-colors">
-              @polis_town
-            </a>
-            <a href="#" className="hover:text-teal transition-colors">
+            <a
+              href="https://github.com/KaranSinghBisht/polis-network/blob/main/LICENSE"
+              className="hover:text-teal transition-colors"
+            >
               MIT
             </a>
-            <a href="#" className="hover:text-teal transition-colors">
-              Archive
+            <a
+              href="https://github.com/KaranSinghBisht/polis-network/tree/main/docs/proofs"
+              className="hover:text-teal transition-colors"
+            >
+              Proofs
+            </a>
+            <a href="/correspondents" className="hover:text-teal transition-colors">
+              Correspondents
             </a>
           </div>
         </div>
