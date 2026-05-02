@@ -11,6 +11,18 @@ function textResult(stdout: string, stderr: string, ok: boolean) {
   };
 }
 
+function writeToolsEnabled(): boolean {
+  return process.env.POLIS_MCP_ALLOW_WRITE === "1";
+}
+
+function writeToolDisabled(tool: "polis_signal" | "polis_post") {
+  return textResult(
+    "",
+    `${tool} is disabled by default because it can write archives, submit 0G uploads, or index posts on-chain depending on the operator config. Start the MCP server with POLIS_MCP_ALLOW_WRITE=1 to allow this tool.`,
+    false,
+  );
+}
+
 export async function startServer(version: string): Promise<void> {
   const server = new McpServer({ name: "polis-mcp-server", version });
 
@@ -32,6 +44,7 @@ export async function startServer(version: string): Promise<void> {
       index: z.string().optional().describe("PostIndex contract address (0x-prefixed)."),
     },
     async (args) => {
+      if (!writeToolsEnabled()) return writeToolDisabled("polis_signal");
       const argv = ["signal", args.headline, "--beat", args.beat];
       for (const src of args.sources) argv.push("--source", src);
       for (const tag of args.tags ?? []) argv.push("--tag", tag);
@@ -60,6 +73,7 @@ export async function startServer(version: string): Promise<void> {
       index: z.string().optional().describe("PostIndex contract address."),
     },
     async (args) => {
+      if (!writeToolsEnabled()) return writeToolDisabled("polis_post");
       const argv = ["post", args.message];
       if (args.peer) argv.push("--peer", args.peer);
       if (args.ens) argv.push("--ens", args.ens);
