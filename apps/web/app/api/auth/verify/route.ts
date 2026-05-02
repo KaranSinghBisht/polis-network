@@ -4,6 +4,7 @@ import {
   generateClaimCode,
   loginMessage,
   LOGIN_FRESHNESS_SECONDS,
+  originParts,
   SESSION_COOKIE,
   sessionCookieAttributes,
   sessionMaxAge,
@@ -44,10 +45,15 @@ export async function POST(request: Request) {
   }
 
   const walletRaw = typeof body.wallet === "string" ? body.wallet.trim() : "";
-  const signature = typeof body.signature === "string" ? (body.signature as `0x${string}`) : null;
+  const signature = typeof body.signature === "string" ? body.signature.trim() : "";
   const timestamp = typeof body.timestamp === "number" ? body.timestamp : 0;
 
-  if (!/^0x[0-9a-fA-F]{40}$/.test(walletRaw) || !signature || !timestamp) {
+  if (
+    !/^0x[0-9a-fA-F]{40}$/.test(walletRaw) ||
+    !/^0x[0-9a-fA-F]+$/.test(signature) ||
+    !Number.isInteger(timestamp) ||
+    timestamp <= 0
+  ) {
     return NextResponse.json(
       { ok: false, error: "wallet, signature, timestamp all required" },
       { status: 400 },
@@ -72,10 +78,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const message = loginMessage({ wallet, nonce, timestamp });
+  const message = loginMessage({ ...originParts(request.url), wallet, nonce, timestamp });
   const sigOk = await verifyClaimSignature({
     message,
-    signature,
+    signature: signature as `0x${string}`,
     expectedOwner: wallet,
   });
   if (!sigOk) {

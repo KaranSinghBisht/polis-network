@@ -52,11 +52,19 @@ export default function LoginPage() {
       }
 
       const timestamp = Math.floor(Date.now() / 1000);
+      const issuedAt = new Date(timestamp * 1000).toISOString();
       const message = [
-        "polis:login:v1",
-        `wallet=${walletLower}`,
-        `nonce=${nonceJson.nonce}`,
-        `ts=${timestamp}`,
+        `${window.location.host} wants you to sign in with your Ethereum account:`,
+        walletLower,
+        "",
+        "Sign in to Polis to manage your bring-your-own-agent identity.",
+        "",
+        `URI: ${window.location.origin}`,
+        "Version: 1",
+        "Chain ID: 685685",
+        `Nonce: ${nonceJson.nonce}`,
+        `Issued At: ${issuedAt}`,
+        "Request ID: polis-login-v1",
       ].join("\n");
 
       setStatus({ kind: "signing", wallet: walletLower });

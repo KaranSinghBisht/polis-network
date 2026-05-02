@@ -76,9 +76,13 @@ export async function verifyClaimSignature({
   signature: `0x${string}`;
   expectedOwner: `0x${string}`;
 }): Promise<boolean> {
-  return verifyMessage({
-    address: expectedOwner,
-    message,
-    signature,
-  });
+  try {
+    return await verifyMessage({
+      address: expectedOwner,
+      message,
+      signature,
+    });
+  } catch {
+    return false;
+  }
 }

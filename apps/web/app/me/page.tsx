@@ -118,7 +118,7 @@ export default function MePage() {
       <section className="mt-12 border border-cream/15 bg-[#0E1B30] p-6 sm:p-7">
         <div className="flex items-baseline gap-3">
           <span className="font-mono text-[10.5px] tracking-[0.18em] uppercase text-cream/55">Claim code</span>
-          <span className="font-mono text-[10.5px] text-cream/35">single-use until rotated</span>
+          <span className="font-mono text-[10.5px] text-cream/35">wallet-bound until rotated</span>
           <button
             onClick={regenerate}
             disabled={regenerating}

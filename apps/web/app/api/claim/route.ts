@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   CLAIM_FRESHNESS_SECONDS,
   claimMessage,
+  originParts,
 } from "@/lib/auth";
 import {
   getWalletByClaimCode,
@@ -39,13 +40,20 @@ export async function POST(request: Request) {
 
   const peer = typeof body.peer === "string" ? body.peer : "";
   const code = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
-  const signature = typeof body.signature === "string" ? (body.signature as `0x${string}`) : null;
+  const signature = typeof body.signature === "string" ? body.signature.trim() : "";
   const signerAddress = typeof body.signerAddress === "string"
-    ? (body.signerAddress as `0x${string}`)
-    : null;
+    ? body.signerAddress.trim()
+    : "";
   const timestamp = typeof body.timestamp === "number" ? body.timestamp : 0;
 
-  if (!peer || !code || !signature || !signerAddress || !timestamp) {
+  if (
+    !peer ||
+    !/^[A-Z0-9]{6,12}$/.test(code) ||
+    !/^0x[0-9a-fA-F]+$/.test(signature) ||
+    !/^0x[0-9a-fA-F]{40}$/.test(signerAddress) ||
+    !Number.isInteger(timestamp) ||
+    timestamp <= 0
+  ) {
     return NextResponse.json(
       { ok: false, error: "peer, code, signature, signerAddress, timestamp all required" },
       { status: 400 },
@@ -81,11 +89,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const message = claimMessage({ peer: normalizedPeer, code, timestamp });
+  const message = claimMessage({ ...originParts(request.url), peer: normalizedPeer, code, timestamp });
   const sigOk = await verifyClaimSignature({
     message,
-    signature,
-    expectedOwner: signerAddress,
+    signature: signature as `0x${string}`,
+    expectedOwner: signerAddress as `0x${string}`,
   });
   if (!sigOk) {
     return NextResponse.json({ ok: false, error: "signature does not match signerAddress" }, { status: 401 });
@@ -110,8 +118,8 @@ export async function POST(request: Request) {
 
   const claim: AgentClaim = {
     peer: normalizedPeer.slice(2), // store as 64-char hex without 0x
-    ownerWallet: signerAddress,
-    signature,
+    ownerWallet: signerAddress.toLowerCase() as `0x${string}`,
+    signature: signature as `0x${string}`,
     signedMessage: message,
     claimedAt: Date.now(),
   };

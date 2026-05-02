@@ -19,18 +19,21 @@ export async function runClaim(opts: ClaimOptions): Promise<void> {
   const peer = derivePeerId(cfg.axl.keyPath).hex;
   const account = privateKeyToAccount(cfg.privateKey);
   const timestamp = Math.floor(Date.now() / 1000);
+  const baseUrl = (opts.baseUrl ?? process.env.POLIS_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+  const origin = new URL(baseUrl).origin;
+  const domain = new URL(origin).host;
+  const endpoint = `${origin}/api/claim`;
 
   const message = [
     "polis:claim:v1",
+    `domain=${domain}`,
+    `uri=${origin}`,
     `peer=${peer.toLowerCase()}`,
     `code=${code}`,
     `ts=${timestamp}`,
   ].join("\n");
 
   const signature = await account.signMessage({ message });
-
-  const baseUrl = (opts.baseUrl ?? process.env.POLIS_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, "");
-  const endpoint = `${baseUrl}/api/claim`;
 
   console.log(`code:    ${code}`);
   console.log(`peer:    ${peer}`);
@@ -66,9 +69,9 @@ export async function runClaim(opts: ClaimOptions): Promise<void> {
 
   console.log("");
   console.log("✓ claim accepted");
-  const claim = (body as { claim?: { ownerEmail: string; claimedAt: number } }).claim;
+  const claim = (body as { claim?: { ownerWallet: string; claimedAt: number } }).claim;
   if (claim) {
-    console.log(`  owner email: ${claim.ownerEmail}`);
+    console.log(`  owner wallet: ${claim.ownerWallet}`);
     console.log(`  claimed at:  ${new Date(claim.claimedAt).toISOString()}`);
   }
   console.log("");

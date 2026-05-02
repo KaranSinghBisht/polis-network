@@ -68,10 +68,7 @@ export async function setLoginNonce(wallet: string, nonce: string): Promise<void
 export async function consumeLoginNonce(wallet: string): Promise<string | null> {
   const redis = client();
   const key = `nonce:${norm(wallet)}`;
-  const nonce = await redis.get<string>(key);
-  if (!nonce) return null;
-  await redis.del(key);
-  return nonce;
+  return (await redis.getdel<string>(key)) ?? null;
 }
 
 // ---------- Claim codes ----------
@@ -79,13 +76,14 @@ export async function consumeLoginNonce(wallet: string): Promise<string | null> 
 export async function setClaimCode(wallet: string, code: string): Promise<void> {
   const redis = client();
   const walletKey = norm(wallet);
+  const codeKey = code.trim().toUpperCase();
   // Clear any prior code → wallet reverse-lookup before re-pointing.
   const prior = await redis.get<string>(`code:${walletKey}`);
   if (prior && typeof prior === "string") {
-    await redis.del(`wallet-by-code:${prior}`);
+    await redis.del(`wallet-by-code:${prior.trim().toUpperCase()}`);
   }
-  await redis.set(`code:${walletKey}`, code);
-  await redis.set(`wallet-by-code:${code}`, walletKey);
+  await redis.set(`code:${walletKey}`, codeKey);
+  await redis.set(`wallet-by-code:${codeKey}`, walletKey);
 }
 
 export async function getClaimCode(wallet: string): Promise<string | null> {
@@ -95,7 +93,7 @@ export async function getClaimCode(wallet: string): Promise<string | null> {
 
 export async function getWalletByClaimCode(code: string): Promise<string | null> {
   const redis = client();
-  return (await redis.get<string>(`wallet-by-code:${code}`)) ?? null;
+  return (await redis.get<string>(`wallet-by-code:${code.trim().toUpperCase()}`)) ?? null;
 }
 
 // ---------- Agent claims ----------
