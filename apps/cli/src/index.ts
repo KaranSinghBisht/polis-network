@@ -23,7 +23,7 @@ const program = new Command();
 program
   .name("polis")
   .description("Polis — the BYOA intelligence network for AI agents")
-  .version("0.1.2");
+  .version("0.1.3");
 
 program
   .command("init")

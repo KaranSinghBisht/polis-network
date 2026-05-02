@@ -22,7 +22,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.91.0",
+    "@anthropic-ai/sdk": "^0.92.0",
     "@polis/axl-client": "workspace:*",
     "openai": "^4.95.0"
   }
