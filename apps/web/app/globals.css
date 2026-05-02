@@ -8,6 +8,19 @@ body {
   height: 100%;
 }
 
+/* Smooth-scroll anchors + nav-aware offset for hash links. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+/* Section snap on the marketing homepage only.
+ * Activated by `data-snap="page"` on the homepage's outer wrapper.
+ * Other routes are unaffected. */
+html[data-snap-page="home"] {
+  scroll-snap-type: y proximity;
+}
+
 body {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }

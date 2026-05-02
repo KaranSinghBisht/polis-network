@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
 
 /**
@@ -224,6 +224,14 @@ function FAQItem({
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(0);
 
+  // Enable proximity scroll-snap on the homepage only.
+  useEffect(() => {
+    document.documentElement.dataset.snapPage = "home";
+    return () => {
+      delete document.documentElement.dataset.snapPage;
+    };
+  }, []);
+
   const steps = [
     {
       n: "01",
@@ -317,7 +325,7 @@ export default function LandingPage() {
       </nav>
 
       {/* 2. Hero */}
-      <Section className="pt-40 md:pt-48 pb-14 md:pb-20">
+      <Section className="snap-start pt-40 md:pt-48 pb-14 md:pb-20">
         <div className="flex items-center gap-2 mb-10 font-mono text-[11px] tracking-[0.18em] uppercase text-cream/50">
           <span className="w-1.5 h-1.5 rounded-none bg-teal animate-pulse" />
           signal desk · open
@@ -371,7 +379,7 @@ export default function LandingPage() {
       </Section>
 
       {/* 4. Install Component */}
-      <Section id="install-section" className="py-0 md:py-0">
+      <Section id="install-section" className="snap-start py-0 md:py-0">
         <div className="max-w-4xl">
           <Eyebrow>Protocol Registration</Eyebrow>
           <InstallComponent />
@@ -382,7 +390,7 @@ export default function LandingPage() {
       </Section>
 
       {/* 5. How Polis works */}
-      <Section>
+      <Section className="snap-start">
         <div className="mb-14 md:mb-20">
           <Eyebrow>How Polis works</Eyebrow>
           <h2 className="font-display text-[38px] sm:text-[48px] md:text-[56px] leading-[1.02] tracking-[-0.02em] text-cream max-w-3xl">
@@ -414,7 +422,7 @@ export default function LandingPage() {
       </Section>
 
       {/* 6. Stats strip */}
-      <section className="border-y border-cream/10 bg-[#0D1835]">
+      <section className="snap-start border-y border-cream/10 bg-[#0D1835]">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 md:px-12 lg:px-20 py-16 md:py-20">
           <div className="flex items-center gap-2 mb-12 font-mono text-[11px] tracking-[0.18em] uppercase text-cream/50">
             <span className="w-1.5 h-1.5 rounded-none bg-amber" />
@@ -440,7 +448,7 @@ export default function LandingPage() {
       </section>
 
       {/* 7. Newsletter card */}
-      <Section>
+      <Section className="snap-start">
         <div className="grid md:grid-cols-12 gap-12 md:gap-16 items-start">
           <div className="md:col-span-7">
             <Eyebrow>Digest Subscription</Eyebrow>
@@ -490,7 +498,7 @@ export default function LandingPage() {
       </Section>
 
       {/* 8. FAQ */}
-      <Section className="border-t border-cream/10">
+      <Section className="snap-start border-t border-cream/10">
         <div className="mb-14 md:mb-20 max-w-3xl">
           <Eyebrow>Infrastructure</Eyebrow>
           <h2 className="font-display text-[38px] sm:text-[48px] md:text-[56px] leading-[1.02] tracking-[-0.02em] text-cream">
@@ -512,7 +520,7 @@ export default function LandingPage() {
       </Section>
 
       {/* 9. Footer */}
-      <footer className="border-t border-cream/15 py-20 bg-[#080E20]">
+      <footer className="snap-start border-t border-cream/15 py-20 bg-[#080E20]">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 md:px-12 lg:px-20">
           <div className="flex flex-col md:flex-row justify-between items-start gap-12">
             <div className="max-w-xs">
