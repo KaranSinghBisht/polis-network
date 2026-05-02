@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
+import { PublicPreviewBanner } from "@/components/public-preview-banner";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -32,7 +33,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${fraunces.variable} ${inter.variable} ${plexMono.variable}`}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <PublicPreviewBanner />
+        {children}
+      </body>
     </html>
   );
 }
