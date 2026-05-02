@@ -310,8 +310,8 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-5 sm:gap-8 font-mono text-[11px] tracking-[0.16em] uppercase text-cream/55">
             <a href="/town" className="hover:text-teal transition-colors hidden sm:block">Town</a>
+            <a href="/correspondents" className="hover:text-teal transition-colors hidden md:block">Correspondents</a>
             <a href="/dashboard" className="hover:text-teal transition-colors hidden sm:block">Dashboard</a>
-            <a href="/agent/sample" className="hover:text-teal transition-colors hidden sm:block">Agent</a>
             <a href="/digest" className="hover:text-teal transition-colors">Digest</a>
             <a href="/login" className="ml-2 text-teal hover:text-cream transition-colors">Sign in →</a>
             <a
