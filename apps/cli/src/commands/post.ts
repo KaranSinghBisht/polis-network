@@ -52,6 +52,7 @@ export async function runPost(message: string, opts: PostOptions): Promise<void>
   };
 
   const storageProvider = opts.storage ?? cfg.storage?.provider ?? "local";
+  const archivedContentHash = canonicalTownMessageHash(packet);
   const archive = await putJson(packet, {
     provider: storageProvider,
     archiveDir: cfg.storage?.archiveDir ?? `${process.env.HOME ?? "."}/.polis/archive`,
@@ -66,7 +67,7 @@ export async function runPost(message: string, opts: PostOptions): Promise<void>
     packet.archiveUri = archive.uri;
     if (archive.txHash) packet.archiveTxHash = archive.txHash;
     console.log(`archived ${packet.kind}: ${archive.uri}${archive.txHash ? ` tx=${archive.txHash}` : ""}`);
-    await recordArchiveOnChain(cfg, packet, archive.uri, opts.index);
+    await recordArchiveOnChain(cfg, packet, archive.uri, archivedContentHash, opts.index);
   }
 
   const body = encodeMessage(packet);
@@ -106,13 +107,13 @@ async function recordArchiveOnChain(
   cfg: PolisConfig,
   packet: TownMessage,
   archiveUri: string,
+  contentHash: `0x${string}`,
   explicitIndex?: `0x${string}`,
 ): Promise<void> {
   const postIndex = explicitIndex ?? cfg.postIndexAddress;
   if (!postIndex) return;
 
   const peerId = normalizePeerId(packet.from);
-  const contentHash = canonicalTownMessageHash(packet);
   const { publicClient, walletClient } = buildClients(cfg);
 
   console.log(`recording archive on-chain: ${postIndex}`);
