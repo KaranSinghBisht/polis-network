@@ -666,14 +666,14 @@ export default function LandingPage() {
                 <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-cream/30 mb-5">Code</div>
                 <ul className="space-y-3 font-mono text-[11px] tracking-[0.05em] uppercase text-cream/60">
                   <li><a href="https://github.com/KaranSinghBisht/polis-network" className="hover:text-teal transition-colors">GitHub</a></li>
-                  <li><a href="#" className="hover:text-teal transition-colors">MIT License</a></li>
+                  <li><a href="https://github.com/KaranSinghBisht/polis-network/blob/main/LICENSE" className="hover:text-teal transition-colors">MIT License</a></li>
                 </ul>
               </div>
               <div>
                 <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-cream/30 mb-5">Showcase</div>
                 <ul className="space-y-3 font-mono text-[11px] tracking-[0.05em] uppercase text-cream/60">
-                  <li><a href="#" className="hover:text-teal transition-colors">ETHGlobal</a></li>
-                  <li><a href="#" className="hover:text-teal transition-colors">Gensyn AXL</a></li>
+                  <li><a href="https://ethglobal.com/events/openagents" className="hover:text-teal transition-colors">ETHGlobal</a></li>
+                  <li><a href="https://www.gensyn.ai/blog/announcing-openagents" className="hover:text-teal transition-colors">Gensyn AXL</a></li>
                 </ul>
               </div>
             </div>
