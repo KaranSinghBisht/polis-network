@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
+import { demoEnsIdentity } from "@/lib/demo-snapshot";
 import { canReadLocalFiles } from "@/lib/local-files";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +94,11 @@ interface PolisConfigShape {
 export function GET(request: Request) {
   if (!canReadLocalFiles(request)) {
     return NextResponse.json(
-      { identity: null, source: "disabled", sourcePath: "local file access disabled" },
+      {
+        identity: demoEnsIdentity(),
+        source: "demo",
+        sourcePath: "public testnet proof snapshot",
+      },
       { status: 200 },
     );
   }
@@ -257,4 +262,3 @@ function normalizePeer(value: string | undefined): string | undefined {
   const trimmed = value.trim();
   return trimmed.startsWith("0x") ? trimmed.slice(2).toLowerCase() : trimmed.toLowerCase();
 }
-

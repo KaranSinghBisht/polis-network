@@ -63,7 +63,7 @@ interface EnsIdentity {
 
 interface ApiResponse {
   identity: EnsIdentity | null;
-  source: "proof" | "config" | "none" | "disabled";
+  source: "proof" | "config" | "demo" | "none" | "disabled";
   sourcePath: string;
 }
 
@@ -167,7 +167,7 @@ function PanelShell({ palette, children }: { palette: Palette; children: React.R
           ENS identity · proof chain
         </span>
         <span className={`font-mono text-[10px] tracking-[0.16em] uppercase ${palette.textFaint} ml-auto`}>
-          read from ~/.polis/ens-proof.json
+          proof-backed identity
         </span>
       </header>
       <div className="px-5 sm:px-6 py-5">{children}</div>
@@ -237,13 +237,14 @@ function Headline({
   palette: Palette;
 }) {
   const fresh = source === "proof";
+  const demo = source === "demo";
   return (
     <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
       <h3 className={`font-display text-[28px] md:text-[34px] tracking-[-0.02em] ${palette.text}`}>
         {identity.ens.name}
       </h3>
       <span className={`font-mono text-[10px] tracking-[0.18em] uppercase border px-2 py-0.5 ${fresh ? palette.badgeOk : palette.badgeWarn}`}>
-        {fresh ? "verified · live" : "verified · cached"}
+        {fresh ? "verified · live" : demo ? "verified · testnet proof" : "verified · cached"}
       </span>
       {identity.peer.matchesEns && (
         <span className={`font-mono text-[10px] tracking-[0.18em] uppercase border px-2 py-0.5 ${palette.badgeOk}`}>

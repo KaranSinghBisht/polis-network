@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
+import { demoDigestSummary } from "@/lib/demo-snapshot";
 import { canReadLocalFiles } from "@/lib/local-files";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +27,8 @@ interface DigestSummary {
 export function GET(request: Request) {
   if (!canReadLocalFiles(request)) {
     return NextResponse.json({
-      digest: null,
-      sourceDir: "local file access disabled",
+      digest: demoDigestSummary(),
+      sourceDir: "public testnet proof snapshot",
     });
   }
 

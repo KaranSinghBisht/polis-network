@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
+import { DEMO_CONTRACTS, DEMO_ENS, DEMO_PEER, DEMO_WALLET } from "@/lib/demo-snapshot";
 import { canReadLocalFiles } from "@/lib/local-files";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,29 @@ interface OperatorProfile {
 
 export function GET(request: Request) {
   if (!canReadLocalFiles(request)) {
-    return NextResponse.json({ profile: null, source: "disabled" });
+    return NextResponse.json({
+      profile: {
+        address: DEMO_WALLET,
+        peer: DEMO_PEER,
+        network: "testnet",
+        chainId: 685685,
+        rpcUrl: "https://gensyn-testnet.g.alchemy.com/public",
+        contracts: {
+          registry: DEMO_CONTRACTS.agentRegistry,
+          paymentRouter: DEMO_CONTRACTS.paymentRouter,
+          postIndex: DEMO_CONTRACTS.postIndex,
+          usdc: DEMO_CONTRACTS.usdc,
+        },
+        ens: {
+          name: DEMO_ENS,
+          peerText: DEMO_PEER,
+          chainAddress: DEMO_WALLET,
+          verifiedAt: "2026-05-01T18:40:00.000Z",
+        },
+        storage: { provider: "0g" },
+      } satisfies OperatorProfile,
+      source: "demo-snapshot",
+    });
   }
 
   const cfgPath = join(homedir(), ".polis", "config.json");
@@ -116,4 +139,3 @@ function readStorageBlock(value: unknown): OperatorProfile["storage"] {
   }
   return undefined;
 }
-

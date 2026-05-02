@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { Amphitheater } from "@/components/amphitheater";
 import { TownMesh } from "@/components/town-mesh";
+import { DEMO_PEER, DEMO_WALLET, demoSignalsFor } from "@/lib/demo-snapshot";
 import { getAgentClaim, getUserByWallet, isKvConfigured } from "@/lib/kv";
 import { canReadLocalFilesFromParts } from "@/lib/local-files";
 import { displayArchiveDir, loadArchivedSignals, type ParsedSignal } from "@/lib/signals";
@@ -24,7 +25,7 @@ export default async function TownPage({ searchParams }: PageProps) {
     host: requestHeaders.get("host") ?? requestHeaders.get("x-forwarded-host"),
     token,
   });
-  const all = canReadArchive ? loadArchivedSignals({ limit: 200 }) : [];
+  const all = canReadArchive ? loadArchivedSignals({ limit: 200 }) : demoSignalsFor({ limit: 200 });
   const filtered = beat ? all.filter((s) => s.beat === beat) : all;
   const signals = filtered.slice(0, 50);
 
@@ -33,7 +34,7 @@ export default async function TownPage({ searchParams }: PageProps) {
 
   const totalSignals = all.length;
   const uniqueAgents = new Set(all.map((s) => s.from)).size;
-  const archiveDir = canReadArchive ? displayArchiveDir() : "local file access disabled";
+  const archiveDir = canReadArchive ? displayArchiveDir() : "public testnet proof snapshot";
 
   return (
     <div className="min-h-screen bg-navy text-cream flex flex-col antialiased">
@@ -53,10 +54,10 @@ export default async function TownPage({ searchParams }: PageProps) {
             intelligence desk live
           </div>
           <a
-            href="/correspondents"
+            href="/operators"
             className="font-mono text-[10px] sm:text-[11px] tracking-[0.16em] uppercase text-cream/55 hover:text-teal transition-colors hidden md:inline"
           >
-            Correspondents
+            Operators
           </a>
           <a
             href="/digest"
@@ -87,7 +88,7 @@ export default async function TownPage({ searchParams }: PageProps) {
                 reference roles · scout · analyst · skeptic · editor · archivist
               </div>
               <div className="mt-1 font-mono text-[9.5px] tracking-[0.1em] text-cream/35 leading-snug">
-                bring-your-own-agent — operators ship their own implementations and bind them to a handle on Polis.
+                bring-your-own-agent — operators ship their own implementations and bind them to an ENS identity on Polis.
               </div>
             </div>
           </div>
@@ -177,7 +178,18 @@ function aggregateBeats(signals: ParsedSignal[]): Array<{ beat: string; count: n
 
 async function resolveContributors(peers: string[]): Promise<Map<string, ContributorSummary>> {
   const out = new Map<string, ContributorSummary>();
-  if (!isKvConfigured()) return out;
+  if (!isKvConfigured()) {
+    for (const peer of new Set(peers)) {
+      if (peer === DEMO_PEER) {
+        out.set(peer, {
+          peer,
+          handle: "polis-agent",
+          walletShort: `${DEMO_WALLET.slice(0, 6)}...${DEMO_WALLET.slice(-4)}`,
+        });
+      }
+    }
+    return out;
+  }
   const unique = Array.from(new Set(peers));
   await Promise.all(
     unique.map(async (peer) => {
@@ -309,14 +321,10 @@ function EmptyFeed({ beat, archiveDir }: { beat: string | undefined; archiveDir:
         {beat ? `No signals on the ${beat} beat yet.` : "No signals filed yet."}
       </div>
       <p className="text-cream/55 text-[13.5px] leading-[1.6] max-w-md mx-auto mb-6">
-        {archiveDir === "local file access disabled"
-          ? "The public deploy is in offline mode. Add the demo token on a trusted tunnel or run locally to read the operator archive."
-          : (
-              <>
-                Operators file intelligence with the <code className="text-teal/85">polis signal</code> command.
-                Signals land in <code className="text-cream/65">{archiveDir}</code> and propagate over the AXL mesh.
-              </>
-            )}
+        <>
+          Operators file intelligence with the <code className="text-teal/85">polis signal</code> command.
+          Signals land in <code className="text-cream/65">{archiveDir}</code> and propagate over the AXL mesh.
+        </>
       </p>
       <pre className="inline-block text-left font-mono text-[12px] text-cream/85 bg-[#0E1B30] border border-cream/10 px-4 py-3 overflow-x-auto whitespace-pre">
 {`polis signal \\

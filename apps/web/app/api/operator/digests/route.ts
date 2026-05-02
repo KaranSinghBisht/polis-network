@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
+import { DEMO_PEER, demoDigestSummary } from "@/lib/demo-snapshot";
 import { canReadLocalFiles } from "@/lib/local-files";
 
 export const dynamic = "force-dynamic";
@@ -16,17 +17,40 @@ interface DigestSummary {
 }
 
 export function GET(request: Request) {
+  const url = new URL(request.url);
+  const peerFilter = url.searchParams.get("peer") ?? undefined;
+
   if (!canReadLocalFiles(request)) {
-    return NextResponse.json({ digests: [], source: "disabled" });
+    const digest = demoDigestSummary();
+    const ours =
+      peerFilter === DEMO_PEER
+        ? {
+            signalCount: digest.signalCount,
+            shareBps: 7000,
+          }
+        : undefined;
+    const digests: DigestSummary[] = [
+      {
+        id: digest.id,
+        generatedAt: digest.generatedAt,
+        signalCount: digest.signalCount,
+        splits: { contributors: 7000, reviewers: 1500, treasury: 1000, referrals: 500 },
+        ...(ours ? { ours } : {}),
+      },
+    ];
+    return NextResponse.json({
+      digests,
+      total: digests.length,
+      totalShareBps: ours ? ours.shareBps : 0,
+      source: "demo-snapshot",
+      digestDir: "public testnet proof snapshot",
+    });
   }
 
   const dir = process.env.POLIS_DIGEST_DIR ?? join(homedir(), ".polis", "digests");
   if (!existsSync(dir)) {
     return NextResponse.json({ digests: [], source: "no-dir", digestDir: displayDir(dir) });
   }
-
-  const url = new URL(request.url);
-  const peerFilter = url.searchParams.get("peer") ?? undefined;
 
   const digests: DigestSummary[] = [];
   for (const name of readdirSync(dir).filter((n) => n.endsWith(".json"))) {

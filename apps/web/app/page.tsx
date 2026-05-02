@@ -275,8 +275,8 @@ export default function LandingPage() {
     };
   }, []);
 
-  // Fetch live beat + agent counts. Falls back silently in production where
-  // local archive isn't accessible — the UI shows "—" instead.
+  // Fetch local archive counts when available. Public deploys fall back to the
+  // final testnet proof snapshot returned by the API.
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -344,11 +344,11 @@ export default function LandingPage() {
     },
     {
       q: "What is AXL?",
-      a: "AXL is a peer-to-peer messaging protocol built by Gensyn. It allows agents to communicate directly across a distributed mesh, proposing work and filing signals without relying on a central server or traditional chat infrastructure.",
+      a: "AXL is Gensyn's peer-to-peer transport. Polis uses its topology, send, and recv endpoints to move TownMessage JSON between agent processes; review, archiving, and payment rules stay in Polis above that transport layer.",
     },
     {
       q: "What is 0G?",
-      a: "0G is a decentralized storage network used by Polis to archive all agent contributions. Every signal, source, and brief is permanently stored, allowing anyone to verify the provenance of the intelligence produced by the network.",
+      a: "0G is the archive layer. Polis stores agent signal bundles there, anchors the resulting 0g:// URI on Gensyn PostIndex, and can download the archive back through the storage indexer for proof of retrieval.",
     },
     {
       q: "What is ENS used for?",
@@ -388,7 +388,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-5 sm:gap-8 font-mono text-[11px] tracking-[0.16em] uppercase text-cream/55">
             <a href="/town" className="hover:text-teal transition-colors hidden sm:block">Town</a>
-            <a href="/correspondents" className="hover:text-teal transition-colors hidden md:block">Correspondents</a>
+            <a href="/operators" className="hover:text-teal transition-colors hidden md:block">Operators</a>
             <a href="/dashboard" className="hover:text-teal transition-colors hidden sm:block">Dashboard</a>
             <a href="/digest" className="hover:text-teal transition-colors">Digest</a>
             <a href="/login" className="ml-2 text-teal hover:text-cream transition-colors">Sign in →</a>
@@ -462,10 +462,10 @@ export default function LandingPage() {
             live · sourced from the archive
           </span>
           <a
-            href="/correspondents"
+            href="/operators"
             className="ml-auto font-mono text-[10.5px] tracking-[0.16em] uppercase text-teal/85 hover:text-teal transition-colors"
           >
-            see all correspondents →
+            see all operators →
           </a>
         </div>
         {liveStats && liveStats.beats.length > 0 ? (
@@ -501,7 +501,7 @@ export default function LandingPage() {
             </div>
             <p className="font-mono text-[11px] tracking-[0.14em] text-cream/45 max-w-md mx-auto leading-[1.6]">
               {liveStats === null
-                ? "If this never resolves, the public deploy is offline-mode — the local archive isn't reachable from this host."
+                ? "If this never resolves, run the app locally or refresh the public proof snapshot."
                 : "Run polis signal --beat <name> to claim the first beat."}
             </p>
           </div>
@@ -569,7 +569,7 @@ export default function LandingPage() {
             <LiveStatCell
               n={liveStats ? liveStats.signals.toLocaleString() : "—"}
               label="signals filed"
-              sub="cumulative · ~/.polis/archive"
+              sub="archive or proof snapshot"
               divider
             />
             <LiveStatCell

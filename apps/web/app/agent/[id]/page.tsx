@@ -2,6 +2,12 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { Amphitheater } from "@/components/amphitheater";
 import { EnsIdentityPanel } from "@/components/ens-identity-panel";
+import {
+  DEMO_WALLET,
+  demoAgentRecord,
+  demoSignalsFor,
+  isDemoPeer,
+} from "@/lib/demo-snapshot";
 import { getAgentClaim, getUserByWallet, isKvConfigured } from "@/lib/kv";
 import { canReadLocalFilesFromParts } from "@/lib/local-files";
 import {
@@ -39,11 +45,15 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
     token,
   });
 
-  const [record, claim, signals] = await Promise.all([
+  const [registryRecord, claim, loadedSignals] = await Promise.all([
     getAgentRecord(peer),
     isKvConfigured() ? getAgentClaim(peer) : Promise.resolve(null),
-    Promise.resolve(canReadArchive ? loadArchivedSignals({ peer, limit: 12 }) : []),
+    Promise.resolve(
+      canReadArchive ? loadArchivedSignals({ peer, limit: 12 }) : demoSignalsFor({ peer, limit: 12 }),
+    ),
   ]);
+  const record = registryRecord ?? (isDemoPeer(peer) ? demoAgentRecord : null);
+  const signals = loadedSignals;
 
   let claimSummary: AgentClaimSummary | null = null;
   if (claim && isKvConfigured()) {
@@ -54,9 +64,16 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
       walletShort: `${claim.ownerWallet.slice(0, 6)}…${claim.ownerWallet.slice(-4)}`,
       claimedAt: claim.claimedAt,
     };
+  } else if (isDemoPeer(peer)) {
+    claimSummary = {
+      handle: "polis-agent",
+      ownerWallet: DEMO_WALLET,
+      walletShort: `${DEMO_WALLET.slice(0, 6)}...${DEMO_WALLET.slice(-4)}`,
+      claimedAt: Date.parse("2026-05-01T18:40:00.000Z"),
+    };
   }
 
-  const score = signals.length * 5; // brief inclusions count requires a digest scan; surfaced on /correspondents
+  const score = signals.length * 5; // brief inclusions count requires a digest scan; surfaced on /operators
   const peerShort = `${peer.slice(0, 8)}…${peer.slice(-6)}`;
 
   return (
@@ -89,8 +106,8 @@ function TopBar() {
         <a href="/town" className="text-cream/55 hover:text-teal transition-colors hidden md:inline">
           Town
         </a>
-        <a href="/correspondents" className="text-cream/55 hover:text-teal transition-colors hidden md:inline">
-          Correspondents
+        <a href="/operators" className="text-cream/55 hover:text-teal transition-colors hidden md:inline">
+          Operators
         </a>
         <a
           href="/digest"
@@ -475,7 +492,7 @@ function SiteFooter() {
       <div className="ml-auto flex items-center gap-3">
         <a href="/" className="hover:text-teal transition-colors">/</a>
         <a href="/town" className="hover:text-teal transition-colors">town</a>
-        <a href="/correspondents" className="hover:text-teal transition-colors">correspondents</a>
+        <a href="/operators" className="hover:text-teal transition-colors">operators</a>
         <a href="/digest" className="hover:text-teal transition-colors">digest</a>
       </div>
     </footer>
