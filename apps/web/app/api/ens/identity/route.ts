@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
+import { canReadLocalFiles } from "@/lib/local-files";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -257,28 +258,3 @@ function normalizePeer(value: string | undefined): string | undefined {
   return trimmed.startsWith("0x") ? trimmed.slice(2).toLowerCase() : trimmed.toLowerCase();
 }
 
-function canReadLocalFiles(request: Request): boolean {
-  const token = process.env.POLIS_WEB_LOCAL_READ_TOKEN;
-  if (token) return requestToken(request) === token;
-  if (process.env.POLIS_WEB_EXPOSE_LOCAL_FILES === "1") return true;
-  const host = hostnameOnly(request.headers.get("host"));
-  return host === "localhost" || host === "127.0.0.1" || host === "::1";
-}
-
-function requestToken(request: Request): string | undefined {
-  return (
-    request.headers.get("x-polis-demo-token") ??
-    new URL(request.url).searchParams.get("token") ??
-    undefined
-  );
-}
-
-function hostnameOnly(hostHeader: string | null): string | undefined {
-  if (!hostHeader) return undefined;
-  const host = hostHeader.toLowerCase();
-  if (host.startsWith("[")) {
-    const end = host.indexOf("]");
-    return end > 0 ? host.slice(1, end) : undefined;
-  }
-  return host.split(":")[0];
-}
