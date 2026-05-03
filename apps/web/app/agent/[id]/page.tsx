@@ -419,6 +419,11 @@ function Hero({
 
 async function resolveAgentRoute(routeId: string): Promise<AgentEnsRoute | { peer: string; name?: undefined } | null> {
   if (/^[0-9a-f]{64}$/.test(routeId)) return { peer: routeId };
+  // Hard short-circuit for the demo ENS name — bypasses any KV / RPC call so
+  // the page renders even when Upstash or the public Sepolia RPC is unreachable.
+  if (routeId === DEMO_ENS) {
+    return resolveAgentEnsRoute(routeId);
+  }
   if (isKvConfigured() && routeId.endsWith(".eth")) {
     let claim: Awaited<ReturnType<typeof getAgentClaimByEnsName>> = null;
     try {
