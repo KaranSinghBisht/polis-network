@@ -5,13 +5,13 @@ import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 import {
   DEMO_CONTRACTS,
   DEMO_ENS,
-  DEMO_PEER,
   DEMO_PROOFS,
   DEMO_WALLET,
   demoAgentRecord,
   demoSignalsFor,
   isDemoPeer,
 } from "@/lib/demo-snapshot";
+import { resolveAgentEnsRoute, type AgentEnsRoute } from "@/lib/ens-route";
 import { getAgentClaim, getUserByWallet, isKvConfigured } from "@/lib/kv";
 import { canReadLocalFilesFromParts } from "@/lib/local-files";
 import {
@@ -41,11 +41,12 @@ interface AgentClaimSummary {
 export default async function AgentProfilePage({ params, searchParams }: PageProps) {
   const [{ id }, { token }, requestHeaders] = await Promise.all([params, searchParams, headers()]);
   const routeId = decodeURIComponent(id).trim().toLowerCase();
-  const routeEnsName = routeId === DEMO_ENS ? DEMO_ENS : null;
-  const peer = resolveAgentRoute(routeId);
-  if (!peer) {
+  const resolvedRoute = await resolveAgentRoute(routeId);
+  if (!resolvedRoute) {
     notFound();
   }
+  const peer = resolvedRoute.peer;
+  const routeEns = "source" in resolvedRoute ? resolvedRoute : null;
   const canReadArchive = canReadLocalFilesFromParts({
     host: requestHeaders.get("host") ?? requestHeaders.get("x-forwarded-host"),
     token,
@@ -82,7 +83,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
   }
 
   const peerShort = `${peer.slice(0, 8)}…${peer.slice(-6)}`;
-  const displayName = routeEnsName ?? (claimSummary?.handle ? `@${claimSummary.handle}` : peerShort);
+  const displayName = routeEns?.name ?? (claimSummary?.handle ? `@${claimSummary.handle}` : peerShort);
 
   return (
     <div className="bg-navy text-cream min-h-screen antialiased flex flex-col selection:bg-teal/30 selection:text-cream">
@@ -95,7 +96,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
         record={record}
         claim={claimSummary}
         isDemo={isDemo}
-        routeEnsName={routeEnsName}
+        routeEns={routeEns}
       />
 
       <StatsStrip signals={signals} record={record} zeroGSignals={zeroGSignals} />
@@ -163,6 +164,9 @@ function TopBar() {
         <a href="/operators" className="text-cream/55 hover:text-teal transition-colors hidden md:inline">
           Operators
         </a>
+        <a href="/ens" className="text-cream/55 hover:text-teal transition-colors hidden md:inline">
+          ENS
+        </a>
         <a
           href="/digest"
           className="group inline-flex items-center gap-2 px-4 py-2 border border-teal/60 text-teal hover:bg-teal hover:text-navy transition-colors text-[10.5px]"
@@ -182,7 +186,7 @@ function Hero({
   record,
   claim,
   isDemo,
-  routeEnsName,
+  routeEns,
 }: {
   peer: string;
   peerShort: string;
@@ -190,7 +194,7 @@ function Hero({
   record: AgentRecord | null;
   claim: AgentClaimSummary | null;
   isDemo: boolean;
-  routeEnsName: string | null;
+  routeEns: AgentEnsRoute | null;
 }) {
   return (
     <section className="px-5 sm:px-8 md:px-12 pt-12 md:pt-16 pb-10 md:pb-12 max-w-6xl mx-auto w-full">
@@ -214,14 +218,14 @@ function Hero({
         {isDemo && (
           <span className="text-amber/85">demo agent · public proof snapshot</span>
         )}
-        {routeEnsName ? (
+        {routeEns ? (
           <a
-            href={`https://sepolia.app.ens.domains/${routeEnsName}`}
+            href={`https://sepolia.app.ens.domains/${routeEns.name}`}
             target="_blank"
             rel="noreferrer"
             className="text-teal hover:text-cream transition-colors"
           >
-            ENS route · {routeEnsName} ↗
+            ENS route · {routeEns.name} ↗
           </a>
         ) : isDemo ? (
           <a
@@ -246,11 +250,13 @@ function Hero({
               <span className="text-cream/40 text-[10px] tracking-[0.16em] uppercase shrink-0">peer</span>
               <span className="text-cream/85">{peer}</span>
             </div>
-            {routeEnsName && (
+            {routeEns && (
               <div className="flex flex-wrap items-baseline gap-3">
                 <span className="text-cream/40 text-[10px] tracking-[0.16em] uppercase shrink-0">ens</span>
                 <span className="text-cream/85">
-                  {routeEnsName} resolves to this wallet and publishes <code>com.polis.peer</code>
+                  {routeEns.name} publishes <code>com.polis.peer</code>
+                  {routeEns.resolvedAddress ? ` and resolves to ${routeEns.resolvedAddress}` : ""}
+                  {routeEns.source === "demo-snapshot" ? " (cached proof snapshot)" : ""}
                 </span>
               </div>
             )}
@@ -285,10 +291,9 @@ function Hero({
   );
 }
 
-function resolveAgentRoute(routeId: string): string | null {
-  if (/^[0-9a-f]{64}$/.test(routeId)) return routeId;
-  if (routeId === DEMO_ENS) return DEMO_PEER;
-  return null;
+async function resolveAgentRoute(routeId: string): Promise<AgentEnsRoute | { peer: string; name?: undefined } | null> {
+  if (/^[0-9a-f]{64}$/.test(routeId)) return { peer: routeId };
+  return resolveAgentEnsRoute(routeId);
 }
 
 function StatsStrip({
