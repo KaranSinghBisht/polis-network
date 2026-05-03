@@ -29,7 +29,7 @@ export interface AgentEnsRoute {
   peer: string;
   resolvedAddress?: `0x${string}`;
   records: AgentEnsRecords;
-  source: "sepolia-ens" | "demo-snapshot";
+  source: "sepolia-ens" | "claim-reservation" | "demo-snapshot";
 }
 
 export type AgentEnsRecords = Partial<Record<keyof typeof ENS_DISCOVERY_KEYS, string>>;

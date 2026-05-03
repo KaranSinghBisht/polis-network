@@ -5,6 +5,7 @@
  *  user:<walletLower>         → PolisUser JSON
  *  handle:<handleLower>       → walletLower (reverse lookup)
  *  agent:<peer>               → AgentClaim JSON
+ *  agent-name:<ensNameLower>  → peer (reverse lookup for /agent/<name.eth>)
  *  nonce:<walletLower>        → random hex nonce (5-min TTL)
  *  code:<walletLower>         → 8-char claim token
  *  wallet-by-code:<code>      → walletLower (reverse, no TTL)
@@ -103,7 +104,14 @@ export async function getWalletByClaimCode(code: string): Promise<string | null>
 
 export async function setAgentClaim(claim: AgentClaim): Promise<void> {
   const redis = client();
+  const prior = await getAgentClaim(claim.peer);
+  if (prior?.ensName && prior.ensName !== claim.ensName) {
+    await redis.del(`agent-name:${norm(prior.ensName)}`);
+  }
   await redis.set(`agent:${claim.peer}`, claim);
+  if (claim.ensName) {
+    await redis.set(`agent-name:${norm(claim.ensName)}`, claim.peer);
+  }
   // Also push the peer onto the owner's agents[] list.
   const user = await getUserByWallet(claim.ownerWallet);
   if (user) {
@@ -115,4 +123,11 @@ export async function setAgentClaim(claim: AgentClaim): Promise<void> {
 export async function getAgentClaim(peer: string): Promise<AgentClaim | null> {
   const redis = client();
   return (await redis.get<AgentClaim>(`agent:${peer}`)) ?? null;
+}
+
+export async function getAgentClaimByEnsName(ensName: string): Promise<AgentClaim | null> {
+  const redis = client();
+  const peer = await redis.get<string>(`agent-name:${norm(ensName)}`);
+  if (!peer) return null;
+  return getAgentClaim(peer);
 }

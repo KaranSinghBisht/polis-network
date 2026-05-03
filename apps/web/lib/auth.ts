@@ -141,22 +141,26 @@ export function claimMessage({
   uri,
   peer,
   code,
+  ensName,
   timestamp,
 }: {
   domain: string;
   uri: string;
   peer: string;
   code: string;
+  ensName?: string;
   timestamp: number;
 }): string {
-  return [
+  const lines = [
     "polis:claim:v1",
     `domain=${domain}`,
     `uri=${uri}`,
     `peer=${peer.toLowerCase()}`,
     `code=${code.toUpperCase()}`,
-    `ts=${timestamp}`,
-  ].join("\n");
+  ];
+  if (ensName) lines.push(`ens=${ensName.toLowerCase()}`);
+  lines.push(`ts=${timestamp}`);
+  return lines.join("\n");
 }
 
 export const CLAIM_FRESHNESS_SECONDS = 5 * 60;

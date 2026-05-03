@@ -12,7 +12,7 @@ import {
   isDemoPeer,
 } from "@/lib/demo-snapshot";
 import { resolveAgentEnsRoute, type AgentEnsRoute } from "@/lib/ens-route";
-import { getAgentClaim, getUserByWallet, isKvConfigured } from "@/lib/kv";
+import { getAgentClaim, getAgentClaimByEnsName, getUserByWallet, isKvConfigured } from "@/lib/kv";
 import { canReadLocalFilesFromParts } from "@/lib/local-files";
 import {
   AgentRecord,
@@ -165,7 +165,11 @@ function EnsRoutingCard({ route }: { route: AgentEnsRoute }) {
           </div>
         </div>
         <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-cream/45 border border-cream/10 px-2 py-1">
-          {route.source === "sepolia-ens" ? "live resolver" : "cached proof"}
+          {route.source === "sepolia-ens"
+            ? "live resolver"
+            : route.source === "claim-reservation"
+              ? "reserved claim"
+              : "cached proof"}
         </span>
       </div>
 
@@ -380,6 +384,29 @@ function Hero({
 
 async function resolveAgentRoute(routeId: string): Promise<AgentEnsRoute | { peer: string; name?: undefined } | null> {
   if (/^[0-9a-f]{64}$/.test(routeId)) return { peer: routeId };
+  if (isKvConfigured() && routeId.endsWith(".eth")) {
+    const claim = await getAgentClaimByEnsName(routeId);
+    if (claim?.ensName) {
+      return {
+        name: claim.ensName,
+        peer: claim.peer,
+        resolvedAddress: claim.ownerWallet,
+        source: claim.ensStatus === "issued" ? "sepolia-ens" : "claim-reservation",
+        records: {
+          registry: DEMO_CONTRACTS.agentRegistry,
+          capabilities: "signal,post,digest,payout,ens-resolve,archive-get",
+          endpoint: `axl://gensyn-testnet/${claim.peer}`,
+          protocol: "polis-townmessage/v1",
+          manifest: `/agent/${claim.ensName}`,
+          payment: `gensyn:${DEMO_CONTRACTS.paymentRouter}`,
+          description:
+            claim.ensStatus === "issued"
+              ? "Agent ENS subname issued by Polis."
+              : "Agent ENS name reserved during claim; on-chain subname issuance is pending sponsor configuration.",
+        },
+      };
+    }
+  }
   return resolveAgentEnsRoute(routeId);
 }
 

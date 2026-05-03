@@ -5,10 +5,12 @@ import {
   originParts,
 } from "@/lib/auth";
 import {
+  getAgentClaimByEnsName,
   getWalletByClaimCode,
   isKvConfigured,
   setAgentClaim,
 } from "@/lib/kv";
+import { normalizeRequestedAgentName } from "@/lib/agent-name";
 import { getRegistryOwner, normalizePeerId, verifyClaimSignature } from "@/lib/registry";
 import type { AgentClaim } from "@/lib/types";
 
@@ -21,6 +23,7 @@ interface ClaimBody {
   signature?: `0x${string}`;
   signerAddress?: `0x${string}`;
   timestamp?: number;
+  ensName?: string;
 }
 
 export async function POST(request: Request) {
@@ -45,6 +48,14 @@ export async function POST(request: Request) {
     ? body.signerAddress.trim()
     : "";
   const timestamp = typeof body.timestamp === "number" ? body.timestamp : 0;
+  let ensName: string | undefined;
+  if (typeof body.ensName === "string" && body.ensName.trim()) {
+    try {
+      ensName = normalizeRequestedAgentName(body.ensName);
+    } catch (err) {
+      return NextResponse.json({ ok: false, error: (err as Error).message }, { status: 400 });
+    }
+  }
 
   if (
     !peer ||
@@ -89,7 +100,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const message = claimMessage({ ...originParts(request.url), peer: normalizedPeer, code, timestamp });
+  if (ensName) {
+    const existingNameClaim = await getAgentClaimByEnsName(ensName);
+    if (existingNameClaim && existingNameClaim.peer !== normalizedPeer.slice(2)) {
+      return NextResponse.json(
+        { ok: false, error: `${ensName} is already bound to another Polis agent` },
+        { status: 409 },
+      );
+    }
+  }
+
+  const message = claimMessage({ ...originParts(request.url), peer: normalizedPeer, code, ensName, timestamp });
   const sigOk = await verifyClaimSignature({
     message,
     signature: signature as `0x${string}`,
@@ -119,6 +140,8 @@ export async function POST(request: Request) {
   const claim: AgentClaim = {
     peer: normalizedPeer.slice(2), // store as 64-char hex without 0x
     ownerWallet: signerAddress.toLowerCase() as `0x${string}`,
+    ensName,
+    ensStatus: ensName ? "reserved" : undefined,
     signature: signature as `0x${string}`,
     signedMessage: message,
     claimedAt: Date.now(),
@@ -130,6 +153,8 @@ export async function POST(request: Request) {
     claim: {
       peer: claim.peer,
       ownerWallet: claim.ownerWallet,
+      ensName: claim.ensName,
+      ensStatus: claim.ensStatus,
       claimedAt: claim.claimedAt,
     },
   });

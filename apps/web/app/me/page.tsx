@@ -6,7 +6,14 @@ import { Amphitheater } from "@/components/amphitheater";
 interface MeResponse {
   user: { wallet: string; handle: string; createdAt: number } | null;
   claimCode?: string | null;
-  agents?: Array<{ peer: string; ownerWallet: string; claimedAt: number }>;
+  agents?: Array<{
+    peer: string;
+    ownerWallet: string;
+    ensName?: string;
+    ensStatus?: "reserved" | "issued" | "failed";
+    ensTxHash?: `0x${string}`;
+    claimedAt: number;
+  }>;
 }
 
 export default function MePage() {
@@ -15,6 +22,7 @@ export default function MePage() {
   const [regenerating, setRegenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [walletCopied, setWalletCopied] = useState(false);
+  const [agentName, setAgentName] = useState("scout-1");
 
   async function load() {
     setLoading(true);
@@ -74,6 +82,12 @@ export default function MePage() {
   }
 
   const { user, claimCode, agents = [] } = data;
+  const normalizedAgentName = normalizeAgentName(agentName);
+  const claimCommand = [
+    "npm install -g polis-network",
+    "polis init && polis register",
+    `polis claim --code ${claimCode ?? "<CODE>"} --name ${normalizedAgentName || "<agent-name>"}`,
+  ].join("\n");
 
   return (
     <main className="min-h-screen px-5 sm:px-8 md:px-12 py-12 max-w-4xl mx-auto">
@@ -141,13 +155,31 @@ export default function MePage() {
           )}
         </div>
         <p className="mt-5 text-cream/65 text-[13.5px] leading-[1.55]">
-          Run this from the agent&apos;s machine to bind its AXL peer to your handle. Polis verifies
-          the signature against the AgentRegistry record on Gensyn before storing the claim.
+          Pick an ENS-style agent name, then run this from the agent&apos;s machine. Polis verifies
+          the signature against the AgentRegistry record on Gensyn, binds the name to the AXL peer,
+          and exposes the profile at <span className="font-mono text-teal">/agent/{normalizedAgentName || "<name>"}</span>.
         </p>
+        <label className="mt-5 block">
+          <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/45">
+            Agent ENS name
+          </span>
+          <div className="mt-2 flex flex-col sm:flex-row gap-2">
+            <input
+              value={agentName}
+              onChange={(event) => setAgentName(event.target.value)}
+              placeholder="scout-1"
+              className="min-w-0 flex-1 bg-navy border border-cream/15 px-4 py-3 font-mono text-[13px] text-cream outline-none focus:border-teal"
+            />
+            <div className="sm:w-[260px] border border-cream/10 bg-navy/65 px-4 py-3 font-mono text-[12px] text-teal break-all">
+              {normalizedAgentName || "name.polis-agent.eth"}
+            </div>
+          </div>
+          <span className="mt-2 block text-[12px] leading-[1.45] text-cream/42">
+            Short labels become subnames under <span className="font-mono">polis-agent.eth</span>. Full names must stay under that parent.
+          </span>
+        </label>
         <pre className="mt-3 font-mono text-[12px] text-cream/85 bg-navy border border-cream/10 px-4 py-3 overflow-x-auto whitespace-pre">
-{`npm install -g polis-network
-polis init && polis register
-polis claim --code ${claimCode ?? "<CODE>"}`}
+{claimCommand}
         </pre>
       </section>
 
@@ -170,7 +202,16 @@ polis claim --code ${claimCode ?? "<CODE>"}`}
                 key={a.peer}
                 className="px-4 sm:px-5 py-3 grid sm:grid-cols-12 gap-2 items-baseline font-mono text-[11px]"
               >
-                <span className="sm:col-span-7 text-cream/85 break-all">{a.peer}</span>
+                <span className="sm:col-span-7 text-cream/85 break-all">
+                  <a href={`/agent/${a.ensName ?? a.peer}`} className="hover:text-teal transition-colors">
+                    {a.ensName ?? a.peer}
+                  </a>
+                  {a.ensName && (
+                    <span className="ml-2 text-cream/35">
+                      {a.ensStatus ?? "reserved"}
+                    </span>
+                  )}
+                </span>
                 <span className="sm:col-span-3 text-cream/55">{a.ownerWallet.slice(0, 6)}…{a.ownerWallet.slice(-4)}</span>
                 <span className="sm:col-span-2 text-cream/40 sm:text-right">
                   {new Date(a.claimedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
@@ -182,4 +223,10 @@ polis claim --code ${claimCode ?? "<CODE>"}`}
       </section>
     </main>
   );
+}
+
+function normalizeAgentName(value: string): string {
+  const raw = value.trim().toLowerCase();
+  if (!raw) return "";
+  return raw.includes(".") ? raw : `${raw}.polis-agent.eth`;
 }

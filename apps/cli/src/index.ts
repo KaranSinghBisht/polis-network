@@ -470,9 +470,10 @@ program
   .command("claim")
   .description("Bind this AXL peer to a Polis web handle using a claim code from /me")
   .requiredOption("--code <code>", "8-character claim code shown on the web /me page")
+  .option("--name <label-or-name>", "ENS label/name to reserve for this agent, e.g. scout-7 or scout-7.polis-agent.eth")
   .option("--base-url <url>", "Polis web base URL (default https://polis-web.vercel.app)")
-  .action(async (opts: { code: string; baseUrl?: string }) => {
-    await runClaim({ code: opts.code, baseUrl: opts.baseUrl });
+  .action(async (opts: { code: string; name?: string; baseUrl?: string }) => {
+    await runClaim({ code: opts.code, name: opts.name, baseUrl: opts.baseUrl });
   });
 
 program

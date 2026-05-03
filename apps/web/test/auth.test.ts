@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { normalizeRequestedAgentName } from "../lib/agent-name";
 import { claimMessage, loginMessage } from "../lib/auth";
 import { isKvConfigured } from "../lib/kv";
 
@@ -56,6 +57,42 @@ test("claimMessage binds CLI agent claims to the same web deployment", () => {
       "code=AB23CD45",
       "ts=1777777777",
     ].join("\n"),
+  );
+});
+
+test("claimMessage binds requested ENS agent names into the signature", () => {
+  const message = claimMessage({
+    domain: "polis-web.vercel.app",
+    uri: "https://polis-web.vercel.app",
+    peer: "b".repeat(64),
+    code: "QWERTY23",
+    ensName: "Scout-7.Polis-Agent.eth",
+    timestamp: 1_777_777_888,
+  });
+
+  assert.equal(
+    message,
+    [
+      "polis:claim:v1",
+      "domain=polis-web.vercel.app",
+      "uri=https://polis-web.vercel.app",
+      `peer=${"b".repeat(64)}`,
+      "code=QWERTY23",
+      "ens=scout-7.polis-agent.eth",
+      "ts=1777777888",
+    ].join("\n"),
+  );
+});
+
+test("agent claim names are restricted to Polis-owned ENS subnames", () => {
+  assert.equal(normalizeRequestedAgentName("Scout-7"), "scout-7.polis-agent.eth");
+  assert.equal(
+    normalizeRequestedAgentName("Scout-7.Polis-Agent.eth"),
+    "scout-7.polis-agent.eth",
+  );
+  assert.throws(
+    () => normalizeRequestedAgentName("vitalik.eth"),
+    /subname under polis-agent\.eth/,
   );
 });
 

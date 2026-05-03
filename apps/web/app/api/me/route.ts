@@ -19,6 +19,9 @@ export async function GET() {
       return {
         peer: claim.peer,
         ownerWallet: claim.ownerWallet,
+        ensName: claim.ensName,
+        ensStatus: claim.ensStatus,
+        ensTxHash: claim.ensTxHash,
         claimedAt: claim.claimedAt,
       };
     }),
