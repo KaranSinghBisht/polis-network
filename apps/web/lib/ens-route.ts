@@ -39,47 +39,48 @@ const ensClient = createPublicClient({
 });
 
 export async function resolveAgentEnsRoute(routeId: string): Promise<AgentEnsRoute | null> {
-  let name: string;
   try {
-    name = normalize(routeId);
-  } catch {
+    let name: string;
+    try {
+      name = normalize(routeId);
+    } catch {
+      return null;
+    }
+    if (!name.endsWith(".eth")) return null;
+
+    // Short-circuit the demo name to avoid 13+ ENS RPC calls per page load.
+    if (name === DEMO_ENS) {
+      return demoSnapshotRoute(name);
+    }
+
+    try {
+      const [peerText, resolvedAddress, records] = await Promise.all([
+        ensClient.getEnsText({ name, key: POLIS_PEER_TEXT_KEY }),
+        ensClient.getEnsAddress({ name }),
+        resolveDiscoveryRecords(name),
+      ]);
+      const peer = normalizePeerText(peerText);
+      if (peer) {
+        return {
+          name,
+          peer,
+          resolvedAddress: resolvedAddress ? getAddress(resolvedAddress) : undefined,
+          records,
+          source: "sepolia-ens",
+        };
+      }
+    } catch {
+      // RPC failure — fall through to demo snapshot or null.
+    }
+
+    if (name === DEMO_ENS) {
+      return demoSnapshotRoute(name);
+    }
+    return null;
+  } catch (err) {
+    console.error("resolveAgentEnsRoute failed", err);
     return null;
   }
-  if (!name.endsWith(".eth")) return null;
-
-  // Short-circuit for the demo name. The on-chain Sepolia records exist for
-  // polis-agent.eth, but resolving them from a Vercel serverless function
-  // routinely exceeds the 10s timeout because it makes ~13 parallel ENS text
-  // calls against the public RPC. The demo-snapshot below is the same data we
-  // wrote on-chain, so we serve it directly and skip the network round trip.
-  if (name === DEMO_ENS) {
-    return demoSnapshotRoute(name);
-  }
-
-  try {
-    const [peerText, resolvedAddress, records] = await Promise.all([
-      ensClient.getEnsText({ name, key: POLIS_PEER_TEXT_KEY }),
-      ensClient.getEnsAddress({ name }),
-      resolveDiscoveryRecords(name),
-    ]);
-    const peer = normalizePeerText(peerText);
-    if (peer) {
-      return {
-        name,
-        peer,
-        resolvedAddress: resolvedAddress ? getAddress(resolvedAddress) : undefined,
-        records,
-        source: "sepolia-ens",
-      };
-    }
-  } catch {
-    // The demo route still needs to render if the public Sepolia RPC is rate-limited.
-  }
-
-  if (name === DEMO_ENS) {
-    return demoSnapshotRoute(name);
-  }
-  return null;
 }
 
 function demoSnapshotRoute(_name: string): AgentEnsRoute {
