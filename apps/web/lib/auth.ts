@@ -151,11 +151,12 @@ export function claimMessage({
   ensName?: string;
   timestamp: number;
 }): string {
+  const normalizedPeer = peer.trim().toLowerCase().replace(/^0x/, "");
   const lines = [
     "polis:claim:v1",
     `domain=${domain}`,
     `uri=${uri}`,
-    `peer=${peer.toLowerCase()}`,
+    `peer=${normalizedPeer}`,
     `code=${code.toUpperCase()}`,
   ];
   if (ensName) lines.push(`ens=${ensName.toLowerCase()}`);

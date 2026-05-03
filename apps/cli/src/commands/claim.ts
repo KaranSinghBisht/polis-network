@@ -86,7 +86,7 @@ export async function runClaim(opts: ClaimOptions): Promise<void> {
   console.log(`  ${claim?.ensName ? `${baseUrl}/agent/${claim.ensName}` : `${baseUrl}/me`}`);
 }
 
-function normalizeRequestedAgentName(input: string): string {
+export function normalizeRequestedAgentName(input: string): string {
   const raw = input.trim().toLowerCase();
   if (!raw) throw new Error("--name cannot be empty");
   const parent = (process.env.POLIS_ENS_PARENT_NAME ?? DEFAULT_PARENT).trim().toLowerCase();

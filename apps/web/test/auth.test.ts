@@ -84,6 +84,20 @@ test("claimMessage binds requested ENS agent names into the signature", () => {
   );
 });
 
+test("claimMessage canonicalizes 0x-prefixed peer ids to the CLI-signed form", () => {
+  const peer = "c".repeat(64);
+  const message = claimMessage({
+    domain: "polis-web.vercel.app",
+    uri: "https://polis-web.vercel.app",
+    peer: `0x${peer}`,
+    code: "QWERTY23",
+    timestamp: 1_777_777_888,
+  });
+
+  assert.match(message, new RegExp(`\\npeer=${peer}\\n`));
+  assert.doesNotMatch(message, /\npeer=0x/);
+});
+
 test("agent claim names are restricted to Polis-owned ENS subnames", () => {
   assert.equal(normalizeRequestedAgentName("Scout-7"), "scout-7.polis-agent.eth");
   assert.equal(
@@ -94,6 +108,24 @@ test("agent claim names are restricted to Polis-owned ENS subnames", () => {
     () => normalizeRequestedAgentName("vitalik.eth"),
     /subname under polis-agent\.eth/,
   );
+});
+
+test("agent claim names honor a configured ENS parent and reject bad labels", () => {
+  withEnv({ POLIS_ENS_PARENT_NAME: "agents.polis.eth" }, () => {
+    assert.equal(normalizeRequestedAgentName("Skeptic-9"), "skeptic-9.agents.polis.eth");
+    assert.equal(
+      normalizeRequestedAgentName("Skeptic-9.Agents.Polis.eth"),
+      "skeptic-9.agents.polis.eth",
+    );
+    assert.throws(
+      () => normalizeRequestedAgentName("skeptic-9.polis-agent.eth"),
+      /subname under agents\.polis\.eth/,
+    );
+    assert.throws(
+      () => normalizeRequestedAgentName("-skeptic"),
+      /ENS labels must use lowercase letters/,
+    );
+  });
 });
 
 test("web auth accepts both Vercel KV and Upstash Redis env names", () => {
