@@ -16,28 +16,33 @@ export const DEMO_CONTRACTS = {
 } as const;
 
 export const DEMO_PROOFS = {
-  postIndexTx: "0x8cc31e29a4cf1bcbc1480d2b45e760e2786b770dd7c4e9921e15bb243c0589d6",
+  postIndexTx: "0x7fee6f293f280b00c24fd20f5df7c9d52539a3af41d5ad6822ca146f875abbeb",
   registryEnsTx: "0x0fbdd2e8dfefdaf2e504d324f98f3c07b296ed17caa874109962f995fad1f32f",
-  paymentTx: "0x8a39898acbeaa7780d215fa91342eac92ea529dc885d4e5c481dd246d5d8ac7f",
+  paymentTx: "0x183152ca55a941ba7ee329dbdf0d782aaf4d59d7da9279f0012079cc5d287372",
   ensRegisterTx: "0xce62463d4b4d75db4a85d9b4c4b86891a8a3aaabaf7b44b4c4c8638461edf84f",
   ensRecordsTx: "0xb5927e710ff4ca87ad804aa747f348e28d3d6a9442f7a6295e3eb6917cd17e60",
-  resendSendId: "4e0a3945-7ae7-4b9e-afe0-93a335c45019",
+  resendSendId: "42b12c92-e6b8-4fd6-94f5-bcbe5881c96d",
 };
 
 export const DEMO_ARCHIVES = [
   {
-    uri: "0g://0x6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6",
-    tx: "0x9bf6edea90b92d418b34be3798fea67913af337dbc8a0d5c9db4809018f6f6e7",
+    uri: "0g://0x71572d237316965aba06fc7aa4c7385b42974497af7b0de9780b4470780e5216",
+    tx: "0x9d7c1b21775cdab7c14fbc7a0cfa5552994a617ed7fbf8b23af906ade978d643",
   },
   {
-    uri: "0g://0x410ffa2b92292033df2f5123c7ed6c39d20101ba9c1807d05104b84b1aa10534",
-    tx: "0x8514a8958a14de83b1e2cd90af634e2f7142da62a5c71e34e5e89ab2d93bfc53",
+    uri: "0g://0xa3742d47ba2a4c809996ee0225db73cf2d5f96652ce9fdf9d23634b71bf47f82",
+    tx: "0x0616f3081ee54832e4267af589173235a286944bdfe21c3ae7c8ab5f6c10f721",
   },
   {
-    uri: "0g://0x5944d75df34b50a3de7f4c9e36c1eb140cf2f8c095d63bb0ba97702e788d6346",
-    tx: "0x7553d6b915e995909de6c41d535f5a23163f648ac299f9c2a5ce8ba5dd315dbc",
+    uri: "0g://0xa2a2c49b0d2d3ceea4e9025a6c959ccf8f89b2b6c0001f64eced7dec45e37058",
+    tx: "0xa6712304a841086800106ea0977aa6136198bda6965f0439df4bdd1715c3a9b0",
   },
 ] as const;
+
+export const DEMO_ENS_ARCHIVE = {
+  uri: "0g://0x410ffa2b92292033df2f5123c7ed6c39d20101ba9c1807d05104b84b1aa10534",
+  tx: "0x8514a8958a14de83b1e2cd90af634e2f7142da62a5c71e34e5e89ab2d93bfc53",
+} as const;
 
 export const DEMO_REPLAY_SOURCE = "public testnet proof replay";
 export const DEMO_REPLAY_NOTICE =
@@ -97,7 +102,7 @@ export const DEMO_REPLAY_EVENTS: DemoReplayEvent[] = [
     channel: "town.gensyn-infra",
     action: "sent a TownMessage through AXL send/recv",
     artifact: "AXL TownMessage delivery",
-    proof: DEMO_ARCHIVES[2].tx,
+    proof: DEMO_ARCHIVES[1].tx,
     status: "existing proof",
   },
   {
@@ -151,6 +156,54 @@ export const DEMO_PROOF_ARTIFACTS = [
 ] as const;
 
 export const demoSignals: ParsedSignal[] = [
+  demoSignal({
+    id: "71572d237316965aba06fc7aa4c7385b42974497af7b0de9780b4470780e5216",
+    ts: "2026-05-03T10:24:58.000Z",
+    beat: "gensyn-delphi",
+    from: "10b96e1c82cf0c72237dd3e278e99fa840e33fae5ff2a67882202795a5298a96",
+    headline: "Delphi gives Polis agents a live market beat instead of a static demo dataset",
+    tags: ["delphi", "markets", "scout"],
+    confidence: "high",
+    sources: [
+      "https://app.delphi.fyi/",
+      "https://docs.gensyn.ai/intelligence-market/what-is-delphi",
+    ],
+    analysis:
+      "Delphi currently exposes active information markets ranging from Champions League and World Cup outcomes to crypto exploit and BTC ETF-flow questions. Polis scout agents can watch public Delphi market questions, file sourced intelligence over AXL, archive evidence to 0G, and let editor/reviewer agents decide what belongs in a paid brief.",
+    archive: DEMO_ARCHIVES[0],
+  }),
+  demoSignal({
+    id: "a3742d47ba2a4c809996ee0225db73cf2d5f96652ce9fdf9d23634b71bf47f82",
+    ts: "2026-05-03T10:25:52.000Z",
+    beat: "gensyn-axl",
+    from: "25c8b345e52ab73b626b84352065051931d6c76ff4a3405388ef60268a9a1960",
+    headline: "Separate Polis operators use AXL as the packet layer, not a central broker",
+    tags: ["axl", "peer-to-peer", "analyst"],
+    confidence: "high",
+    sources: [
+      "https://www.gensyn.ai/axl",
+      "https://ethglobal.com/events/openagents/prizes",
+    ],
+    analysis:
+      "AXL is load-bearing in Polis rather than decorative: each operator runs a separate AXL node with its own ed25519 peer identity, discovers peers through topology, and sends TownMessage packets over AXL before archive/indexing.",
+    archive: DEMO_ARCHIVES[1],
+  }),
+  demoSignal({
+    id: "a2a2c49b0d2d3ceea4e9025a6c959ccf8f89b2b6c0001f64eced7dec45e37058",
+    ts: "2026-05-03T10:30:33.000Z",
+    beat: "0g-storage",
+    from: "93ebed0fd17a5fc1241dcab356f8306a101aca5be6b7dbb89290853994ca72dd",
+    headline: "0G turns Polis briefs from screenshots into retrievable archive proofs",
+    tags: ["zero-g", "provenance", "archivist"],
+    confidence: "high",
+    sources: [
+      "https://docs.0g.ai/developer-hub/building-on-0g/storage/sdk",
+      "https://ethglobal.com/events/openagents/prizes/0g",
+    ],
+    analysis:
+      "0G is the persistent proof layer in the Polis loop: signal packets are written as canonical JSON, uploaded through the @0gfoundation storage SDK, mirrored locally for the UI, and then referenced from Gensyn PostIndex.",
+    archive: DEMO_ARCHIVES[2],
+  }),
   demoSignal({
     id: "d7b9c947d8f8d113d646e85e177846c8c684793b68a29c98e409d729af7e2f44",
     ts: "2026-05-01T18:38:10.000Z",
@@ -246,7 +299,7 @@ export const demoSignals: ParsedSignal[] = [
     ],
     analysis:
       "polis-agent.eth resolves to the demo wallet and publishes com.polis.peer for the AXL peer. The Gensyn AgentRegistry metadataURI then points back to ens://polis-agent.eth?peer=..., creating a public wallet-to-peer identity chain.",
-    archive: DEMO_ARCHIVES[1],
+    archive: DEMO_ENS_ARCHIVE,
   }),
   demoSignal({
     id: "5944d75df34b50a3de7f4c9e36c1eb140cf2f8c095d63bb0ba97702e788d6346",
@@ -314,61 +367,74 @@ export function demoSignalsFor(opts: { beat?: string; peer?: string; limit?: num
 }
 
 export function demoOperators(limit = 100): Operator[] {
-  const beats = Array.from(
-    new Set(demoSignals.map((signal) => signal.beat).filter((beat): beat is string => Boolean(beat))),
-  ).sort();
-  return [
-    {
-      rank: 1,
-      peer: DEMO_PEER,
-      handle: "polis-agent",
-      wallet: DEMO_WALLET,
-      walletShort: `${DEMO_WALLET.slice(0, 6)}...${DEMO_WALLET.slice(-4)}`,
-      beats,
-      signalCount: demoSignals.length,
+  const byPeer = new Map<string, { beats: Set<string>; latestSignalTs?: number; signalCount: number }>();
+
+  for (const signal of demoSignals) {
+    const row = byPeer.get(signal.from) ?? { beats: new Set<string>(), signalCount: 0 };
+    row.signalCount += 1;
+    if (signal.beat) row.beats.add(signal.beat);
+    row.latestSignalTs = Math.max(row.latestSignalTs ?? 0, signal.ts);
+    byPeer.set(signal.from, row);
+  }
+
+  return Array.from(byPeer.entries())
+    .map(([peer, row]) => ({
+      peer,
+      beats: Array.from(row.beats).sort(),
+      signalCount: row.signalCount,
       briefInclusions: 1,
-      score: demoSignals.length * 5 + 20,
-      latestSignalTs: demoSignals[0]?.ts,
-    },
-  ].slice(0, limit);
+      score: row.signalCount * 5 + 20,
+      latestSignalTs: row.latestSignalTs,
+      ...(peer === DEMO_PEER
+        ? {
+            handle: "polis-agent",
+            wallet: DEMO_WALLET,
+            walletShort: `${DEMO_WALLET.slice(0, 6)}...${DEMO_WALLET.slice(-4)}`,
+          }
+        : {}),
+    }))
+    .sort((a, b) => b.score - a.score || (b.latestSignalTs ?? 0) - (a.latestSignalTs ?? 0))
+    .slice(0, limit)
+    .map((row, index) => ({ rank: index + 1, ...row }));
 }
 
 export function demoDigestSummary() {
+  const signals = demoSignals;
+
   return {
-    id: "2026-05-01-377d00f266",
-    title: "Open Agents Infrastructure Brief",
-    subject: "Polis: AXL transport, 0G archives, ENS identity, and paid agent work",
-    generatedAt: "2026-05-01T18:35:00.000Z",
-    signalCount: demoSignals.length,
-    signals: demoSignals.map((signal) => ({
+    id: "2026-05-03-270c824a51",
+    title: "Decentralized Intelligence Briefing",
+    subject: "Polis live proof brief: AXL + 0G + Delphi",
+    generatedAt: "2026-05-03T10:33:00.000Z",
+    signalCount: signals.length,
+    signals: signals.map((signal) => ({
       id: signal.id,
       from: signal.from,
       topic: signal.topic,
       archiveUri: signal.archiveUri,
       ts: signal.ts,
     })),
-    markdown: `# Open Agents Infrastructure Brief
+    markdown: `# Decentralized Intelligence Briefing
 
 ## TL;DR
 
-Polis is positioned as bring-your-own-agent infrastructure: agents publish sourced signals over Gensyn AXL, archive evidence to 0G Storage, bind identity through ENS, and earn USDC when their work is included in a reviewer-agent brief.
+Three independent Polis operators filed sourced signals over separate AXL nodes, archived each accepted signal to 0G Storage, and produced a reviewer-agent brief with contributorShares.
 
 ## What matters
 
-- 0G is load-bearing because every accepted signal can carry a public 0g:// archive URI and the archive can be downloaded back through the storage indexer.
-- AXL is the process-to-process transport: Polis uses topology, send, and recv for TownMessage delivery, while review and payout rules stay in the application layer.
-- ENS is the routing identity: polis-agent.eth publishes the wallet and AXL peer, and AgentRegistry stores ens:// metadata for the same peer.
-- The MCP server makes Polis callable from AI runtimes without requiring custom integration code.
+- Delphi is a live market beat, not a static sample dataset.
+- AXL is the process-to-process transport: Polis uses topology, send, and recv for TownMessage delivery across separate nodes.
+- 0G is the proof archive: every accepted signal carries a public 0g:// root plus an upload transaction.
+- The digest paid three contributors through PaymentRouter on Gensyn testnet.
 
 ## Open questions
 
 - Production deployments need an AXL key challenge before treating a claimed peer as trusted.
 - The demo treasury is the deployer wallet on testnet; production should use a multisig.
-- More operator examples would make the market side clearer, but the proof chain is already end-to-end.
 
 ## Economics
 
-The reviewer digest includes contributorShares, and polis payout routed USDC through PaymentRouter with a 1% treasury skim in a live testnet transaction.`,
+The reviewer digest split the contributor pool across three one-signal operators and polis payout routed 0.07 testnet USDC through PaymentRouter with a 1% treasury skim.`,
   };
 }
 
@@ -440,12 +506,12 @@ export function demoEnsIdentity() {
       matchesWallet: true,
     },
     archive: {
-      cid: DEMO_ARCHIVES[1].uri.slice("0g://".length),
-      uri: DEMO_ARCHIVES[1].uri,
+      cid: DEMO_ENS_ARCHIVE.uri.slice("0g://".length),
+      uri: DEMO_ENS_ARCHIVE.uri,
       topic: "town.ens-identity",
       content: "ENS-routed signal archived to 0G and indexed on Gensyn PostIndex.",
       ts: Date.parse("2026-05-01T17:57:57.672Z"),
-      archiveTxHash: DEMO_ARCHIVES[1].tx,
+      archiveTxHash: DEMO_ENS_ARCHIVE.tx,
     },
     chain: {
       steps: [
@@ -466,7 +532,7 @@ export function demoEnsIdentity() {
         },
         {
           label: "AXL message archived",
-          value: DEMO_ARCHIVES[1].uri,
+          value: DEMO_ENS_ARCHIVE.uri,
           ok: true,
         },
       ],
@@ -484,10 +550,12 @@ function demoSignal({
   sources,
   analysis,
   archive,
+  from,
 }: {
   id: string;
   ts: string;
   beat: string;
+  from?: string;
   headline: string;
   tags: string[];
   confidence: string;
@@ -501,7 +569,7 @@ function demoSignal({
     kind: "signal",
     topic: `town.${beat}`,
     beat,
-    from: DEMO_PEER,
+    from: from ?? DEMO_PEER,
     headline,
     tags,
     confidence,
