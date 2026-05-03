@@ -5,6 +5,7 @@ import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 import {
   DEMO_CONTRACTS,
   DEMO_ENS,
+  DEMO_MARKET_ROUND,
   DEMO_PROOF_ARTIFACTS,
   DEMO_PROOFS,
   DEMO_REPLAY_EVENTS,
@@ -23,6 +24,7 @@ import {
   GENSYN_CHAIN_ID,
   REGISTRY_ADDRESS,
   gensynExplorerAddress,
+  gensynExplorerTx,
   getAgentRecord,
 } from "@/lib/registry";
 import { loadArchivedSignals, type ParsedSignal } from "@/lib/signals";
@@ -104,6 +106,8 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
       />
 
       <StatsStrip signals={signals} record={record} zeroGSignals={zeroGSignals} isDemo={isDemo} />
+
+      {isDemo && <AgentProofPath />}
 
       <section className="px-5 sm:px-8 md:px-12 py-12 md:py-16 max-w-6xl mx-auto w-full grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] gap-10 lg:gap-12">
         <div className="min-w-0">
@@ -518,6 +522,92 @@ function Stat({ n, label, sub }: { n: string; label: string; sub: string }) {
         {sub}
       </div>
     </div>
+  );
+}
+
+function AgentProofPath() {
+  const steps = [
+    {
+      label: "ENS route",
+      value: DEMO_ENS,
+      detail: "human-readable agent identity",
+      href: `https://sepolia.app.ens.domains/${DEMO_ENS}`,
+    },
+    {
+      label: "AXL peer",
+      value: DEMO_MARKET_ROUND.nodes[0].peer,
+      detail: "message source in the market desk round",
+      href: undefined,
+    },
+    {
+      label: "0G archive",
+      value: DEMO_MARKET_ROUND.nodes[0].archive.uri,
+      detail: "retrievable signal bundle",
+      href: `https://chainscan-galileo.0g.ai/tx/${DEMO_MARKET_ROUND.nodes[0].archive.tx}`,
+    },
+    {
+      label: "PostIndex",
+      value: DEMO_MARKET_ROUND.nodes[0].archive.postIndexTx,
+      detail: "Gensyn chain pointer to the archive",
+      href: gensynExplorerTx(DEMO_MARKET_ROUND.nodes[0].archive.postIndexTx),
+    },
+    {
+      label: "Payout",
+      value: DEMO_MARKET_ROUND.outcome.payoutTx,
+      detail: `${DEMO_MARKET_ROUND.outcome.contributorPool} contributor pool`,
+      href: gensynExplorerTx(DEMO_MARKET_ROUND.outcome.payoutTx),
+    },
+  ];
+  return (
+    <section className="border-b border-cream/10 bg-[#071224]/70">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 md:px-12 py-8">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-5">
+          <span className="font-mono text-[10.5px] tracking-[0.2em] uppercase text-teal">
+            agent passport
+          </span>
+          <span className="font-mono text-[10.5px] text-cream/45">
+            name {"->"} peer {"->"} archive {"->"} index {"->"} earnings
+          </span>
+        </div>
+        <div className="grid md:grid-cols-5 gap-2">
+          {steps.map((step, index) => {
+            const body = (
+              <>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-cream/35">
+                    {index + 1}. {step.label}
+                  </span>
+                  {index < steps.length - 1 && (
+                    <span className="hidden md:inline font-mono text-[13px] text-teal/45">→</span>
+                  )}
+                </div>
+                <div className="mt-2 font-mono text-[11px] text-cream/82 truncate" title={step.value}>
+                  {shorten(step.value, 12, 6)}
+                </div>
+                <div className="mt-1 text-[12px] leading-[1.45] text-cream/48">
+                  {step.detail}
+                </div>
+              </>
+            );
+            return step.href ? (
+              <a
+                key={step.label}
+                href={step.href}
+                target="_blank"
+                rel="noreferrer"
+                className="border border-cream/10 bg-navy/60 px-3 py-3 min-w-0 hover:border-teal/40 transition-colors"
+              >
+                {body}
+              </a>
+            ) : (
+              <div key={step.label} className="border border-cream/10 bg-navy/60 px-3 py-3 min-w-0">
+                {body}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 

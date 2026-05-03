@@ -28,14 +28,17 @@ export const DEMO_ARCHIVES = [
   {
     uri: "0g://0x71572d237316965aba06fc7aa4c7385b42974497af7b0de9780b4470780e5216",
     tx: "0x9d7c1b21775cdab7c14fbc7a0cfa5552994a617ed7fbf8b23af906ade978d643",
+    postIndexTx: "0x2a861cc21e23dfa37ffb1bfc934c3d944ca0c7f4c10e59a79f61a0779bed7eb1",
   },
   {
     uri: "0g://0xa3742d47ba2a4c809996ee0225db73cf2d5f96652ce9fdf9d23634b71bf47f82",
     tx: "0x0616f3081ee54832e4267af589173235a286944bdfe21c3ae7c8ab5f6c10f721",
+    postIndexTx: "0xfa42a2af75d54b87a85655a00d9fb4b1a96cebb2ce8e5d841e54f6139646c54f",
   },
   {
     uri: "0g://0xa2a2c49b0d2d3ceea4e9025a6c959ccf8f89b2b6c0001f64eced7dec45e37058",
     tx: "0xa6712304a841086800106ea0977aa6136198bda6965f0439df4bdd1715c3a9b0",
+    postIndexTx: "0x7fee6f293f280b00c24fd20f5df7c9d52539a3af41d5ad6822ca146f875abbeb",
   },
 ] as const;
 
@@ -59,6 +62,49 @@ export interface DemoReplayEvent {
   proof?: string;
   status: "existing proof" | "replay event" | "known gap";
 }
+
+export const DEMO_MARKET_ROUND = {
+  id: "market-desk-2026-05-03",
+  title: "Prediction-market intelligence round",
+  source: "https://app.delphi.fyi/",
+  summary:
+    "Three independently registered operators filed one market-facing briefing round: scout sourced the market beat, analyst verified the AXL transport, archivist anchored the accepted signal bundle to 0G.",
+  nodes: [
+    {
+      role: "scout",
+      peer: "10b96e1c82cf0c72237dd3e278e99fa840e33fae5ff2a67882202795a5298a96",
+      wallet: "0x411204BB2dD5fCfbE83C75D73154EF5529Ac2975",
+      axl: "POST /send -> GET /recv",
+      bytes: 646,
+      action: "filed a sourced market signal and relayed it to peer operators",
+      archive: DEMO_ARCHIVES[0],
+    },
+    {
+      role: "analyst",
+      peer: "25c8b345e52ab73b626b84352065051931d6c76ff4a3405388ef60268a9a1960",
+      wallet: "0xC4d7F25cAC15000bbc6597C3252ff555b7a61293",
+      axl: "topology + inbound packet",
+      bytes: 607,
+      action: "confirmed the mesh path and added a transport-quality signal",
+      archive: DEMO_ARCHIVES[1],
+    },
+    {
+      role: "archivist",
+      peer: "93ebed0fd17a5fc1241dcab356f8306a101aca5be6b7dbb89290853994ca72dd",
+      wallet: "0xdA0377F4d3C8D2a6733B7B959901f96327Ff24ff",
+      axl: "broadcast accepted",
+      bytes: 680,
+      action: "uploaded the storage proof signal and closed the archive loop",
+      archive: DEMO_ARCHIVES[2],
+    },
+  ],
+  outcome: {
+    digestId: "2026-05-03-270c824a51",
+    resendSendId: DEMO_PROOFS.resendSendId,
+    payoutTx: DEMO_PROOFS.paymentTx,
+    contributorPool: "0.07 testnet USDC",
+  },
+} as const;
 
 export const DEMO_REPLAY_EVENTS: DemoReplayEvent[] = [
   {

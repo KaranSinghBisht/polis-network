@@ -3,6 +3,7 @@ import { Amphitheater } from "@/components/amphitheater";
 import { TownMesh } from "@/components/town-mesh";
 import {
   DEMO_ARCHIVES,
+  DEMO_MARKET_ROUND,
   DEMO_PEER,
   DEMO_PROOFS,
   DEMO_REPLAY_EVENTS,
@@ -152,6 +153,8 @@ export default async function TownPage({ searchParams }: PageProps) {
             isReplay={!canReadArchive}
           />
 
+          <MarketRound />
+
           {!canReadArchive && <ReplayStrip />}
 
           {beatCounts.length > 0 && (
@@ -236,6 +239,112 @@ function ProofRail({
           detail={isReplay ? "existing receipts only" : shorten(DEMO_ARCHIVES[0].uri, 18, 6)}
         />
         <ProofCard label="chain anchor" value="PostIndex event" detail={shorten(DEMO_PROOFS.postIndexTx, 18, 6)} />
+      </div>
+    </div>
+  );
+}
+
+function MarketRound() {
+  return (
+    <div className="border-b border-cream/10 bg-[#0A172A]/90 px-6 py-5">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-3">
+        <span className="font-mono text-[10.5px] tracking-[0.2em] uppercase text-amber">
+          market desk round
+        </span>
+        <span className="font-mono text-[10.5px] text-cream/45">
+          AXL packets · 0G archives · digest payout
+        </span>
+      </div>
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] gap-4">
+        <div>
+          <h2 className="font-display text-[28px] md:text-[34px] leading-[1.05] tracking-[-0.02em] text-cream">
+            {DEMO_MARKET_ROUND.title}
+          </h2>
+          <p className="mt-3 max-w-3xl text-[13px] leading-[1.6] text-cream/58">
+            {DEMO_MARKET_ROUND.summary}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href={DEMO_MARKET_ROUND.source}
+              target="_blank"
+              rel="noreferrer"
+              className="border border-cream/12 bg-cream/[0.025] px-3 py-2 font-mono text-[10px] tracking-[0.14em] uppercase text-cream/55 hover:text-teal hover:border-teal/35"
+            >
+              source market ↗
+            </a>
+            <a
+              href={`https://chainscan-galileo.0g.ai/tx/${DEMO_MARKET_ROUND.nodes[0].archive.tx}`}
+              target="_blank"
+              rel="noreferrer"
+              className="border border-teal/25 bg-teal/5 px-3 py-2 font-mono text-[10px] tracking-[0.14em] uppercase text-teal/85 hover:text-teal hover:border-teal/60"
+            >
+              first 0G upload ↗
+            </a>
+            <a
+              href={gensynTx(DEMO_MARKET_ROUND.nodes[0].archive.postIndexTx)}
+              target="_blank"
+              rel="noreferrer"
+              className="border border-cream/12 bg-cream/[0.025] px-3 py-2 font-mono text-[10px] tracking-[0.14em] uppercase text-cream/55 hover:text-teal hover:border-teal/35"
+            >
+              first PostIndex tx ↗
+            </a>
+          </div>
+        </div>
+        <div className="grid gap-2">
+          <RoundReceipt label="digest" value={DEMO_MARKET_ROUND.outcome.digestId} />
+          <RoundReceipt label="resend" value={DEMO_MARKET_ROUND.outcome.resendSendId} />
+          <RoundReceipt label="payout" value={shorten(DEMO_MARKET_ROUND.outcome.payoutTx, 14, 6)} />
+        </div>
+      </div>
+      <div className="mt-5 grid md:grid-cols-3 gap-2">
+        {DEMO_MARKET_ROUND.nodes.map((node, index) => (
+          <div key={node.peer} className="border border-cream/10 bg-navy/55 px-3.5 py-3 min-w-0">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-teal">
+                {index + 1}. {node.role}
+              </span>
+              <span className="font-mono text-[10px] text-cream/35">{node.bytes} bytes</span>
+            </div>
+            <div className="mt-2 font-mono text-[10.5px] text-cream/45 truncate" title={node.peer}>
+              peer {shorten(node.peer, 8, 6)}
+            </div>
+            <p className="mt-2 text-[12.5px] leading-[1.5] text-cream/62">
+              {node.action}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-1.5 font-mono text-[9.5px] tracking-[0.12em] uppercase">
+              <span className="border border-cream/10 bg-cream/[0.025] px-2 py-1 text-cream/45">
+                {node.axl}
+              </span>
+              <a
+                href={`https://chainscan-galileo.0g.ai/tx/${node.archive.tx}`}
+                target="_blank"
+                rel="noreferrer"
+                className="border border-teal/25 bg-teal/5 px-2 py-1 text-teal/80 hover:text-teal"
+              >
+                0G tx
+              </a>
+              <a
+                href={gensynTx(node.archive.postIndexTx)}
+                target="_blank"
+                rel="noreferrer"
+                className="border border-cream/10 bg-cream/[0.025] px-2 py-1 text-cream/45 hover:text-teal"
+              >
+                index tx
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RoundReceipt({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-cream/10 bg-navy/55 px-3 py-2 min-w-0">
+      <div className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-cream/35">{label}</div>
+      <div className="mt-1 font-mono text-[11.5px] text-cream/82 truncate" title={value}>
+        {value}
       </div>
     </div>
   );
@@ -567,6 +676,10 @@ function formatArchiveLink(uri: string): string {
     }
   }
   return "archive";
+}
+
+function gensynTx(tx: string): string {
+  return `https://gensyn-testnet.explorer.alchemy.com/tx/${tx}`;
 }
 
 function shorten(value: string, head = 8, tail = 6): string {
