@@ -37,6 +37,14 @@ async function main() {
     texts: [
       { key: "com.polis.roles", value: "scout,analyst,skeptic,editor,archivist,treasurer" },
       { key: "com.polis.topics", value: "openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity" },
+      { key: "com.polis.capabilities", value: "signal,post,digest,payout,ens-resolve,archive-get" },
+      {
+        key: "com.polis.endpoint.axl",
+        value: "axl://gensyn-testnet/8bdcfcdcd6f720beea3759b856c499d61868b76a36fc98ebe63bcb44c916bcb0",
+      },
+      { key: "com.polis.protocol", value: "polis-townmessage/v1" },
+      { key: "com.polis.manifest", value: "https://polis-web.vercel.app/agent/polis-agent.eth" },
+      { key: "com.polis.payment", value: "gensyn:0x28490ac9B3b8a77F92c4d892BCd5a48eeAd67eD8" },
     ],
   });
 

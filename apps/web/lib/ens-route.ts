@@ -1,7 +1,7 @@
 import { createPublicClient, getAddress, http } from "viem";
 import { sepolia } from "viem/chains";
 import { normalize } from "viem/ens";
-import { DEMO_ENS, DEMO_PEER, DEMO_WALLET } from "@/lib/demo-snapshot";
+import { DEMO_ARCHIVES, DEMO_CONTRACTS, DEMO_ENS, DEMO_PEER, DEMO_WALLET } from "@/lib/demo-snapshot";
 
 const ENS_ROUTE_RPC =
   process.env.POLIS_ENS_RPC_URL ??
@@ -9,13 +9,30 @@ const ENS_ROUTE_RPC =
   "https://ethereum-sepolia-rpc.publicnode.com";
 
 const POLIS_PEER_TEXT_KEY = "com.polis.peer";
+const ENS_DISCOVERY_KEYS = {
+  agent: "com.polis.agent",
+  roles: "com.polis.roles",
+  topics: "com.polis.topics",
+  registry: "com.polis.registry",
+  capabilities: "com.polis.capabilities",
+  endpoint: "com.polis.endpoint.axl",
+  protocol: "com.polis.protocol",
+  manifest: "com.polis.manifest",
+  storage: "com.polis.storage",
+  payment: "com.polis.payment",
+  url: "url",
+  description: "description",
+} as const;
 
 export interface AgentEnsRoute {
   name: string;
   peer: string;
   resolvedAddress?: `0x${string}`;
+  records: AgentEnsRecords;
   source: "sepolia-ens" | "demo-snapshot";
 }
+
+export type AgentEnsRecords = Partial<Record<keyof typeof ENS_DISCOVERY_KEYS, string>>;
 
 const ensClient = createPublicClient({
   chain: sepolia,
@@ -32,9 +49,10 @@ export async function resolveAgentEnsRoute(routeId: string): Promise<AgentEnsRou
   if (!name.endsWith(".eth")) return null;
 
   try {
-    const [peerText, resolvedAddress] = await Promise.all([
+    const [peerText, resolvedAddress, records] = await Promise.all([
       ensClient.getEnsText({ name, key: POLIS_PEER_TEXT_KEY }),
       ensClient.getEnsAddress({ name }),
+      resolveDiscoveryRecords(name),
     ]);
     const peer = normalizePeerText(peerText);
     if (peer) {
@@ -42,6 +60,7 @@ export async function resolveAgentEnsRoute(routeId: string): Promise<AgentEnsRou
         name,
         peer,
         resolvedAddress: resolvedAddress ? getAddress(resolvedAddress) : undefined,
+        records,
         source: "sepolia-ens",
       };
     }
@@ -54,6 +73,24 @@ export async function resolveAgentEnsRoute(routeId: string): Promise<AgentEnsRou
       name: DEMO_ENS,
       peer: DEMO_PEER,
       resolvedAddress: DEMO_WALLET,
+      records: {
+        agent: JSON.stringify({
+          role: "polis",
+          beats: ["openagents", "gensyn-infra", "delphi-markets"],
+          runtime: "polis-network",
+        }),
+        roles: "scout,analyst,skeptic,editor,archivist,treasurer",
+        topics: "openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity",
+        registry: DEMO_CONTRACTS.agentRegistry,
+        capabilities: "signal,post,digest,payout,ens-resolve,archive-get",
+        endpoint: `axl://gensyn-testnet/${DEMO_PEER}`,
+        protocol: "polis-townmessage/v1",
+        manifest: `https://polis-web.vercel.app/agent/${DEMO_ENS}`,
+        storage: DEMO_ARCHIVES[1].uri,
+        payment: `gensyn:${DEMO_CONTRACTS.paymentRouter}`,
+        url: "https://github.com/KaranSinghBisht/polis-network",
+        description: "Polis BYOA agent - files sourced intelligence over Gensyn AXL.",
+      },
       source: "demo-snapshot",
     };
   }
@@ -67,4 +104,18 @@ function normalizePeerText(value?: string | null): string | null {
     ? value.trim().slice(2).toLowerCase()
     : value.trim().toLowerCase();
   return /^[0-9a-f]{64}$/.test(peer) ? peer : null;
+}
+
+async function resolveDiscoveryRecords(name: string): Promise<AgentEnsRecords> {
+  const entries = await Promise.all(
+    Object.entries(ENS_DISCOVERY_KEYS).map(async ([field, key]) => {
+      try {
+        const value = await ensClient.getEnsText({ name, key });
+        return value ? [field, value] : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return Object.fromEntries(entries.filter(Boolean) as Array<[string, string]>) as AgentEnsRecords;
 }

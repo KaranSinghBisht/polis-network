@@ -64,6 +64,8 @@ export default function EnsOnboardingPage() {
             <ProofRow label="ENS name" value={DEMO_ENS} href={`https://sepolia.app.ens.domains/${DEMO_ENS}`} />
             <ProofRow label="wallet" value={DEMO_WALLET} />
             <ProofRow label="peer text" value={DEMO_PEER} />
+            <ProofRow label="endpoint" value={`axl://gensyn-testnet/${DEMO_PEER}`} />
+            <ProofRow label="capabilities" value="signal, post, digest, payout, ens-resolve, archive-get" />
             <ProofRow
               label="register tx"
               value={shortHash(DEMO_PROOFS.ensRegisterTx)}
@@ -98,7 +100,7 @@ export default function EnsOnboardingPage() {
           <FlowStep
             k="03"
             title="Records are written"
-            body="The ENS resolver stores the wallet address, com.polis.peer, com.polis.registry, roles, and topics."
+            body="The ENS resolver stores the wallet address, com.polis.peer, com.polis.registry, endpoint, protocol, roles, topics, and capabilities."
           />
           <FlowStep
             k="04"

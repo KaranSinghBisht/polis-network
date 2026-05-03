@@ -111,6 +111,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
         </div>
 
         <aside className="min-w-0 space-y-5">
+          {routeEns && <EnsRoutingCard route={routeEns} />}
           <SectionHeading title="Identity proof" />
           <EnsIdentityPanel variant="navy" />
           {!isDemo && (
@@ -145,6 +146,92 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
       <SiteFooter />
     </div>
   );
+}
+
+function EnsRoutingCard({ route }: { route: AgentEnsRoute }) {
+  const records = route.records;
+  const capabilities = splitRecord(records.capabilities);
+  const topics = splitRecord(records.topics);
+  const roles = splitRecord(records.roles);
+  return (
+    <div className="border border-teal/25 bg-teal/5 p-5">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-teal">
+            ENS discovery card
+          </div>
+          <div className="mt-2 font-display text-[28px] leading-none tracking-[-0.02em] text-cream">
+            {route.name}
+          </div>
+        </div>
+        <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-cream/45 border border-cream/10 px-2 py-1">
+          {route.source === "sepolia-ens" ? "live resolver" : "cached proof"}
+        </span>
+      </div>
+
+      <div className="space-y-3 font-mono text-[10.5px] leading-[1.55]">
+        <EnsRouteRow label="address" value={route.resolvedAddress ?? "not set"} />
+        <EnsRouteRow label="peer" value={route.peer} />
+        <EnsRouteRow label="endpoint" value={records.endpoint ?? `axl://gensyn-testnet/${route.peer}`} />
+        <EnsRouteRow label="protocol" value={records.protocol ?? "polis-townmessage/v1"} />
+        <EnsRouteRow label="registry" value={records.registry ?? "not set"} />
+        <EnsRouteRow label="profile" value={records.manifest ?? `/agent/${route.name}`} href={records.manifest} />
+      </div>
+
+      <TagCloud title="roles" tags={roles} />
+      <TagCloud title="topics" tags={topics} />
+      <TagCloud title="capabilities" tags={capabilities} />
+
+      <p className="mt-4 font-mono text-[10.5px] leading-[1.55] text-cream/48">
+        This card is resolved from ENS text records. Polis uses it to turn a name into an AXL
+        route plus machine-readable agent metadata.
+      </p>
+    </div>
+  );
+}
+
+function EnsRouteRow({ label, value, href }: { label: string; value: string; href?: string }) {
+  const body = <span className="break-all text-cream/72">{value}</span>;
+  return (
+    <div className="grid grid-cols-[82px_minmax(0,1fr)] gap-3">
+      <span className="uppercase tracking-[0.16em] text-cream/32">{label}</span>
+      {href ? (
+        <a href={href} target="_blank" rel="noreferrer" className="hover:text-teal underline decoration-cream/15">
+          {body}
+        </a>
+      ) : (
+        body
+      )}
+    </div>
+  );
+}
+
+function TagCloud({ title, tags }: { title: string; tags: string[] }) {
+  if (tags.length === 0) return null;
+  return (
+    <div className="mt-4">
+      <div className="font-mono text-[9px] tracking-[0.18em] uppercase text-cream/34 mb-2">{title}</div>
+      <div className="flex flex-wrap gap-2">
+        {tags.map((tag) => (
+          <span
+            key={`${title}-${tag}`}
+            className="font-mono text-[9.5px] tracking-[0.12em] uppercase px-2 py-1 border border-cream/10 bg-cream/[0.03] text-cream/60"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function splitRecord(value?: string): string[] {
+  return value
+    ? value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
 }
 
 function TopBar() {
