@@ -31,7 +31,6 @@ interface EnsIdentityPayload {
   records: {
     peer?: string;
     agent?: string;
-    roles?: string;
     topics?: string;
     registry?: string;
   };
@@ -74,7 +73,6 @@ interface PolisConfigEnsBlock {
   primaryName?: string;
   peerText?: string;
   agentText?: string;
-  rolesText?: string;
   topicsText?: string;
   registryText?: string;
   avatar?: string;
@@ -196,7 +194,6 @@ function readConfigFallback(path: string): EnsIdentityPayload | null {
       records: {
         peer: ens.peerText,
         agent: ens.agentText,
-        roles: ens.rolesText,
         topics: ens.topicsText,
         registry: ens.registryText,
       },

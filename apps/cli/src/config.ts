@@ -31,7 +31,6 @@ export interface PolisConfig {
     primaryName?: string;
     peerText?: string;
     agentText?: string;
-    rolesText?: string;
     topicsText?: string;
     registryText?: string;
     avatar?: string;

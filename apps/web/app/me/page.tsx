@@ -11,7 +11,6 @@ interface MeResponse {
     ownerWallet: string;
     ensName?: string;
     ensStatus?: "reserved" | "issued" | "failed";
-    ensTxHash?: `0x${string}`;
     claimedAt: number;
   }>;
 }

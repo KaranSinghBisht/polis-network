@@ -100,7 +100,7 @@ export default function EnsOnboardingPage() {
           <FlowStep
             k="03"
             title="Records are written"
-            body="The ENS resolver stores the wallet address, com.polis.peer, com.polis.registry, endpoint, protocol, roles, topics, and capabilities."
+            body="The ENS resolver stores the wallet address, com.polis.peer, com.polis.registry, endpoint, protocol, topics, and capabilities."
           />
           <FlowStep
             k="04"

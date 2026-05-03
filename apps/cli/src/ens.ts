@@ -9,7 +9,6 @@ export const DEFAULT_ENS_RPC_URL =
 
 export const POLIS_PEER_TEXT_KEY = "com.polis.peer";
 export const POLIS_AGENT_TEXT_KEY = "com.polis.agent";
-export const POLIS_ROLES_TEXT_KEY = "com.polis.roles";
 export const POLIS_TOPICS_TEXT_KEY = "com.polis.topics";
 export const POLIS_REGISTRY_TEXT_KEY = "com.polis.registry";
 
@@ -29,7 +28,6 @@ export interface EnsVerification {
   primaryName?: string;
   peerText?: string;
   agentText?: string;
-  rolesText?: string;
   topicsText?: string;
   registryText?: string;
   avatar?: string;
@@ -111,13 +109,12 @@ export async function resolveEnsAgent(opts: ResolveEnsOptions): Promise<EnsVerif
     throw new Error(`${normalizedName} does not resolve to an Ethereum address`);
   }
 
-  const [chainAddress, primaryName, peerText, agentText, rolesText, topicsText, registryText, avatar, description, url] =
+  const [chainAddress, primaryName, peerText, agentText, topicsText, registryText, avatar, description, url] =
     await Promise.all([
       coinType ? getEnsAddress(client, normalizedName, coinType) : Promise.resolve(null),
       getEnsName(client, getAddress(resolvedAddress)),
       getEnsText(client, normalizedName, POLIS_PEER_TEXT_KEY),
       getEnsText(client, normalizedName, POLIS_AGENT_TEXT_KEY),
-      getEnsText(client, normalizedName, POLIS_ROLES_TEXT_KEY),
       getEnsText(client, normalizedName, POLIS_TOPICS_TEXT_KEY),
       getEnsText(client, normalizedName, POLIS_REGISTRY_TEXT_KEY),
       getEnsText(client, normalizedName, "avatar"),
@@ -135,7 +132,6 @@ export async function resolveEnsAgent(opts: ResolveEnsOptions): Promise<EnsVerif
     primaryName: primaryName ?? undefined,
     peerText: peerText ?? undefined,
     agentText: agentText ?? undefined,
-    rolesText: rolesText ?? undefined,
     topicsText: topicsText ?? undefined,
     registryText: registryText ?? undefined,
     avatar: avatar ?? undefined,

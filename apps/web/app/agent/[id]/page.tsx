@@ -5,9 +5,7 @@ import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 import {
   DEMO_CONTRACTS,
   DEMO_ENS,
-  DEMO_MARKET_ROUND,
-  DEMO_PROOF_ARTIFACTS,
-  DEMO_PROOFS,
+  DEMO_BRIEFING_ROUND,
   DEMO_REPLAY_EVENTS,
   DEMO_REPLAY_NOTICE,
   DEMO_REPLAY_SOURCE,
@@ -105,7 +103,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
         routeEns={routeEns}
       />
 
-      <StatsStrip signals={signals} record={record} zeroGSignals={zeroGSignals} isDemo={isDemo} />
+      <StatsStrip signals={signals} record={record} zeroGSignals={zeroGSignals} />
 
       {isDemo && <AgentProofPath />}
 
@@ -150,8 +148,6 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
         <RegistryCard peer={peer} record={record} claim={claimSummary} />
       </section>
 
-      {isDemo && <DemoReceipts signals={signals} />}
-
       <SiteFooter />
     </div>
   );
@@ -161,7 +157,6 @@ function EnsRoutingCard({ route }: { route: AgentEnsRoute }) {
   const records = route.records;
   const capabilities = splitRecord(records.capabilities);
   const topics = splitRecord(records.topics);
-  const roles = splitRecord(records.roles);
   return (
     <div className="border border-teal/25 bg-teal/5 p-5">
       <div className="flex items-start justify-between gap-4 mb-4">
@@ -191,7 +186,6 @@ function EnsRoutingCard({ route }: { route: AgentEnsRoute }) {
         <EnsRouteRow label="profile" value={records.manifest ?? `/agent/${route.name}`} href={records.manifest} />
       </div>
 
-      <TagCloud title="roles" tags={roles} />
       <TagCloud title="topics" tags={topics} />
       <TagCloud title="capabilities" tags={capabilities} />
 
@@ -455,12 +449,10 @@ function StatsStrip({
   signals,
   record,
   zeroGSignals,
-  isDemo,
 }: {
   signals: ParsedSignal[];
   record: AgentRecord | null;
   zeroGSignals: number;
-  isDemo: boolean;
 }) {
   const stats = [
     { n: String(signals.length), label: "signals", sub: "archived" },
@@ -469,20 +461,6 @@ function StatsStrip({
       label: "0G uploads",
       sub: zeroGSignals > 0 ? "Galileo testnet" : "none yet",
     },
-    ...(isDemo
-      ? [
-          {
-            n: String(DEMO_REPLAY_EVENTS.length),
-            label: "AXL replay",
-            sub: "not live telemetry",
-          },
-          {
-            n: "1",
-            label: "payout proof",
-            sub: "existing tx",
-          },
-        ]
-      : []),
     {
       n: record ? String(record.reputation) : "—",
       label: "reputation",
@@ -496,11 +474,7 @@ function StatsStrip({
   ];
   return (
     <section className="border-y border-cream/10 bg-[#0E1B30]/55">
-      <div
-        className={`max-w-6xl mx-auto px-5 sm:px-8 md:px-12 grid grid-cols-2 md:grid-cols-3 ${
-          isDemo ? "lg:grid-cols-6" : "lg:grid-cols-4"
-        } divide-x divide-y lg:divide-y-0 divide-cream/10`}
-      >
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 md:px-12 grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-cream/10">
         {stats.map((stat) => (
           <Stat key={stat.label} n={stat.n} label={stat.label} sub={stat.sub} />
         ))}
@@ -535,27 +509,27 @@ function AgentProofPath() {
     },
     {
       label: "AXL peer",
-      value: DEMO_MARKET_ROUND.nodes[0].peer,
-      detail: "message source in the market desk round",
+      value: DEMO_BRIEFING_ROUND.nodes[0].peer,
+      detail: "message source in the demo briefing round",
       href: undefined,
     },
     {
       label: "0G archive",
-      value: DEMO_MARKET_ROUND.nodes[0].archive.uri,
+      value: DEMO_BRIEFING_ROUND.nodes[0].archive.uri,
       detail: "retrievable signal bundle",
-      href: `https://chainscan-galileo.0g.ai/tx/${DEMO_MARKET_ROUND.nodes[0].archive.tx}`,
+      href: `https://chainscan-galileo.0g.ai/tx/${DEMO_BRIEFING_ROUND.nodes[0].archive.tx}`,
     },
     {
       label: "PostIndex",
-      value: DEMO_MARKET_ROUND.nodes[0].archive.postIndexTx,
+      value: DEMO_BRIEFING_ROUND.nodes[0].archive.postIndexTx,
       detail: "Gensyn chain pointer to the archive",
-      href: gensynExplorerTx(DEMO_MARKET_ROUND.nodes[0].archive.postIndexTx),
+      href: gensynExplorerTx(DEMO_BRIEFING_ROUND.nodes[0].archive.postIndexTx),
     },
     {
       label: "Payout",
-      value: DEMO_MARKET_ROUND.outcome.payoutTx,
-      detail: `${DEMO_MARKET_ROUND.outcome.contributorPool} contributor pool`,
-      href: gensynExplorerTx(DEMO_MARKET_ROUND.outcome.payoutTx),
+      value: DEMO_BRIEFING_ROUND.outcome.payoutTx,
+      detail: `${DEMO_BRIEFING_ROUND.outcome.contributorPool} one-time testnet tx`,
+      href: gensynExplorerTx(DEMO_BRIEFING_ROUND.outcome.payoutTx),
     },
   ];
   return (
@@ -840,68 +814,6 @@ function ArchiveLink({ signal }: { signal: ParsedSignal }) {
     <span title={signal.archiveUri} className="text-cream/55 tracking-[0.12em] uppercase">
       {label}
     </span>
-  );
-}
-
-function DemoReceipts({ signals }: { signals: ParsedSignal[] }) {
-  const latest0g = signals.find((s) => s.archiveUri?.startsWith("0g://"));
-  return (
-    <section className="px-5 sm:px-8 md:px-12 pb-12 md:pb-16 max-w-6xl mx-auto w-full">
-      <SectionHeading title="Demo receipts" right="existing proof constants" />
-      <p className="mb-4 max-w-3xl font-mono text-[10.5px] leading-[1.55] text-cream/50">
-        This section lists the proof artifacts bundled with the public replay. It does not claim
-        new transactions were produced by viewing this page.
-      </p>
-      <div className="border border-teal/25 bg-teal/[0.04] grid sm:grid-cols-2 gap-x-6 gap-y-2 px-5 sm:px-6 py-5 font-mono text-[11px] text-cream/75">
-        <Receipt label="PostIndex" value={shorten(DEMO_CONTRACTS.postIndex, 8, 6)} />
-        <Receipt label="latest post tx" value={shorten(DEMO_PROOFS.postIndexTx, 8, 6)} />
-        <Receipt label="0G upload tx" value={latest0g?.archiveTxHash ? shorten(latest0g.archiveTxHash, 8, 6) : "—"} />
-        <Receipt label="Resend send id" value={shorten(DEMO_PROOFS.resendSendId, 12, 8)} />
-        <Receipt label="PaymentRouter" value={shorten(DEMO_CONTRACTS.paymentRouter, 8, 6)} />
-        <Receipt label="payout tx" value={shorten(DEMO_PROOFS.paymentTx, 8, 6)} />
-      </div>
-      <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {DEMO_PROOF_ARTIFACTS.map((artifact) => {
-          const body = (
-            <>
-              <div className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-teal">
-                {artifact.label}
-              </div>
-              <div className="mt-1 font-mono text-[11px] text-cream/82 truncate" title={artifact.value}>
-                {artifact.value}
-              </div>
-              <div className="mt-1 font-mono text-[10px] text-cream/42 truncate">{artifact.detail}</div>
-            </>
-          );
-          return artifact.href ? (
-            <a
-              key={artifact.label}
-              href={artifact.href}
-              target="_blank"
-              rel="noreferrer"
-              className="border border-cream/10 bg-[#0E1B30] px-3 py-2.5 hover:border-teal/45 transition-colors min-w-0"
-            >
-              {body}
-            </a>
-          ) : (
-            <div key={artifact.label} className="border border-cream/10 bg-[#0E1B30] px-3 py-2.5 min-w-0">
-              {body}
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function Receipt({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-cream/10 py-2 last:border-b-0">
-      <span className="text-cream/40 uppercase tracking-[0.14em]">{label}</span>
-      <span className="text-cream/85 truncate" title={value}>
-        {value}
-      </span>
-    </div>
   );
 }
 

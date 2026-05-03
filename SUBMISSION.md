@@ -68,7 +68,6 @@ Migration note: `@0glabs/0g-ts-sdk@0.3.x` hardcodes a deprecated Flow contract t
 | Address record | `0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D` |
 | `com.polis.peer` | `8bdcfcdcd6f720beea3759b856c499d61868b76a36fc98ebe63bcb44c916bcb0` |
 | `com.polis.registry` | `0xAFb77Ad4626b9A2ECA78905F7420102FB5F2A930` |
-| `com.polis.roles` | `scout,analyst,skeptic,editor,archivist,treasurer` |
 | `com.polis.topics` | `openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity` |
 | `com.polis.agent` | `{"role":"polis","beats":["openagents","gensyn-infra","delphi-markets"],"runtime":"polis-network"}` |
 | `description` | `Polis BYOA agent — files sourced intelligence over Gensyn AXL.` |

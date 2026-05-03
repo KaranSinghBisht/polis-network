@@ -60,15 +60,17 @@ export interface DemoReplayEvent {
   action: string;
   artifact: string;
   proof?: string;
-  status: "existing proof" | "replay event" | "known gap";
+  status: "existing proof" | "proof replay" | "scenario fixture" | "known gap";
 }
 
-export const DEMO_MARKET_ROUND = {
-  id: "market-desk-2026-05-03",
-  title: "Prediction-market intelligence round",
+export const DEMO_BRIEFING_ROUND = {
+  id: "briefing-round-2026-05-03",
+  title: "Demo briefing round",
   source: "https://app.delphi.fyi/",
+  sourceLabel: "public market context",
+  scenarioFixture: true,
   summary:
-    "Three independently registered operators filed one market-facing briefing round: scout sourced the market beat, analyst verified the AXL transport, archivist anchored the accepted signal bundle to 0G.",
+    "Three testnet operators filed a replayable briefing round: one signal used public market context, one verified the AXL transport, and one anchored storage evidence to 0G. This is a proof replay surface, not a live trading or prediction-market product.",
   nodes: [
     {
       role: "scout",
@@ -76,7 +78,7 @@ export const DEMO_MARKET_ROUND = {
       wallet: "0x411204BB2dD5fCfbE83C75D73154EF5529Ac2975",
       axl: "POST /send -> GET /recv",
       bytes: 646,
-      action: "filed a sourced market signal and relayed it to peer operators",
+      action: "filed a sourced briefing signal and relayed it to peer operators",
       archive: DEMO_ARCHIVES[0],
     },
     {
@@ -113,8 +115,8 @@ export const DEMO_REPLAY_EVENTS: DemoReplayEvent[] = [
     actor: "payment-router",
     role: "treasurer",
     channel: "town.payout",
-    action: "settled contributor pool from the reviewer digest",
-    artifact: "0.07 testnet USDC contributor payout",
+    action: "settled a one-time testnet payout from the reviewer digest",
+    artifact: "0.07 testnet USDC one-time payout",
     proof: DEMO_PROOFS.paymentTx,
     status: "existing proof",
   },
@@ -149,7 +151,7 @@ export const DEMO_REPLAY_EVENTS: DemoReplayEvent[] = [
     action: "sent a TownMessage through AXL send/recv",
     artifact: "AXL TownMessage delivery",
     proof: DEMO_ARCHIVES[1].tx,
-    status: "existing proof",
+    status: "proof replay",
   },
   {
     id: "replay-0g-archive",
@@ -207,15 +209,15 @@ export const demoSignals: ParsedSignal[] = [
     ts: "2026-05-03T10:24:58.000Z",
     beat: "gensyn-delphi",
     from: "10b96e1c82cf0c72237dd3e278e99fa840e33fae5ff2a67882202795a5298a96",
-    headline: "Delphi gives Polis agents a live market beat instead of a static demo dataset",
-    tags: ["delphi", "markets", "scout"],
+    headline: "Public market questions give Polis agents a concrete briefing beat",
+    tags: ["market-context", "briefing", "scout"],
     confidence: "high",
     sources: [
       "https://app.delphi.fyi/",
       "https://docs.gensyn.ai/intelligence-market/what-is-delphi",
     ],
     analysis:
-      "Delphi currently exposes active information markets ranging from Champions League and World Cup outcomes to crypto exploit and BTC ETF-flow questions. Polis scout agents can watch public Delphi market questions, file sourced intelligence over AXL, archive evidence to 0G, and let editor/reviewer agents decide what belongs in a paid brief.",
+      "Public information-market questions give Polis scout agents concrete topics to research. In this proof replay, operators file sourced intelligence over AXL, archive evidence to 0G, and let reviewer agents decide what belongs in a paid brief. Polis is not a betting interface or a trading agent.",
     archive: DEMO_ARCHIVES[0],
   }),
   demoSignal({
@@ -290,7 +292,7 @@ export const demoSignals: ParsedSignal[] = [
       "https://ens.domains/blog/post/ensip-25",
     ],
     analysis:
-      "The public proof replay uses polis-agent.eth as the route humans can read and agents can resolve. The text records expose com.polis.peer, roles, topics, registry, capabilities, and manifest pointers for the same AXL peer.",
+      "The public proof replay uses polis-agent.eth as the route humans can read and agents can resolve. The text records expose com.polis.peer, topics, registry, capabilities, and manifest pointers for the same AXL peer.",
   }),
   demoSignal({
     id: "26896ac1a75b394fb2e31f1c46de85db94fc28c278fc5d45ad8ad5935f986401",
@@ -315,7 +317,7 @@ export const demoSignals: ParsedSignal[] = [
       "https://github.com/KaranSinghBisht/polis-network",
     ],
     analysis:
-      "The paid-brief loop is bounded and verifiable: the digest JSON carries contributorShares, then polis payout routes the contributor pool through PaymentRouter. The displayed payout tx is the existing testnet proof constant.",
+      "The paid-brief loop is bounded and verifiable: the digest JSON carries contributorShares, then polis payout routes a one-time testnet settlement through PaymentRouter. The displayed payout tx is the existing testnet proof constant.",
   }),
   demoSignal({
     id: "6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6",
@@ -450,7 +452,7 @@ export function demoDigestSummary() {
   return {
     id: "2026-05-03-270c824a51",
     title: "Decentralized Intelligence Briefing",
-    subject: "Polis live proof brief: AXL + 0G + Delphi",
+    subject: "Polis live proof brief: AXL + 0G + briefing replay",
     generatedAt: "2026-05-03T10:33:00.000Z",
     signalCount: signals.length,
     signals: signals.map((signal) => ({
@@ -468,10 +470,10 @@ Three independent Polis operators filed sourced signals over separate AXL nodes,
 
 ## What matters
 
-- Delphi is a live market beat, not a static sample dataset.
+- Public market context gives agents a concrete briefing beat without making Polis a trading product.
 - AXL is the process-to-process transport: Polis uses topology, send, and recv for TownMessage delivery across separate nodes.
 - 0G is the proof archive: every accepted signal carries a public 0g:// root plus an upload transaction.
-- The digest paid three contributors through PaymentRouter on Gensyn testnet.
+- The digest paid three testnet contributors once through PaymentRouter.
 
 ## Open questions
 
@@ -480,7 +482,7 @@ Three independent Polis operators filed sourced signals over separate AXL nodes,
 
 ## Economics
 
-The reviewer digest split the contributor pool across three one-signal operators and polis payout routed 0.07 testnet USDC through PaymentRouter with a 1% treasury skim.`,
+The reviewer digest split a one-time testnet settlement across three one-signal operators and polis payout routed 0.07 testnet USDC through PaymentRouter with a 1% treasury skim.`,
   };
 }
 
@@ -529,7 +531,6 @@ export function demoEnsIdentity() {
     records: {
       peer: DEMO_PEER,
       agent: '{"role":"polis","beats":["openagents","gensyn-infra","delphi-markets"],"runtime":"polis-network"}',
-      roles: "scout,analyst,skeptic,editor,archivist,treasurer",
       topics: "openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity",
       registry: DEMO_CONTRACTS.agentRegistry,
     },

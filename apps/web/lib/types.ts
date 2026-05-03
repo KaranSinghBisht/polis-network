@@ -14,7 +14,6 @@ export interface AgentClaim {
   ownerWallet: `0x${string}`;
   ensName?: string;
   ensStatus?: "reserved" | "issued" | "failed";
-  ensTxHash?: `0x${string}`;
   ensError?: string;
   signature: `0x${string}`;
   signedMessage: string;

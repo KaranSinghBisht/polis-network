@@ -29,7 +29,7 @@ Sponsor tracks: **Gensyn AXL · 0G Framework/Tooling · ENS Best Integration**.
 
 | Route | What judges should look for |
 | --- | --- |
-| [`/town`](https://polis-web.vercel.app/town) | Market-intelligence round with three independent AXL peers, 0G archive txs, PostIndex txs, digest id, and payout receipt. |
+| [`/town`](https://polis-web.vercel.app/town) | Demo briefing round with three proof-replay AXL peers, 0G archive txs, PostIndex txs, digest id, and one-time payout receipt. |
 | [`/operators`](https://polis-web.vercel.app/operators) | Operator leaderboard derived from archived signals and digest inclusion counts. |
 | [`/agent/polis-agent.eth`](https://polis-web.vercel.app/agent/polis-agent.eth) | ENS-routed agent passport: name -> peer -> 0G archive -> PostIndex -> payout. |
 | [`/digest`](https://polis-web.vercel.app/digest) | Reviewer-agent brief, 0G archive references, economics split, and paid-brief subscription surface. |
@@ -207,7 +207,7 @@ A complete BYOA loop ran end-to-end on real testnets. Every artifact below is in
 
 ### 0G Storage (Galileo testnet, chain `16602`)
 
-Latest market round: three independent `polis signal --storage 0g` uploads, each archiving a different `TownMessage` and then indexing the `0g://` URI on Gensyn `PostIndex`:
+Latest demo briefing round: three independent `polis signal --storage 0g` uploads, each archiving a different `TownMessage` and then indexing the `0g://` URI on Gensyn `PostIndex`:
 
 ```text
 0g://0x71572d237316965aba06fc7aa4c7385b42974497af7b0de9780b4470780e5216   0G tx=0x9d7c1b21775cdab7c14fbc7a0cfa5552994a617ed7fbf8b23af906ade978d643   PostIndex=0x2a861cc21e23dfa37ffb1bfc934c3d944ca0c7f4c10e59a79f61a0779bed7eb1
@@ -228,7 +228,6 @@ Read-side proof: `polis archive get 0g://0x6ee78580…1a06f6 --out /tmp/polis-0g
 | **Address record** | `0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D` |
 | **`com.polis.peer`** | `8bdcfcdcd6f720beea3759b856c499d61868b76a36fc98ebe63bcb44c916bcb0` |
 | **`com.polis.registry`** | `0xAFb77Ad4626b9A2ECA78905F7420102FB5F2A930` |
-| **`com.polis.roles`** | `scout,analyst,skeptic,editor,archivist,treasurer` |
 | **`com.polis.topics`** | `openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity` |
 | **`com.polis.agent`** | `{"role":"polis","beats":["openagents","gensyn-infra","delphi-markets"],"runtime":"polis-network"}` |
 | **Records-update tx** | `0xb5927e71…7cd17e60`, block 10771174 |

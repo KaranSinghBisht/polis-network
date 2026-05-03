@@ -11,7 +11,6 @@ const ENS_ROUTE_RPC =
 const POLIS_PEER_TEXT_KEY = "com.polis.peer";
 const ENS_DISCOVERY_KEYS = {
   agent: "com.polis.agent",
-  roles: "com.polis.roles",
   topics: "com.polis.topics",
   registry: "com.polis.registry",
   capabilities: "com.polis.capabilities",
@@ -79,7 +78,6 @@ export async function resolveAgentEnsRoute(routeId: string): Promise<AgentEnsRou
           beats: ["openagents", "gensyn-infra", "delphi-markets"],
           runtime: "polis-network",
         }),
-        roles: "scout,analyst,skeptic,editor,archivist,treasurer",
         topics: "openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity",
         registry: DEMO_CONTRACTS.agentRegistry,
         capabilities: "signal,post,digest,payout,ens-resolve,archive-get",

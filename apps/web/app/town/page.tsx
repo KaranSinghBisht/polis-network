@@ -3,7 +3,7 @@ import { Amphitheater } from "@/components/amphitheater";
 import { TownMesh } from "@/components/town-mesh";
 import {
   DEMO_ARCHIVES,
-  DEMO_MARKET_ROUND,
+  DEMO_BRIEFING_ROUND,
   DEMO_PEER,
   DEMO_PROOFS,
   DEMO_REPLAY_EVENTS,
@@ -153,7 +153,7 @@ export default async function TownPage({ searchParams }: PageProps) {
             isReplay={!canReadArchive}
           />
 
-          <MarketRound />
+          <BriefingRound />
 
           {!canReadArchive && <ReplayStrip />}
 
@@ -244,36 +244,36 @@ function ProofRail({
   );
 }
 
-function MarketRound() {
+function BriefingRound() {
   return (
     <div className="border-b border-cream/10 bg-[#0A172A]/90 px-6 py-5">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-3">
         <span className="font-mono text-[10.5px] tracking-[0.2em] uppercase text-amber">
-          market desk round
+          demo briefing round
         </span>
         <span className="font-mono text-[10.5px] text-cream/45">
-          AXL packets · 0G archives · digest payout
+          proof replay · AXL packets · 0G archives · one-time payout
         </span>
       </div>
       <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] gap-4">
         <div>
           <h2 className="font-display text-[28px] md:text-[34px] leading-[1.05] tracking-[-0.02em] text-cream">
-            {DEMO_MARKET_ROUND.title}
+            {DEMO_BRIEFING_ROUND.title}
           </h2>
           <p className="mt-3 max-w-3xl text-[13px] leading-[1.6] text-cream/58">
-            {DEMO_MARKET_ROUND.summary}
+            {DEMO_BRIEFING_ROUND.summary}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <a
-              href={DEMO_MARKET_ROUND.source}
+              href={DEMO_BRIEFING_ROUND.source}
               target="_blank"
               rel="noreferrer"
               className="border border-cream/12 bg-cream/[0.025] px-3 py-2 font-mono text-[10px] tracking-[0.14em] uppercase text-cream/55 hover:text-teal hover:border-teal/35"
             >
-              source market ↗
+              {DEMO_BRIEFING_ROUND.sourceLabel} ↗
             </a>
             <a
-              href={`https://chainscan-galileo.0g.ai/tx/${DEMO_MARKET_ROUND.nodes[0].archive.tx}`}
+              href={`https://chainscan-galileo.0g.ai/tx/${DEMO_BRIEFING_ROUND.nodes[0].archive.tx}`}
               target="_blank"
               rel="noreferrer"
               className="border border-teal/25 bg-teal/5 px-3 py-2 font-mono text-[10px] tracking-[0.14em] uppercase text-teal/85 hover:text-teal hover:border-teal/60"
@@ -281,7 +281,7 @@ function MarketRound() {
               first 0G upload ↗
             </a>
             <a
-              href={gensynTx(DEMO_MARKET_ROUND.nodes[0].archive.postIndexTx)}
+              href={gensynTx(DEMO_BRIEFING_ROUND.nodes[0].archive.postIndexTx)}
               target="_blank"
               rel="noreferrer"
               className="border border-cream/12 bg-cream/[0.025] px-3 py-2 font-mono text-[10px] tracking-[0.14em] uppercase text-cream/55 hover:text-teal hover:border-teal/35"
@@ -291,13 +291,13 @@ function MarketRound() {
           </div>
         </div>
         <div className="grid gap-2">
-          <RoundReceipt label="digest" value={DEMO_MARKET_ROUND.outcome.digestId} />
-          <RoundReceipt label="resend" value={DEMO_MARKET_ROUND.outcome.resendSendId} />
-          <RoundReceipt label="payout" value={shorten(DEMO_MARKET_ROUND.outcome.payoutTx, 14, 6)} />
+          <RoundReceipt label="mode" value={DEMO_BRIEFING_ROUND.scenarioFixture ? "scenario fixture + proof receipts" : "proof replay"} />
+          <RoundReceipt label="digest" value={DEMO_BRIEFING_ROUND.outcome.digestId} />
+          <RoundReceipt label="payout" value={`${shorten(DEMO_BRIEFING_ROUND.outcome.payoutTx, 14, 6)} · one-time`} />
         </div>
       </div>
       <div className="mt-5 grid md:grid-cols-3 gap-2">
-        {DEMO_MARKET_ROUND.nodes.map((node, index) => (
+        {DEMO_BRIEFING_ROUND.nodes.map((node, index) => (
           <div key={node.peer} className="border border-cream/10 bg-navy/55 px-3.5 py-3 min-w-0">
             <div className="flex items-baseline justify-between gap-3">
               <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-teal">

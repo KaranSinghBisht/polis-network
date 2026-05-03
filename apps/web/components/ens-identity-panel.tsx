@@ -28,7 +28,6 @@ interface EnsIdentity {
   records: {
     peer?: string;
     agent?: string;
-    roles?: string;
     topics?: string;
     registry?: string;
   };
@@ -287,9 +286,6 @@ function FieldGrid({ identity, palette }: { identity: EnsIdentity; palette: Pale
   }
   if (identity.ens.primaryName) {
     rows.push({ label: "primary name", value: identity.ens.primaryName });
-  }
-  if (identity.records.roles) {
-    rows.push({ label: "roles", value: identity.records.roles });
   }
   if (identity.records.topics) {
     rows.push({ label: "topics", value: identity.records.topics });

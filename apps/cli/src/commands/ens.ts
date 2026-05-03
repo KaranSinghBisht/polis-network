@@ -67,7 +67,6 @@ export interface EnsProof {
   records: {
     peer?: string;
     agent?: string;
-    roles?: string;
     topics?: string;
     registry?: string;
   };
@@ -130,7 +129,6 @@ export async function runEnsVerify(opts: EnsVerifyOptions): Promise<void> {
   console.log(`AXL peer:     ${peerId}`);
   console.log(`text peer:    ${verification.peerText ?? "(not set)"}`);
   console.log(`text agent:   ${verification.agentText ?? "(not set)"}`);
-  console.log(`text roles:   ${verification.rolesText ?? "(not set)"}`);
   console.log(`text topics:  ${verification.topicsText ?? "(not set)"}`);
   console.log(`text registry:${verification.registryText ?? "(not set)"}`);
   if (verification.url) console.log(`url:          ${verification.url}`);
@@ -160,7 +158,6 @@ export async function runEnsResolve(opts: EnsResolveOptions): Promise<void> {
   console.log(`text peer:    ${resolution.peerText ?? "(not set)"}`);
   if (resolution.peerText) console.log(`AXL peer:     ${peerIdFromEns(resolution)}`);
   console.log(`text agent:   ${resolution.agentText ?? "(not set)"}`);
-  console.log(`text roles:   ${resolution.rolesText ?? "(not set)"}`);
   console.log(`text topics:  ${resolution.topicsText ?? "(not set)"}`);
   console.log(`text registry:${resolution.registryText ?? "(not set)"}`);
   if (resolution.description) console.log(`description:  ${resolution.description}`);
@@ -203,7 +200,6 @@ export async function runEnsExport(opts: EnsExportOptions): Promise<void> {
     records: {
       peer: resolution.peerText,
       agent: resolution.agentText,
-      roles: resolution.rolesText,
       topics: resolution.topicsText,
       registry: resolution.registryText,
     },

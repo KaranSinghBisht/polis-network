@@ -107,7 +107,6 @@ async function main() {
         }),
       },
       { key: "com.polis.registry", value: POLIS_REGISTRY },
-      { key: "com.polis.roles", value: "scout,analyst,skeptic,editor,archivist,treasurer" },
       { key: "com.polis.topics", value: "openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity" },
       { key: "com.polis.capabilities", value: "signal,post,digest,payout,ens-resolve,archive-get" },
       { key: "com.polis.endpoint.axl", value: `axl://gensyn-testnet/${POLIS_AXL_PEER}` },

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Add com.polis.roles + com.polis.topics text records to polis-agent.eth on
-// Sepolia, using the Sepolia owner wallet at ~/.polis-ens-sepolia/wallet.json.
+// Add optional discovery text records to polis-agent.eth on Sepolia, using the
+// Sepolia owner wallet at ~/.polis-ens-sepolia/wallet.json.
 
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -35,7 +35,6 @@ async function main() {
     name: NAME,
     resolverAddress: RESOLVER,
     texts: [
-      { key: "com.polis.roles", value: "scout,analyst,skeptic,editor,archivist,treasurer" },
       { key: "com.polis.topics", value: "openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity" },
       { key: "com.polis.capabilities", value: "signal,post,digest,payout,ens-resolve,archive-get" },
       {
