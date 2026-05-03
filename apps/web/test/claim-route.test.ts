@@ -81,7 +81,14 @@ function installMockFetch(redis: Map<string, string>, owner: `0x${string}`): () 
       return redis.get(key) ?? null;
     }
     if (name === "set") {
-      redis.set(String(args[0]), String(args[1]));
+      const key = String(args[0]);
+      const options = args.slice(2);
+      const nx = options.some((arg) => {
+        if (typeof arg === "string") return arg.toLowerCase() === "nx";
+        return Boolean(arg && typeof arg === "object" && "nx" in arg && (arg as { nx?: boolean }).nx);
+      });
+      if (nx && redis.has(key)) return null;
+      redis.set(key, String(args[1]));
       return "OK";
     }
     if (name === "del") {
@@ -193,6 +200,25 @@ test("claim route accepts the CLI-signed peer format and reserves ENS names for 
         const routedClaim = await getAgentClaimByEnsName("SCOUT-7.POLIS-AGENT.ETH");
         assert.equal(routedClaim?.peer, PEER);
         assert.equal(routedClaim?.ownerWallet, account.address.toLowerCase());
+
+        const replay = await POST(
+          new Request("https://polis.example/api/claim", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              peer: PEER,
+              code: CLAIM_CODE,
+              signature,
+              signerAddress: account.address,
+              timestamp,
+              ensName: ENS_NAME,
+            }),
+          }),
+        );
+        const replayBody = await replay.json() as { ok?: boolean; error?: string };
+        assert.equal(replay.status, 409);
+        assert.equal(replayBody.ok, false);
+        assert.match(replayBody.error ?? "", /signature already used/);
 
         const otherTimestamp = Math.floor(Date.now() / 1000);
         const otherSignature = await account.signMessage({

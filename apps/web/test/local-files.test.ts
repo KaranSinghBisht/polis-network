@@ -44,3 +44,10 @@ test("local-file gate requires the demo token when configured", () => {
     assert.equal(canReadLocalFilesFromParts({ host: "polis-web.vercel.app", token: "secret" }), true);
   });
 });
+
+test("local-file gate never exposes public reads without a token", () => {
+  withEnv({ NODE_ENV: "production", POLIS_WEB_LOCAL_READ_TOKEN: undefined, POLIS_WEB_EXPOSE_LOCAL_FILES: "1" }, () => {
+    assert.equal(canReadLocalFilesFromParts({ host: "polis-web.vercel.app" }), false);
+    assert.equal(canReadLocalFilesFromParts({ host: "polis-web.vercel.app", token: "anything" }), false);
+  });
+});

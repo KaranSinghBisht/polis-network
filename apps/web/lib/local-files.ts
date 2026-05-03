@@ -1,12 +1,14 @@
 /**
  * Shared gate for routes that read `~/.polis/` from the operator machine.
  *
- * Three ways a request can be granted access (any one passes):
+ * Two ways a request can be granted access (any one passes):
  *  - `POLIS_WEB_LOCAL_READ_TOKEN` is set, and the request carries the same
  *    value in the `x-polis-demo-token` header or `?token=` query param.
- *  - `POLIS_WEB_EXPOSE_LOCAL_FILES=1` is set (operator opts in to public read).
  *  - In non-production only, request host is `localhost`, `127.0.0.1`,
  *    or `::1` (default for dev).
+ *
+ * `POLIS_WEB_EXPOSE_LOCAL_FILES=1` only permits token-gated tunnel reads; it
+ * never bypasses `POLIS_WEB_LOCAL_READ_TOKEN`.
  *
  * In production on Vercel none of these will pass by default. Public routes
  * should return the bounded testnet proof snapshot rather than local secrets.
@@ -28,7 +30,7 @@ export function canReadLocalFilesFromParts({
 }): boolean {
   const token = process.env.POLIS_WEB_LOCAL_READ_TOKEN;
   if (token) return requestToken === token;
-  if (process.env.POLIS_WEB_EXPOSE_LOCAL_FILES === "1") return true;
+  if (process.env.POLIS_WEB_EXPOSE_LOCAL_FILES === "1") return false;
   if (process.env.NODE_ENV === "production") return false;
   const hostname = hostnameOnly(host ?? null);
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";

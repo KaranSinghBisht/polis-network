@@ -17,6 +17,7 @@ import { Redis } from "@upstash/redis";
 import type { AgentClaim, PolisUser } from "./types";
 
 const NONCE_TTL_SECONDS = 5 * 60;
+const CLAIM_SIGNATURE_TTL_SECONDS = 5 * 60;
 
 let cached: Redis | null = null;
 
@@ -75,6 +76,11 @@ export async function consumeLoginNonce(wallet: string): Promise<string | null> 
   return (await redis.getdel<string>(key)) ?? null;
 }
 
+export async function getLoginNonce(wallet: string): Promise<string | null> {
+  const redis = client();
+  return (await redis.get<string>(`nonce:${norm(wallet)}`)) ?? null;
+}
+
 // ---------- Claim codes ----------
 
 export async function setClaimCode(wallet: string, code: string): Promise<void> {
@@ -130,4 +136,11 @@ export async function getAgentClaimByEnsName(ensName: string): Promise<AgentClai
   const peer = await redis.get<string>(`agent-name:${norm(ensName)}`);
   if (!peer) return null;
   return getAgentClaim(peer);
+}
+
+export async function reserveClaimSignature(signature: string): Promise<boolean> {
+  const redis = client();
+  const key = `claim-sig:${norm(signature)}`;
+  const result = await redis.set(key, "1", { ex: CLAIM_SIGNATURE_TTL_SECONDS, nx: true });
+  return result === "OK";
 }

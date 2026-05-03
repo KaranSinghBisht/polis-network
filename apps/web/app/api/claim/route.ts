@@ -8,6 +8,7 @@ import {
   getAgentClaimByEnsName,
   getWalletByClaimCode,
   isKvConfigured,
+  reserveClaimSignature,
   setAgentClaim,
 } from "@/lib/kv";
 import { normalizeRequestedAgentName } from "@/lib/agent-name";
@@ -134,6 +135,14 @@ export async function POST(request: Request) {
         error: `signerAddress ${signerAddress} does not match the AgentRegistry owner ${registryOwner} for that peer`,
       },
       { status: 401 },
+    );
+  }
+
+  const signatureFresh = await reserveClaimSignature(signature);
+  if (!signatureFresh) {
+    return NextResponse.json(
+      { ok: false, error: "claim signature already used — sign a fresh claim" },
+      { status: 409 },
     );
   }
 

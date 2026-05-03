@@ -12,6 +12,7 @@ import {
 import { generateHandle, isValidHandle } from "@/lib/handles";
 import {
   consumeLoginNonce,
+  getLoginNonce,
   getUserByWallet,
   getWalletByHandle,
   isKvConfigured,
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
 
   const wallet = walletRaw.toLowerCase() as `0x${string}`;
 
-  const nonce = await consumeLoginNonce(wallet);
+  const nonce = await getLoginNonce(wallet);
   if (!nonce) {
     return NextResponse.json(
       { ok: false, error: "no pending nonce — request a new one" },
@@ -88,6 +89,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { ok: false, error: "signature does not match wallet" },
       { status: 401 },
+    );
+  }
+
+  const consumedNonce = await consumeLoginNonce(wallet);
+  if (consumedNonce !== nonce) {
+    return NextResponse.json(
+      { ok: false, error: "login nonce was already consumed — request a new one" },
+      { status: 409 },
     );
   }
 
