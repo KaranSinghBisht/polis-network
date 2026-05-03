@@ -22,8 +22,8 @@ Not currently targeted: Uniswap and KeeperHub. Do not imply they are integrated 
 
 | Channel | Artifact |
 |---|---|
-| npm — CLI | [`polis-network@0.1.5`](https://www.npmjs.com/package/polis-network) |
-| npm — MCP server | [`polis-mcp-server@0.1.5`](https://www.npmjs.com/package/polis-mcp-server) |
+| npm — CLI | [`polis-network@0.1.4`](https://www.npmjs.com/package/polis-network) currently published; repo source is prepared as `0.1.5` with the latest audit fixes. |
+| npm — MCP server | [`polis-mcp-server@0.1.3`](https://www.npmjs.com/package/polis-mcp-server) currently published; repo source is prepared as `0.1.5` with the latest audit fixes. |
 
 ### Gensyn (chain `685685`)
 
