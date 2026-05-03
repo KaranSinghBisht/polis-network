@@ -6,6 +6,7 @@ import {
   DEMO_CONTRACTS,
   DEMO_ENS,
   DEMO_BRIEFING_ROUND,
+  DEMO_PEER,
   DEMO_REPLAY_EVENTS,
   DEMO_REPLAY_NOTICE,
   DEMO_REPLAY_SOURCE,
@@ -419,10 +420,25 @@ function Hero({
 
 async function resolveAgentRoute(routeId: string): Promise<AgentEnsRoute | { peer: string; name?: undefined } | null> {
   if (/^[0-9a-f]{64}$/.test(routeId)) return { peer: routeId };
-  // Hard short-circuit for the demo ENS name — bypasses any KV / RPC call so
-  // the page renders even when Upstash or the public Sepolia RPC is unreachable.
+  // Hard short-circuit for the demo ENS name — synthesize the route inline
+  // so the page renders regardless of KV / RPC availability.
   if (routeId === DEMO_ENS) {
-    return resolveAgentEnsRoute(routeId);
+    return {
+      name: DEMO_ENS,
+      peer: DEMO_PEER,
+      resolvedAddress: DEMO_WALLET,
+      source: "demo-snapshot",
+      records: {
+        registry: DEMO_CONTRACTS.agentRegistry,
+        capabilities: "signal,post,digest,payout,ens-resolve,archive-get",
+        endpoint: `axl://gensyn-testnet/${DEMO_PEER}`,
+        protocol: "polis-townmessage/v1",
+        manifest: `https://polis-web.vercel.app/agent/${DEMO_ENS}`,
+        topics: "openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity",
+        url: "https://github.com/KaranSinghBisht/polis-network",
+        description: "Polis BYOA agent — files sourced intelligence over Gensyn AXL.",
+      },
+    };
   }
   if (isKvConfigured() && routeId.endsWith(".eth")) {
     let claim: Awaited<ReturnType<typeof getAgentClaimByEnsName>> = null;
