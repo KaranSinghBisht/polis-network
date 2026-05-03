@@ -4,6 +4,8 @@ import { Amphitheater } from "@/components/amphitheater";
 import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 import {
   DEMO_CONTRACTS,
+  DEMO_ENS,
+  DEMO_PEER,
   DEMO_PROOFS,
   DEMO_WALLET,
   demoAgentRecord,
@@ -38,8 +40,10 @@ interface AgentClaimSummary {
 
 export default async function AgentProfilePage({ params, searchParams }: PageProps) {
   const [{ id }, { token }, requestHeaders] = await Promise.all([params, searchParams, headers()]);
-  const peer = id.trim().toLowerCase();
-  if (!/^[0-9a-f]{64}$/.test(peer)) {
+  const routeId = decodeURIComponent(id).trim().toLowerCase();
+  const routeEnsName = routeId === DEMO_ENS ? DEMO_ENS : null;
+  const peer = resolveAgentRoute(routeId);
+  if (!peer) {
     notFound();
   }
   const canReadArchive = canReadLocalFilesFromParts({
@@ -78,7 +82,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
   }
 
   const peerShort = `${peer.slice(0, 8)}…${peer.slice(-6)}`;
-  const displayName = claimSummary?.handle ? `@${claimSummary.handle}` : peerShort;
+  const displayName = routeEnsName ?? (claimSummary?.handle ? `@${claimSummary.handle}` : peerShort);
 
   return (
     <div className="bg-navy text-cream min-h-screen antialiased flex flex-col selection:bg-teal/30 selection:text-cream">
@@ -91,6 +95,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
         record={record}
         claim={claimSummary}
         isDemo={isDemo}
+        routeEnsName={routeEnsName}
       />
 
       <StatsStrip signals={signals} record={record} zeroGSignals={zeroGSignals} />
@@ -177,6 +182,7 @@ function Hero({
   record,
   claim,
   isDemo,
+  routeEnsName,
 }: {
   peer: string;
   peerShort: string;
@@ -184,6 +190,7 @@ function Hero({
   record: AgentRecord | null;
   claim: AgentClaimSummary | null;
   isDemo: boolean;
+  routeEnsName: string | null;
 }) {
   return (
     <section className="px-5 sm:px-8 md:px-12 pt-12 md:pt-16 pb-10 md:pb-12 max-w-6xl mx-auto w-full">
@@ -207,6 +214,23 @@ function Hero({
         {isDemo && (
           <span className="text-amber/85">demo agent · public proof snapshot</span>
         )}
+        {routeEnsName ? (
+          <a
+            href={`https://sepolia.app.ens.domains/${routeEnsName}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-teal hover:text-cream transition-colors"
+          >
+            ENS route · {routeEnsName} ↗
+          </a>
+        ) : isDemo ? (
+          <a
+            href={`/agent/${DEMO_ENS}`}
+            className="text-teal hover:text-cream transition-colors"
+          >
+            open as ENS route
+          </a>
+        ) : null}
       </div>
 
       <div className="flex items-start gap-5">
@@ -222,6 +246,14 @@ function Hero({
               <span className="text-cream/40 text-[10px] tracking-[0.16em] uppercase shrink-0">peer</span>
               <span className="text-cream/85">{peer}</span>
             </div>
+            {routeEnsName && (
+              <div className="flex flex-wrap items-baseline gap-3">
+                <span className="text-cream/40 text-[10px] tracking-[0.16em] uppercase shrink-0">ens</span>
+                <span className="text-cream/85">
+                  {routeEnsName} resolves to this wallet and publishes <code>com.polis.peer</code>
+                </span>
+              </div>
+            )}
             {record && (
               <div className="flex flex-wrap items-baseline gap-3">
                 <span className="text-cream/40 text-[10px] tracking-[0.16em] uppercase shrink-0">owner</span>
@@ -251,6 +283,12 @@ function Hero({
       )}
     </section>
   );
+}
+
+function resolveAgentRoute(routeId: string): string | null {
+  if (/^[0-9a-f]{64}$/.test(routeId)) return routeId;
+  if (routeId === DEMO_ENS) return DEMO_PEER;
+  return null;
 }
 
 function StatsStrip({
