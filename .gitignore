@@ -49,3 +49,5 @@ CLAUDE.md
 # Demo recording reference notes - local-only
 demo.md
 DEMO.md
+scripts/demo-recording.sh
+scripts/demo-*.sh

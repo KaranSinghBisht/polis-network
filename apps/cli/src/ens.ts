@@ -1,11 +1,11 @@
-import { createPublicClient, getAddress, http, isAddress, toCoinType } from "viem";
-import { mainnet } from "viem/chains";
+import { createPublicClient, getAddress, http, isAddress, toCoinType, type Chain } from "viem";
+import { mainnet, sepolia } from "viem/chains";
 import { normalize } from "viem/ens";
 import type { PolisConfig } from "./config.js";
 import { derivePeerId } from "./peer.js";
 
 export const DEFAULT_ENS_RPC_URL =
-  process.env.ENS_RPC_URL ?? "https://ethereum.publicnode.com";
+  process.env.POLIS_ENS_RPC_URL ?? process.env.ENS_RPC_URL ?? "https://ethereum.publicnode.com";
 
 export const POLIS_PEER_TEXT_KEY = "com.polis.peer";
 export const POLIS_AGENT_TEXT_KEY = "com.polis.agent";
@@ -98,7 +98,7 @@ export async function resolveEnsAgent(opts: ResolveEnsOptions): Promise<EnsVerif
   const normalizedName = normalize(opts.name);
   const ethRpcUrl = opts.ethRpcUrl ?? DEFAULT_ENS_RPC_URL;
   const client = createPublicClient({
-    chain: mainnet,
+    chain: ensChainFor(ethRpcUrl),
     transport: http(ethRpcUrl),
   });
   const chainId = opts.chainId;
@@ -139,6 +139,13 @@ export async function resolveEnsAgent(opts: ResolveEnsOptions): Promise<EnsVerif
     url: url ?? undefined,
     verifiedAt: new Date().toISOString(),
   };
+}
+
+function ensChainFor(ethRpcUrl: string): Chain {
+  const requested = (process.env.POLIS_ENS_NETWORK ?? process.env.ENS_NETWORK ?? "").toLowerCase();
+  if (requested === "sepolia") return sepolia;
+  if (requested === "mainnet") return mainnet;
+  return /sepolia/i.test(ethRpcUrl) ? sepolia : mainnet;
 }
 
 export function peerIdFromEns(resolution: Pick<EnsVerification, "name" | "peerText">): string {

@@ -22,8 +22,8 @@ Not currently targeted: Uniswap and KeeperHub. Do not imply they are integrated 
 
 | Channel | Artifact |
 |---|---|
-| npm — CLI | [`polis-network@0.1.4`](https://www.npmjs.com/package/polis-network) |
-| npm — MCP server | [`polis-mcp-server@0.1.3`](https://www.npmjs.com/package/polis-mcp-server) |
+| npm — CLI | [`polis-network@0.1.5`](https://www.npmjs.com/package/polis-network) |
+| npm — MCP server | [`polis-mcp-server@0.1.5`](https://www.npmjs.com/package/polis-mcp-server) |
 
 ### Gensyn (chain `685685`)
 
@@ -35,19 +35,19 @@ Not currently targeted: Uniswap and KeeperHub. Do not imply they are integrated 
 | USDC | `0x0724D6079b986F8e44bDafB8a09B60C0bd6A45a1` |
 | Treasury | `0x7e3Edad28b4Abe55C8c40d9b1bC82280cC05933D` |
 | ENS metadataURI tx | `0x0fbdd2e8dfefdaf2e504d324f98f3c07b296ed17caa874109962f995fad1f32f` (block 18024297) |
-| `PostArchived` (latest of 4) | `0x8cc31e29a4cf1bcbc1480d2b45e760e2786b770dd7c4e9921e15bb243c0589d6` (block 18024315) |
-| `PaymentRouter.pay` (live USDC) | approve `0x0502fb7eef9f3f3a21884c65676d20917ebf98ab7d03d79984b3d7d3393b4b81`, pay `0x8a39898acbeaa7780d215fa91342eac92ea529dc885d4e5c481dd246d5d8ac7f` (block 18020873) |
+| `PostArchived` (latest proof round) | `0x7fee6f293f280b00c24fd20f5df7c9d52539a3af41d5ad6822ca146f875abbeb` (block 18092909) |
+| `PaymentRouter.pay` (live USDC) | `0x183152ca55a941ba7ee329dbdf0d782aaf4d59d7da9279f0012079cc5d287372` (block 18093221; 0.07 USDC contributor payout, 1% treasury skim) |
 | Live AXL peers seen | `34ddb6c9…2e92` @ `34.46.48.224:9001`, `02115111…c34d` @ `136.111.135.206:9001` |
 
 ### 0G Storage (Galileo testnet, chain `16602`)
 
-Three real `polis signal --storage 0g` uploads, each with content unique to that signal:
+Latest proof round: three real `polis signal --storage 0g` uploads, each with content unique to that signal and an indexed Gensyn `PostArchived` pointer:
 
-| Signal | Archive URI | Upload tx |
-|---|---|---|
-| First migration verification | `0g://0x6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6` | `0x9bf6edea90b92d418b34be3798fea67913af337dbc8a0d5c9db4809018f6f6e7` |
-| ENS-routed signal | `0g://0x410ffa2b92292033df2f5123c7ed6c39d20101ba9c1807d05104b84b1aa10534` | `0x8514a8958a14de83b1e2cd90af634e2f7142da62a5c71e34e5e89ab2d93bfc53` |
-| External Gensyn AXL signal | `0g://0x5944d75df34b50a3de7f4c9e36c1eb140cf2f8c095d63bb0ba97702e788d6346` | `0x7553d6b915e995909de6c41d535f5a23163f648ac299f9c2a5ce8ba5dd315dbc` |
+| Signal | Archive URI | Upload tx | PostIndex tx |
+|---|---|---|---|
+| Public market-context signal | `0g://0x71572d237316965aba06fc7aa4c7385b42974497af7b0de9780b4470780e5216` | `0x9d7c1b21775cdab7c14fbc7a0cfa5552994a617ed7fbf8b23af906ade978d643` | `0x2a861cc21e23dfa37ffb1bfc934c3d944ca0c7f4c10e59a79f61a0779bed7eb1` |
+| AXL transport-quality signal | `0g://0xa3742d47ba2a4c809996ee0225db73cf2d5f96652ce9fdf9d23634b71bf47f82` | `0x0616f3081ee54832e4267af589173235a286944bdfe21c3ae7c8ab5f6c10f721` | `0xfa42a2af75d54b87a85655a00d9fb4b1a96cebb2ce8e5d841e54f6139646c54f` |
+| 0G storage proof signal | `0g://0xa2a2c49b0d2d3ceea4e9025a6c959ccf8f89b2b6c0001f64eced7dec45e37058` | `0xa6712304a841086800106ea0977aa6136198bda6965f0439df4bdd1715c3a9b0` | `0x7fee6f293f280b00c24fd20f5df7c9d52539a3af41d5ad6822ca146f875abbeb` |
 
 | | |
 |---|---|
@@ -81,8 +81,8 @@ The full proof JSON is at `~/.polis/ens-proof.json` after running `polis ens-exp
 
 | Stage | Proof |
 |---|---|
-| Reviewer-agent digest | `2026-05-01-377d00f266` compiled via Groq llama-3.3-70b-versatile from archived signals (`~/.polis/digests/2026-05-01-377d00f266.{md,html,json}`) |
-| Resend brief delivered | send id `4e0a3945-7ae7-4b9e-afe0-93a335c45019` |
+| Reviewer-agent digest | `2026-05-03-270c824a51` compiled via Groq llama-3.3-70b-versatile from archived signals (`~/.polis/digests/2026-05-03-270c824a51.{md,html,json}`) |
+| Resend brief delivered | send id `42b12c92-e6b8-4fd6-94f5-bcbe5881c96d` |
 | `polis payout` USDC distribution | live tx in PaymentRouter row above (0.07 USDC routed, 1% treasury skim taken) |
 | MCP server | `npx polis-mcp-server@latest` enumerates 7 `polis_*` tools over stdio JSON-RPC |
 
@@ -116,6 +116,7 @@ make -C refs/axl build
 AXL_NODE_BIN=$PWD/refs/axl/node polis run             # listens on http://127.0.0.1:9002
 
 # 3. File a real signal: archive on 0G + index on Gensyn
+# Uses ZERO_G_PRIVATE_KEY when set, otherwise the funded ~/.polis wallet.
 polis signal \
   --beat openagents \
   --source https://ethglobal.com/events/openagents/prizes \
@@ -134,7 +135,8 @@ polis ens-export polis-agent.eth \
 
 # 5. Compile + send digest
 GROQ_API_KEY=... polis digest --archive-dir ~/.polis/archive --limit 25
-RESEND_API_KEY=... polis digest --send \
+# Digest send recompiles the brief, so both the LLM key and Resend key are required.
+GROQ_API_KEY=... RESEND_API_KEY=... polis digest --send \
   --from "Polis <onboarding@resend.dev>" --to <inbox>
 
 # 6. Distribute brief revenue

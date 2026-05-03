@@ -2,6 +2,7 @@ import { createPublicClient, getAddress, http } from "viem";
 import { sepolia } from "viem/chains";
 import { normalize } from "viem/ens";
 import { DEMO_ARCHIVES, DEMO_CONTRACTS, DEMO_ENS, DEMO_PEER, DEMO_WALLET } from "@/lib/demo-snapshot";
+import { getAgentRecord } from "@/lib/registry";
 
 const ENS_ROUTE_RPC =
   process.env.POLIS_ENS_RPC_URL ??
@@ -60,11 +61,19 @@ export async function resolveAgentEnsRoute(routeId: string): Promise<AgentEnsRou
         resolveDiscoveryRecords(name),
       ]);
       const peer = normalizePeerText(peerText);
-      if (peer) {
+      const normalizedAddress = resolvedAddress ? getAddress(resolvedAddress) : undefined;
+      if (peer && normalizedAddress) {
+        const record = await getAgentRecord(peer);
+        const expectedMetadata = `ens://${name}?peer=${peer}`;
+        const ensOwnsRegistryPeer = record?.owner.toLowerCase() === normalizedAddress.toLowerCase();
+        const metadataLinksBack = record?.metadataURI === expectedMetadata;
+        if (!ensOwnsRegistryPeer || !metadataLinksBack) {
+          return null;
+        }
         return {
           name,
           peer,
-          resolvedAddress: resolvedAddress ? getAddress(resolvedAddress) : undefined,
+          resolvedAddress: normalizedAddress,
           records,
           source: "sepolia-ens",
         };

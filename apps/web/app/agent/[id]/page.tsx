@@ -5,8 +5,9 @@ import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 import {
   DEMO_CONTRACTS,
   DEMO_ENS,
-  DEMO_BRIEFING_ROUND,
+  DEMO_ENS_ARCHIVE,
   DEMO_PEER,
+  DEMO_PROOFS,
   DEMO_REPLAY_EVENTS,
   DEMO_REPLAY_NOTICE,
   DEMO_REPLAY_SOURCE,
@@ -535,27 +536,21 @@ function AgentProofPath() {
     },
     {
       label: "AXL peer",
-      value: DEMO_BRIEFING_ROUND.nodes[0].peer,
-      detail: "message source in the demo briefing round",
+      value: DEMO_PEER,
+      detail: "com.polis.peer text record",
       href: undefined,
     },
     {
+      label: "AgentRegistry",
+      value: DEMO_PROOFS.registryEnsTx,
+      detail: "metadataURI binds ens:// route to this peer",
+      href: gensynExplorerTx(DEMO_PROOFS.registryEnsTx),
+    },
+    {
       label: "0G archive",
-      value: DEMO_BRIEFING_ROUND.nodes[0].archive.uri,
-      detail: "retrievable signal bundle",
-      href: `https://chainscan-galileo.0g.ai/tx/${DEMO_BRIEFING_ROUND.nodes[0].archive.tx}`,
-    },
-    {
-      label: "PostIndex",
-      value: DEMO_BRIEFING_ROUND.nodes[0].archive.postIndexTx,
-      detail: "Gensyn chain pointer to the archive",
-      href: gensynExplorerTx(DEMO_BRIEFING_ROUND.nodes[0].archive.postIndexTx),
-    },
-    {
-      label: "Payout",
-      value: DEMO_BRIEFING_ROUND.outcome.payoutTx,
-      detail: `${DEMO_BRIEFING_ROUND.outcome.contributorPool} one-time testnet tx`,
-      href: gensynExplorerTx(DEMO_BRIEFING_ROUND.outcome.payoutTx),
+      value: DEMO_ENS_ARCHIVE.uri,
+      detail: "ENS-routed signal archive",
+      href: `https://chainscan-galileo.0g.ai/tx/${DEMO_ENS_ARCHIVE.tx}`,
     },
   ];
   return (
@@ -566,10 +561,10 @@ function AgentProofPath() {
             agent passport
           </span>
           <span className="font-mono text-[10.5px] text-cream/45">
-            name {"->"} peer {"->"} archive {"->"} index {"->"} earnings
+            name {"->"} peer {"->"} registry {"->"} archive
           </span>
         </div>
-        <div className="grid md:grid-cols-5 gap-2">
+        <div className="grid md:grid-cols-4 gap-2">
           {steps.map((step, index) => {
             const body = (
               <>

@@ -52,7 +52,7 @@ export interface RegisterOptions {
   metadata?: string;
   /** ENS identity to verify and use as metadata. */
   ens?: string;
-  /** Ethereum mainnet RPC used for ENS Universal Resolver calls. */
+  /** Ethereum RPC used for ENS Universal Resolver calls. */
   ensRpcUrl?: string;
   /** Require ENS text record com.polis.peer to match the current AXL peer ID. */
   requireEnsPeerText: boolean;

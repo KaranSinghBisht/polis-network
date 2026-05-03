@@ -1,7 +1,6 @@
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { getZeroG, parseZeroGRoot } from "@polis/storage";
-import { readConfig } from "../config.js";
+import { configExists, defaultArchiveDir, readConfig, type PolisConfig } from "../config.js";
 
 export interface ArchiveGetOptions {
   out?: string;
@@ -10,11 +9,11 @@ export interface ArchiveGetOptions {
 }
 
 export async function runArchiveGet(uri: string, opts: ArchiveGetOptions): Promise<void> {
-  const cfg = readConfig();
+  const cfg = readConfigIfAvailable(Boolean(opts.indexerRpcUrl ?? process.env.ZERO_G_INDEXER_RPC));
   const indexerRpcUrl =
-    opts.indexerRpcUrl ?? cfg.storage?.zeroGIndexerRpcUrl ?? process.env.ZERO_G_INDEXER_RPC ?? "";
+    opts.indexerRpcUrl ?? cfg?.storage?.zeroGIndexerRpcUrl ?? process.env.ZERO_G_INDEXER_RPC ?? "";
   const rootHash = parseZeroGRoot(uri);
-  const archiveDir = cfg.storage?.archiveDir ?? join(homedir(), ".polis", "archive");
+  const archiveDir = cfg?.storage?.archiveDir ?? defaultArchiveDir();
   const outPath = opts.out ?? join(archiveDir, `${rootHash}.download.json`);
 
   const result = await getZeroG(uri, {
@@ -27,4 +26,14 @@ export async function runArchiveGet(uri: string, opts: ArchiveGetOptions): Promi
   console.log(`root:    ${result.cid}`);
   console.log(`path:    ${result.path}`);
   console.log(`bytes:   ${result.bytes}`);
+}
+
+function readConfigIfAvailable(canProceedWithoutConfig: boolean): PolisConfig | null {
+  if (!configExists()) return null;
+  try {
+    return readConfig();
+  } catch (err) {
+    if (canProceedWithoutConfig) return null;
+    throw err;
+  }
 }

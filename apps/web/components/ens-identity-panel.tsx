@@ -392,10 +392,20 @@ function FooterMeta({
   palette: Palette;
 }) {
   const generated = new Date(identity.generatedAt).toUTCString();
+  const sourceLabel =
+    source === "proof"
+      ? "ens-proof.json"
+      : source === "config"
+        ? "config.json (partial)"
+        : source === "demo"
+          ? "public proof snapshot"
+          : source === "disabled"
+            ? "local file access disabled"
+            : "none";
   return (
     <div className={`flex flex-wrap gap-x-5 gap-y-1 font-mono text-[10px] tracking-[0.14em] uppercase ${palette.textFaint}`}>
       <span>generated · {generated}</span>
-      <span>source · {source === "proof" ? "ens-proof.json" : source === "config" ? "config.json (partial)" : "none"}</span>
+      <span>source · {sourceLabel}</span>
       <span>chain · {identity.wallet.chainId}</span>
     </div>
   );

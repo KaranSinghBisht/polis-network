@@ -96,6 +96,9 @@ function normalizeSource(value: string): string {
   if (source.length === 0 || source.length > 500) {
     throw new Error("source URL must be 1-500 characters");
   }
+  if (/^0g:\/\/0x[0-9a-fA-F]{64}$/.test(source)) {
+    return source;
+  }
   let url: URL;
   try {
     url = new URL(source);

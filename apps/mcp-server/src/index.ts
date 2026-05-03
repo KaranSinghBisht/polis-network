@@ -2,7 +2,7 @@
 import { startServer } from "./server.js";
 import { runInstall } from "./install.js";
 
-const VERSION = "0.1.3";
+const VERSION = "0.1.5";
 
 const USAGE = `polis-mcp-server v${VERSION}
 

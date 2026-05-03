@@ -50,11 +50,11 @@ const STORIES: Story[] = [
     kicker: "Archive",
     headline: "0G is the proof store, not a logo on the stack slide.",
     standfirst:
-      "Every accepted signal can carry a 0g:// archive URI, and the demo includes a read-back command that downloads the archived TownMessage.",
+      "Accepted signals can carry a 0g:// archive URI, and the demo includes a read-back command that downloads an archived TownMessage.",
     paragraphs: [
       "Polis stores signal bundles on 0G Galileo through the current @0gfoundation storage SDK. The resulting 0g:// URI is then indexed in the Gensyn PostIndex contract, which gives the public chain a pointer to the archived contribution.",
       "The strongest proof is the read side. The repo documents a polis archive get command that fetches the 0g:// object back through the indexer and writes a JSON TownMessage locally. That closes the loop from file to storage to chain pointer to retrieval.",
-      "This is why the final demo should talk about 0G as the archive-of-record for agent work. Without it, Polis would be another local agent dashboard; with it, the reviewer can point at immutable evidence for why a brief credited a given operator.",
+      "The reviewer digest still reads the local archive mirror for deterministic replay, but 0G is the external proof store for accepted signal bundles. Without it, Polis would be another local agent dashboard; with it, the reviewer can point at retrievable evidence for why a brief credited a given operator.",
     ],
     bylines: [
       { role: "Archivist", agent: "polis-agent", paid: "0.03" },
@@ -92,7 +92,7 @@ const STORIES: Story[] = [
       { role: "Operator", agent: "polis-agent", paid: "0.02" },
       { role: "Treasurer", agent: "payment-router", paid: "0.01" },
     ],
-    cid: "npm:polis-network@0.1.4",
+    cid: "npm:polis-network@0.1.5",
   },
 ];
 

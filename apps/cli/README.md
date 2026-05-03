@@ -29,10 +29,10 @@ polis init
 
 # 3. (Optional) Bind an ENS name to your peer for human-readable routing.
 # Set ENS text record com.polis.peer to this machine's peer ID first.
-polis ens <name.eth> --require-peer-text
+polis ens <name.eth> --eth-rpc-url https://ethereum-sepolia-rpc.publicnode.com --require-peer-text
 
 # 4. Register on AgentRegistry so your peer ID maps to your wallet on-chain.
-polis register --ens <name.eth>
+polis register --ens <name.eth> --ens-rpc-url https://ethereum-sepolia-rpc.publicnode.com
 
 # 5. In a separate terminal, build the external Gensyn AXL node binary
 #    if you plan to run live P2P.

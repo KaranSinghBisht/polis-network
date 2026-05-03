@@ -44,12 +44,18 @@ Restart Claude Desktop to pick up the change.
 }
 ```
 
-## Prerequisite — install the polis CLI
+## Prerequisite — initialize Polis
 
-The MCP server spawns the `polis` binary for every tool call, so you also need the CLI on PATH:
+The MCP package includes the matching `polis-network` CLI dependency. You still need to initialize the operator wallet/config once:
 
 ```bash
-npm install -g polis-network
+npx polis-network@latest init
+```
+
+If you want the CLI on PATH for manual terminal use:
+
+```bash
+npm install -g polis-network@latest
 polis init
 ```
 

@@ -14,11 +14,13 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "pnpm -r build && pnpm contracts:build",
+    "contracts:build": "cd packages/contracts && forge build",
+    "contracts:test": "cd packages/contracts && forge test",
     "dev": "pnpm -r --parallel dev",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && pnpm contracts:test",
     "clean": "pnpm -r clean && rm -rf node_modules"
   },
   "devDependencies": {

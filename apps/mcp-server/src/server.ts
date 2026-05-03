@@ -13,6 +13,20 @@ function textResult(stdout: string, stderr: string, ok: boolean) {
   };
 }
 
+const sourceUrlSchema = z.string().min(1).max(500).refine(
+  (value) => {
+    const source = value.trim();
+    if (/^0g:\/\/0x[0-9a-fA-F]{64}$/.test(source)) return true;
+    try {
+      const parsed = new URL(source);
+      return ["http:", "https:", "ipfs:", "ens:"].includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  },
+  "source URL protocol must be http, https, 0g, ipfs, or ens",
+);
+
 function writeToolsEnabled(): boolean {
   return process.env.POLIS_MCP_ALLOW_WRITE === "1";
 }
@@ -71,7 +85,7 @@ export async function startServer(version: string): Promise<void> {
     {
       headline: z.string().min(3).describe("One-sentence claim or finding."),
       beat: z.string().describe("Coverage beat slug, e.g. 'openagents' or 'gensyn-infra'."),
-      sources: z.array(z.string().url()).min(1).max(5).describe("Supporting source URLs."),
+      sources: z.array(sourceUrlSchema).min(1).max(5).describe("Supporting source URLs."),
       tags: z.array(z.string()).optional().describe("Tag slugs."),
       confidence: z.enum(["low", "medium", "high"]).optional().describe("Default 'medium'."),
       disclosure: z.string().optional().describe("Model/tool disclosure for the signal."),
@@ -79,6 +93,7 @@ export async function startServer(version: string): Promise<void> {
       storage: z.enum(["local", "0g", "none"]).optional().describe("Archive provider; default 'local'."),
       peer: z.string().optional().describe("Specific destination peer ID (64-char hex)."),
       ens: z.string().optional().describe("Specific destination agent ENS name."),
+      ensRpcUrl: z.string().optional().describe("Ethereum RPC used for ENS resolution."),
       topic: z.string().optional().describe("Override AXL topic; defaults to town.<beat>."),
       index: z.string().optional().describe("PostIndex contract address (0x-prefixed)."),
     },
@@ -93,6 +108,7 @@ export async function startServer(version: string): Promise<void> {
       if (args.storage) argv.push("--storage", args.storage);
       if (args.peer) argv.push("--peer", args.peer);
       if (args.ens) argv.push("--ens", args.ens);
+      if (args.ensRpcUrl) argv.push("--ens-rpc-url", args.ensRpcUrl);
       if (args.topic) argv.push("--topic", args.topic);
       if (args.index) argv.push("--index", args.index);
       const r = await spawnPolis(argv);
@@ -107,6 +123,7 @@ export async function startServer(version: string): Promise<void> {
       message: z.string().min(1).describe("Message body."),
       peer: z.string().optional().describe("Specific destination peer ID."),
       ens: z.string().optional().describe("Specific destination agent ENS name."),
+      ensRpcUrl: z.string().optional().describe("Ethereum RPC used for ENS resolution."),
       topic: z.string().optional().describe("Topic; default 'town.general'."),
       storage: z.enum(["local", "0g", "none"]).optional(),
       index: z.string().optional().describe("PostIndex contract address."),
@@ -116,6 +133,7 @@ export async function startServer(version: string): Promise<void> {
       const argv = ["post", args.message];
       if (args.peer) argv.push("--peer", args.peer);
       if (args.ens) argv.push("--ens", args.ens);
+      if (args.ensRpcUrl) argv.push("--ens-rpc-url", args.ensRpcUrl);
       if (args.topic) argv.push("--topic", args.topic);
       if (args.storage) argv.push("--storage", args.storage);
       if (args.index) argv.push("--index", args.index);
@@ -205,7 +223,7 @@ export async function startServer(version: string): Promise<void> {
     "Resolve an agent ENS name to its wallet, AXL peer, and Polis text records (com.polis.peer, com.polis.agent, etc).",
     {
       name: z.string().describe("ENS name like 'agent-1.polis.eth'."),
-      ethRpcUrl: z.string().optional().describe("Override Ethereum mainnet RPC."),
+      ethRpcUrl: z.string().optional().describe("Override Ethereum RPC."),
       chainId: z.number().int().optional().describe("Chain ID for ENSIP-19 chain-specific address lookup."),
     },
     async (args) => {

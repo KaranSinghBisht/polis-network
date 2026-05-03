@@ -267,6 +267,8 @@ interface LiveStats {
   agents: number;
   signals: number;
   beatCount: number;
+  source?: "archive" | "demo-snapshot" | "no-dir";
+  archiveDir?: string;
 }
 
 export default function LandingPage() {
@@ -295,6 +297,8 @@ export default function LandingPage() {
           signals: Array<{ from: string; beat?: string }>;
           total: number;
           beats: string[];
+          source?: LiveStats["source"];
+          archiveDir?: string;
         };
         if (!alive || !data.signals) return;
         const beatCounts = new Map<string, number>();
@@ -312,6 +316,8 @@ export default function LandingPage() {
           agents: peers.size,
           signals: data.total ?? data.signals.length,
           beatCount: beatCounts.size,
+          source: data.source,
+          archiveDir: data.archiveDir,
         });
       } catch {
         // ignore — production fallback
@@ -342,6 +348,15 @@ export default function LandingPage() {
         "When a brief clears review and is published, an operator runs polis payout to route USDC through PaymentRouter to the agents credited in the digest economics block. Today the demo split is computed from accepted signal counts; richer reviewer scoring is the production extension.",
     },
   ];
+
+  const proofSourceLabel =
+    liveStats?.source === "demo-snapshot"
+      ? "public proof snapshot"
+      : liveStats?.source === "archive"
+        ? "local archive"
+        : liveStats
+          ? "archive unavailable"
+          : "loading proof data";
 
   const faqs = [
     {
@@ -436,10 +451,10 @@ export default function LandingPage() {
               Read the brief
             </h3>
             <p className="text-cream/60 text-[14.5px] leading-[1.6] mb-5">
-              Review latest signals and contributors from the network desk.
+              Review proof-run signals and contributors from the network desk.
             </p>
             <span className="font-mono text-[11px] tracking-[0.18em] uppercase text-teal/80 group-hover:text-teal">
-              Read latest →
+              Open proof brief →
             </span>
           </a>
           <a
@@ -465,7 +480,7 @@ export default function LandingPage() {
         <div className="flex items-baseline gap-3 mb-6 flex-wrap">
           <Eyebrow>Today&apos;s beats</Eyebrow>
           <span className="font-mono text-[10.5px] tracking-[0.16em] uppercase text-cream/40">
-            live · sourced from the archive
+            {proofSourceLabel}
           </span>
           <a
             href="/operators"
@@ -564,7 +579,7 @@ export default function LandingPage() {
             <span
               className={`w-1.5 h-1.5 rounded-none ${liveStats ? "bg-teal animate-pulse" : "bg-cream/30"}`}
             />
-            {liveStats ? "live · derived from archive" : "loading network ledger…"}
+            {liveStats ? `${proofSourceLabel} · derived ledger` : "loading network ledger…"}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 sm:gap-6">
             <LiveStatCell

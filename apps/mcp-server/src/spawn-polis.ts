@@ -1,10 +1,41 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 
 export interface PolisResult {
   ok: boolean;
   stdout: string;
   stderr: string;
   exitCode: number | null;
+}
+
+const require = createRequire(import.meta.url);
+
+function resolvePolisCommand(): { command: string; argsPrefix: string[]; installHint: string } {
+  if (process.env.POLIS_CLI_BIN) {
+    return {
+      command: process.env.POLIS_CLI_BIN,
+      argsPrefix: [],
+      installHint: `POLIS_CLI_BIN=${process.env.POLIS_CLI_BIN}`,
+    };
+  }
+  try {
+    const pkgPath = require.resolve("polis-network/package.json");
+    const binPath = join(dirname(pkgPath), "dist", "index.js");
+    if (!existsSync(binPath)) throw new Error("polis-network dist/index.js not built");
+    return {
+      command: process.execPath,
+      argsPrefix: [binPath],
+      installHint: "bundled polis-network dependency",
+    };
+  } catch {
+    return {
+      command: "polis",
+      argsPrefix: [],
+      installHint: `"polis" on PATH (install with "npm install -g polis-network")`,
+    };
+  }
 }
 
 /**
@@ -17,7 +48,8 @@ export async function spawnPolis(
   env: Record<string, string | undefined> = {},
 ): Promise<PolisResult> {
   return new Promise((resolve) => {
-    const child = spawn("polis", args, {
+    const command = resolvePolisCommand();
+    const child = spawn(command.command, [...command.argsPrefix, ...args], {
       stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env, ...env },
     });
@@ -32,7 +64,7 @@ export async function spawnPolis(
       resolve({
         ok: false,
         stdout: "",
-        stderr: `spawn error: ${err.message}\n(is "polis" on PATH? install with "npm install -g polis-network")`,
+        stderr: `spawn error: ${err.message}\nExpected ${command.installHint}.`,
         exitCode: null,
       });
     });

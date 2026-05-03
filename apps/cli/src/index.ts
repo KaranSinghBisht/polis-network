@@ -24,7 +24,7 @@ const program = new Command();
 program
   .name("polis")
   .description("Polis — the BYOA intelligence network for AI agents")
-  .version("0.1.4");
+  .version("0.1.5");
 
 program
   .command("init")
@@ -98,7 +98,7 @@ program
   .description("Publish a generic message to town.general")
   .option("-p, --peer <peerId>", "specific destination peer; defaults to all connected peers")
   .option("--ens <name>", "specific destination agent ENS name; resolves com.polis.peer")
-  .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option("--ens-rpc-url <url>", "Ethereum RPC used for ENS resolution")
   .option("-t, --topic <topic>", "town topic", "town.general")
   .option("--storage <provider>", "archive provider: local | 0g | none")
   .option("--index <addr>", "PostIndex contract address; records archive URI on-chain")
@@ -141,7 +141,7 @@ program
   .option("--disclosure <text>", "model/tool disclosure for the signal")
   .option("-p, --peer <peerId>", "specific destination peer; defaults to all connected peers")
   .option("--ens <name>", "specific destination agent ENS name; resolves com.polis.peer")
-  .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option("--ens-rpc-url <url>", "Ethereum RPC used for ENS resolution")
   .option("-t, --topic <topic>", "AXL topic; defaults to town.<beat>")
   .option("--storage <provider>", "archive provider: local | 0g | none")
   .option("--index <addr>", "PostIndex contract address; records archive URI on-chain")
@@ -197,7 +197,7 @@ program
   .description("Send USDC to another agent via PaymentRouter; target can be AXL peer ID or ENS")
   .option("--router <addr>", "PaymentRouter contract address (saved on success)")
   .option("--registry <addr>", "AgentRegistry contract address")
-  .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used when target is ENS")
+  .option("--ens-rpc-url <url>", "Ethereum RPC used when target is ENS")
   .option("--memo <memo>", "payment memo")
   .option("--approve", "approve PaymentRouter to spend this amount first", false)
   .action(async (
@@ -349,7 +349,7 @@ program
   .option("-r, --registry <addr>", "AgentRegistry contract address (saved to config on success)")
   .option("-m, --metadata <uri>", "metadata URI (defaults to polis://agent/<peerId>)")
   .option("--ens <name>", "verify ENS identity and use ens:// metadata")
-  .option("--ens-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option("--ens-rpc-url <url>", "Ethereum RPC used for ENS resolution")
   .option(
     "--require-ens-peer-text",
     "require ENS text record com.polis.peer to match this AXL peer ID (default when --ens is used)",
@@ -398,7 +398,7 @@ program
 program
   .command("ens <name>")
   .description("Verify an ENS name against this wallet and optional AXL peer text record")
-  .option("--eth-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option("--eth-rpc-url <url>", "Ethereum RPC used for ENS resolution")
   .option(
     "--require-peer-text",
     "require ENS text record com.polis.peer to match this AXL peer ID",
@@ -435,7 +435,7 @@ program
 program
   .command("ens-resolve <name>")
   .description("Resolve an agent ENS name to wallet, AXL peer, and Polis text records")
-  .option("--eth-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option("--eth-rpc-url <url>", "Ethereum RPC used for ENS resolution")
   .option("--chain-id <id>", "chain ID used for ENSIP-19 chain-specific address lookup")
   .option("--json", "emit machine-readable JSON instead of formatted output", false)
   .action(async (name: string, opts: { ethRpcUrl?: string; chainId?: string; json: boolean }) => {
@@ -449,7 +449,7 @@ program
 program
   .command("ens-export [name]")
   .description("Snapshot the full ENS proof chain (ENS → peer → AgentRegistry → archive) to JSON")
-  .option("--eth-rpc-url <url>", "Ethereum mainnet RPC used for ENS resolution")
+  .option("--eth-rpc-url <url>", "Ethereum RPC used for ENS resolution")
   .option("--out <path>", "output JSON path (default ~/.polis/ens-proof.json)")
   .option("--archive-dir <path>", "AXL archive directory to scan for the latest message")
   .option("--json", "echo the proof JSON to stdout in addition to writing the file", false)

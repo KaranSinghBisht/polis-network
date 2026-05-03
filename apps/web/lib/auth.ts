@@ -19,6 +19,7 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 function secretKey(): Uint8Array {
   const raw = process.env.POLIS_AUTH_SECRET;
   if (!raw) throw new Error("POLIS_AUTH_SECRET not configured");
+  if (raw.length < 32) throw new Error("POLIS_AUTH_SECRET must be at least 32 characters");
   return new TextEncoder().encode(raw);
 }
 
