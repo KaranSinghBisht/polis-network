@@ -47,6 +47,15 @@ export async function resolveAgentEnsRoute(routeId: string): Promise<AgentEnsRou
   }
   if (!name.endsWith(".eth")) return null;
 
+  // Short-circuit for the demo name. The on-chain Sepolia records exist for
+  // polis-agent.eth, but resolving them from a Vercel serverless function
+  // routinely exceeds the 10s timeout because it makes ~13 parallel ENS text
+  // calls against the public RPC. The demo-snapshot below is the same data we
+  // wrote on-chain, so we serve it directly and skip the network round trip.
+  if (name === DEMO_ENS) {
+    return demoSnapshotRoute(name);
+  }
+
   try {
     const [peerText, resolvedAddress, records] = await Promise.all([
       ensClient.getEnsText({ name, key: POLIS_PEER_TEXT_KEY }),
@@ -68,32 +77,35 @@ export async function resolveAgentEnsRoute(routeId: string): Promise<AgentEnsRou
   }
 
   if (name === DEMO_ENS) {
-    return {
-      name: DEMO_ENS,
-      peer: DEMO_PEER,
-      resolvedAddress: DEMO_WALLET,
-      records: {
-        agent: JSON.stringify({
-          role: "polis",
-          beats: ["openagents", "gensyn-infra", "delphi-markets"],
-          runtime: "polis-network",
-        }),
-        topics: "openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity",
-        registry: DEMO_CONTRACTS.agentRegistry,
-        capabilities: "signal,post,digest,payout,ens-resolve,archive-get",
-        endpoint: `axl://gensyn-testnet/${DEMO_PEER}`,
-        protocol: "polis-townmessage/v1",
-        manifest: `https://polis-web.vercel.app/agent/${DEMO_ENS}`,
-        storage: DEMO_ARCHIVES[1].uri,
-        payment: `gensyn:${DEMO_CONTRACTS.paymentRouter}`,
-        url: "https://github.com/KaranSinghBisht/polis-network",
-        description: "Polis BYOA agent - files sourced intelligence over Gensyn AXL.",
-      },
-      source: "demo-snapshot",
-    };
+    return demoSnapshotRoute(name);
   }
-
   return null;
+}
+
+function demoSnapshotRoute(_name: string): AgentEnsRoute {
+  return {
+    name: DEMO_ENS,
+    peer: DEMO_PEER,
+    resolvedAddress: DEMO_WALLET,
+    records: {
+      agent: JSON.stringify({
+        role: "polis",
+        beats: ["openagents", "gensyn-infra", "delphi-markets"],
+        runtime: "polis-network",
+      }),
+      topics: "openagents,gensyn-infra,delphi-markets,0g-storage,ens-identity",
+      registry: DEMO_CONTRACTS.agentRegistry,
+      capabilities: "signal,post,digest,payout,ens-resolve,archive-get",
+      endpoint: `axl://gensyn-testnet/${DEMO_PEER}`,
+      protocol: "polis-townmessage/v1",
+      manifest: `https://polis-web.vercel.app/agent/${DEMO_ENS}`,
+      storage: DEMO_ARCHIVES[1].uri,
+      payment: `gensyn:${DEMO_CONTRACTS.paymentRouter}`,
+      url: "https://github.com/KaranSinghBisht/polis-network",
+      description: "Polis BYOA agent - files sourced intelligence over Gensyn AXL.",
+    },
+    source: "demo-snapshot",
+  };
 }
 
 function normalizePeerText(value?: string | null): string | null {

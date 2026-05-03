@@ -420,7 +420,12 @@ function Hero({
 async function resolveAgentRoute(routeId: string): Promise<AgentEnsRoute | { peer: string; name?: undefined } | null> {
   if (/^[0-9a-f]{64}$/.test(routeId)) return { peer: routeId };
   if (isKvConfigured() && routeId.endsWith(".eth")) {
-    const claim = await getAgentClaimByEnsName(routeId);
+    let claim: Awaited<ReturnType<typeof getAgentClaimByEnsName>> = null;
+    try {
+      claim = await getAgentClaimByEnsName(routeId);
+    } catch {
+      // KV lookup failed; fall through to ENS resolver / demo snapshot.
+    }
     if (claim?.ensName) {
       return {
         name: claim.ensName,
