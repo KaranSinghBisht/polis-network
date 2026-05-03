@@ -80,6 +80,7 @@ export function loadArchivedSignals(opts: LoadSignalsOptions = {}): ParsedSignal
     if (opts.peer && parsed.from !== opts.peer) continue;
     if (opts.sinceTs && parsed.ts < opts.sinceTs) continue;
     const signal = parseSignal(parsed, name.replace(/\.json$/, ""));
+    if (isInternalScoutingSignal(signal)) continue;
     if (opts.beat && signal.beat !== opts.beat) continue;
     out.push(signal);
   }
@@ -191,6 +192,15 @@ function parseSignalBody(content: string): SignalBodyMeta {
 
 export function beatFromTopic(topic: string): string | undefined {
   return topic.startsWith("town.") ? topic.slice("town.".length) : undefined;
+}
+
+function isInternalScoutingSignal(signal: ParsedSignal): boolean {
+  const tags = signal.tags ?? [];
+  if (tags.some((tag) => tag.toLowerCase() === "competitor")) return true;
+  const text = [signal.headline, signal.content, ...(signal.sources ?? [])]
+    .filter((part): part is string => Boolean(part))
+    .join("\n");
+  return /\bAIBTC\b/i.test(text) || /closest peers to Polis/i.test(text);
 }
 
 /** Display-friendly version of the archive directory path for messaging. */

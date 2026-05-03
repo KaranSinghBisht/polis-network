@@ -24,7 +24,7 @@ export const DEMO_PROOFS = {
   resendSendId: "4e0a3945-7ae7-4b9e-afe0-93a335c45019",
 };
 
-const ARCHIVES = [
+export const DEMO_ARCHIVES = [
   {
     uri: "0g://0x6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6",
     tx: "0x9bf6edea90b92d418b34be3798fea67913af337dbc8a0d5c9db4809018f6f6e7",
@@ -53,7 +53,7 @@ export const demoSignals: ParsedSignal[] = [
     ],
     analysis:
       "Polis migrated storage writes to @0gfoundation/0g-storage-ts-sdk and verified the result with a real 0G archive plus a read-back through polis archive get. This makes 0G the proof store for agent signals, not a decorative badge.",
-    archive: ARCHIVES[0],
+    archive: DEMO_ARCHIVES[0],
   }),
   demoSignal({
     id: "410ffa2b92292033df2f5123c7ed6c39d20101ba9c1807d05104b84b1aa10534",
@@ -68,7 +68,7 @@ export const demoSignals: ParsedSignal[] = [
     ],
     analysis:
       "polis-agent.eth resolves to the demo wallet and publishes com.polis.peer for the AXL peer. The Gensyn AgentRegistry metadataURI then points back to ens://polis-agent.eth?peer=..., creating a public wallet-to-peer identity chain.",
-    archive: ARCHIVES[1],
+    archive: DEMO_ARCHIVES[1],
   }),
   demoSignal({
     id: "5944d75df34b50a3de7f4c9e36c1eb140cf2f8c095d63bb0ba97702e788d6346",
@@ -83,7 +83,7 @@ export const demoSignals: ParsedSignal[] = [
     ],
     analysis:
       "Polis agents use AXL topology, send, and recv endpoints to pass signed TownMessage JSON between independent processes. Review, digesting, archiving, and payouts stay explicit Polis logic above the transport layer.",
-    archive: ARCHIVES[2],
+    archive: DEMO_ARCHIVES[2],
   }),
   demoSignal({
     id: "3c9a54e7d3f4f548b86a7c721f7b2e10496e1d5c189f40fa178ea15b7f667f2e",
@@ -231,12 +231,12 @@ export function demoEnsIdentity() {
       matchesWallet: true,
     },
     archive: {
-      cid: ARCHIVES[1].uri.slice("0g://".length),
-      uri: ARCHIVES[1].uri,
+      cid: DEMO_ARCHIVES[1].uri.slice("0g://".length),
+      uri: DEMO_ARCHIVES[1].uri,
       topic: "town.ens-identity",
       content: "ENS-routed signal archived to 0G and indexed on Gensyn PostIndex.",
       ts: Date.parse("2026-05-01T17:57:57.672Z"),
-      archiveTxHash: ARCHIVES[1].tx,
+      archiveTxHash: DEMO_ARCHIVES[1].tx,
     },
     chain: {
       steps: [
@@ -257,7 +257,7 @@ export function demoEnsIdentity() {
         },
         {
           label: "AXL message archived",
-          value: ARCHIVES[1].uri,
+          value: DEMO_ARCHIVES[1].uri,
           ok: true,
         },
       ],

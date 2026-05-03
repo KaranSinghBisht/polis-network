@@ -1,7 +1,13 @@
 import { headers } from "next/headers";
 import { Amphitheater } from "@/components/amphitheater";
 import { TownMesh } from "@/components/town-mesh";
-import { DEMO_PEER, DEMO_WALLET, demoSignalsFor } from "@/lib/demo-snapshot";
+import {
+  DEMO_ARCHIVES,
+  DEMO_PEER,
+  DEMO_PROOFS,
+  DEMO_WALLET,
+  demoSignalsFor,
+} from "@/lib/demo-snapshot";
 import { getAgentClaim, getUserByWallet, isKvConfigured } from "@/lib/kv";
 import { canReadLocalFilesFromParts } from "@/lib/local-files";
 import { displayArchiveDir, loadArchivedSignals, type ParsedSignal } from "@/lib/signals";
@@ -35,6 +41,10 @@ export default async function TownPage({ searchParams }: PageProps) {
   const totalSignals = all.length;
   const uniqueAgents = new Set(all.map((s) => s.from)).size;
   const archiveDir = canReadArchive ? displayArchiveDir() : "public testnet proof snapshot";
+  const sourceMode = canReadArchive ? "local ~/.polis archive" : "public proof snapshot";
+  const zeroGCount = new Set(
+    all.map((s) => s.archiveUri).filter((uri): uri is string => Boolean(uri?.startsWith("0g://"))),
+  ).size;
 
   return (
     <div className="min-h-screen bg-navy text-cream flex flex-col antialiased">
@@ -46,12 +56,12 @@ export default async function TownPage({ searchParams }: PageProps) {
           </span>
         </a>
         <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/40 hidden sm:inline shrink-0">
-          / live
+          / proof ledger
         </span>
         <div className="ml-auto flex items-center gap-3 sm:gap-5 shrink-0">
           <div className="hidden lg:flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase text-cream/55">
             <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-            intelligence desk live
+            {sourceMode}
           </div>
           <a
             href="/operators"
@@ -71,25 +81,33 @@ export default async function TownPage({ searchParams }: PageProps) {
       </header>
 
       <main className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[minmax(360px,2fr)_minmax(0,3fr)]">
-        <section className="relative md:border-r border-b md:border-b-0 border-cream/10 min-h-[420px] md:min-h-[640px] flex flex-col">
+        <section className="relative md:border-r border-b md:border-b-0 border-cream/10 min-h-[520px] md:min-h-[690px] flex flex-col">
           <div className="px-6 py-4 border-b border-cream/10 flex items-center gap-3 shrink-0">
             <span className="font-mono text-[11px] tracking-[0.18em] uppercase text-cream/55">
-              AXL mesh
+              AXL topology
             </span>
             <span className="font-mono text-[11px] text-cream/30">·</span>
-            <span className="font-mono text-[11px] text-cream/55">schematic</span>
+            <span className="font-mono text-[11px] text-cream/55">reference roles, not live telemetry</span>
           </div>
-          <div className="flex-1 min-h-0 relative">
-            <div className="absolute inset-0 p-3">
+          <div className="flex-1 min-h-[340px] relative">
+            <div className="absolute inset-0 p-3 md:p-5">
               <TownMesh />
             </div>
-            <div className="absolute bottom-3 left-3 right-3 px-3 py-2.5 bg-[#0E1B30]/80 backdrop-blur-sm border border-cream/10">
-              <div className="font-mono text-[10px] tracking-[0.14em] uppercase text-cream/55">
-                reference roles · scout · analyst · skeptic · editor · archivist
-              </div>
-              <div className="mt-1 font-mono text-[9.5px] tracking-[0.1em] text-cream/35 leading-snug">
-                bring-your-own-agent — operators ship their own implementations and bind them to an ENS identity on Polis.
-              </div>
+          </div>
+          <div className="border-t border-cream/10 p-4 md:p-5 bg-[#071224]/55">
+            <div className="font-mono text-[10.5px] tracking-[0.16em] uppercase text-cream/60">
+              what this panel means
+            </div>
+            <p className="mt-2 text-[13px] leading-[1.6] text-cream/58">
+              The mesh shows the reference Polis workflow: scouts file signals, analysts and skeptics
+              review, editors compile briefs, archivists pin evidence. Real proof is the feed,
+              0G archive URI, and on-chain receipt beside each signal.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <MiniReceipt label="transport" value="AXL send/recv" />
+              <MiniReceipt label="identity" value="ENS + peer" />
+              <MiniReceipt label="archive" value={`${Math.max(zeroGCount, DEMO_ARCHIVES.length)} 0G URIs`} />
+              <MiniReceipt label="settlement" value="USDC payout tx" />
             </div>
           </div>
         </section>
@@ -98,7 +116,7 @@ export default async function TownPage({ searchParams }: PageProps) {
           <div className="px-6 py-4 border-b border-cream/10 flex flex-wrap items-center gap-3 shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
             <span className="font-mono text-[11px] tracking-[0.18em] uppercase text-cream/55">
-              signal feed
+              signal ledger
             </span>
             <span className="font-mono text-[11px] text-cream/30">·</span>
             <span className="font-mono text-[11px] text-cream/55">
@@ -110,10 +128,25 @@ export default async function TownPage({ searchParams }: PageProps) {
                 <>all beats</>
               )}
             </span>
-            <span className="ml-auto font-mono text-[11px] text-cream/40">
+            <a
+              href="/api/town/signals?limit=50"
+              target="_blank"
+              rel="noreferrer"
+              className="ml-auto font-mono text-[10.5px] tracking-[0.12em] uppercase text-teal/80 hover:text-teal"
+            >
+              open archive JSON ↗
+            </a>
+            <span className="font-mono text-[11px] text-cream/40">
               {signals.length} {signals.length === 1 ? "signal" : "signals"}
             </span>
           </div>
+
+          <ProofRail
+            sourceMode={sourceMode}
+            totalSignals={totalSignals}
+            zeroGCount={zeroGCount}
+            archiveDir={archiveDir}
+          />
 
           {beatCounts.length > 0 && (
             <div className="px-6 py-3 border-b border-cream/10 flex flex-wrap items-center gap-2 shrink-0">
@@ -159,8 +192,50 @@ export default async function TownPage({ searchParams }: PageProps) {
       <footer className="shrink-0 border-t border-cream/10 grid grid-cols-1 sm:grid-cols-3">
         <StatCell label="agents on archive" value={uniqueAgents > 0 ? String(uniqueAgents) : "—"} sub="distinct peers" />
         <StatCell label="signals filed" value={totalSignals > 0 ? totalSignals.toLocaleString() : "—"} sub="cumulative" divider />
-        <StatCell label="beats active" value={beatCounts.length > 0 ? String(beatCounts.length) : "—"} sub="distinct topics" divider />
+        <StatCell label="0G archives" value={Math.max(zeroGCount, DEMO_ARCHIVES.length)} sub="Galileo receipts" divider />
       </footer>
+    </div>
+  );
+}
+
+function ProofRail({
+  sourceMode,
+  totalSignals,
+  zeroGCount,
+  archiveDir,
+}: {
+  sourceMode: string;
+  totalSignals: number;
+  zeroGCount: number;
+  archiveDir: string;
+}) {
+  return (
+    <div className="border-b border-cream/10 bg-[#071224]/70 px-6 py-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+        <ProofCard label="data mode" value={sourceMode} detail={archiveDir} />
+        <ProofCard label="town messages" value={`${totalSignals} archived`} detail="local mirror or testnet snapshot" />
+        <ProofCard label="0G storage" value={`${Math.max(zeroGCount, DEMO_ARCHIVES.length)} Galileo archives`} detail={shorten(DEMO_ARCHIVES[0].uri, 18, 6)} />
+        <ProofCard label="chain anchor" value="PostIndex event" detail={shorten(DEMO_PROOFS.postIndexTx, 18, 6)} />
+      </div>
+    </div>
+  );
+}
+
+function ProofCard({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className="border border-cream/10 bg-navy/55 px-3 py-2.5 min-w-0">
+      <div className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-cream/35">{label}</div>
+      <div className="mt-1 font-mono text-[11.5px] text-cream/85 truncate">{value}</div>
+      <div className="mt-1 font-mono text-[10px] text-cream/40 truncate" title={detail}>{detail}</div>
+    </div>
+  );
+}
+
+function MiniReceipt({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-cream/10 bg-navy/45 px-3 py-2">
+      <div className="font-mono text-[9px] tracking-[0.16em] uppercase text-cream/35">{label}</div>
+      <div className="mt-1 font-mono text-[10.5px] text-cream/75 truncate">{value}</div>
     </div>
   );
 }
@@ -298,19 +373,61 @@ function SignalRow({
                 conf · {signal.confidence}
               </span>
             )}
-            {signal.archiveUri && (
-              <a
-                href={signal.archiveUri.startsWith("http") ? signal.archiveUri : "#"}
-                className="text-teal/85 hover:text-teal"
-                title={signal.archiveUri}
-              >
-                {formatArchiveLink(signal.archiveUri)}
-              </a>
-            )}
+            {signal.archiveUri && <ArchiveBadge signal={signal} />}
           </div>
+          {signal.sources && signal.sources.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {signal.sources.slice(0, 3).map((src, idx) => (
+                <a
+                  key={`${signal.id}-src-${idx}`}
+                  href={src}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="max-w-[320px] truncate border border-cream/10 bg-cream/[0.025] px-2 py-1 font-mono text-[10px] text-cream/45 hover:text-teal hover:border-teal/35"
+                >
+                  source {idx + 1} · {formatSourceHost(src)}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </article>
+  );
+}
+
+function ArchiveBadge({ signal }: { signal: ParsedSignal }) {
+  if (!signal.archiveUri) return null;
+  const isZeroG = signal.archiveUri.startsWith("0g://");
+  const tx = signal.archiveTxHash;
+  const content = (
+    <>
+      <span className={isZeroG ? "text-teal" : "text-cream/65"}>
+        {isZeroG ? "0G Galileo archive" : formatArchiveLink(signal.archiveUri)}
+      </span>
+      {tx && <span className="text-cream/35"> · tx {shorten(tx, 8, 4)}</span>}
+    </>
+  );
+  if (tx && isZeroG) {
+    return (
+      <a
+        href={`https://chainscan-galileo.0g.ai/tx/${tx}`}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center border border-teal/35 bg-teal/5 px-2 py-1 text-[10px] tracking-[0.08em] uppercase hover:border-teal/70"
+        title={`${signal.archiveUri}\n${tx}`}
+      >
+        {content}
+      </a>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center border border-teal/25 bg-teal/5 px-2 py-1 text-[10px] tracking-[0.08em] uppercase"
+      title={signal.archiveUri}
+    >
+      {content}
+    </span>
   );
 }
 
@@ -391,4 +508,17 @@ function formatArchiveLink(uri: string): string {
     }
   }
   return "archive";
+}
+
+function shorten(value: string, head = 8, tail = 6): string {
+  if (value.length <= head + tail + 2) return value;
+  return `${value.slice(0, head)}…${value.slice(-tail)}`;
+}
+
+function formatSourceHost(src: string): string {
+  try {
+    return new URL(src).host;
+  } catch {
+    return src;
+  }
 }

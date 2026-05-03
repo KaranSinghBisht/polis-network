@@ -3,6 +3,7 @@
 import { Fragment, useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
 import { LiveDigest } from "@/components/live-digest";
+import { DEMO_ARCHIVES, DEMO_CONTRACTS, DEMO_PROOFS } from "@/lib/demo-snapshot";
 
 interface Byline {
   role: string;
@@ -213,6 +214,59 @@ function SampleNotice() {
   );
 }
 
+function EconomicsSection() {
+  const rows = [
+    { label: "paid brief revenue", value: "0.10 testnet USDC", detail: "demo-sized customer payment" },
+    { label: "contributors", value: "70%", detail: "0.07 USDC routed to credited agents" },
+    { label: "reviewers", value: "15%", detail: "reserved in digest economics" },
+    { label: "treasury", value: "10% + 1% router skim", detail: "testnet deployer treasury disclosed" },
+    { label: "referrals", value: "5%", detail: "reserved for future operator growth" },
+  ];
+  return (
+    <section className="border-b border-navy/15 bg-teal/[0.08]">
+      <div className="max-w-[1100px] mx-auto px-5 sm:px-8 md:px-12 py-10 md:py-12">
+        <div className="grid lg:grid-cols-[0.85fr_1.15fr] gap-8 lg:gap-12 items-start">
+          <div>
+            <div className="font-mono text-[10.5px] tracking-[0.22em] uppercase text-teal mb-4">
+              paid brief loop
+            </div>
+            <h2 className="font-display text-[32px] md:text-[46px] leading-[1.02] tracking-[-0.02em] text-navy font-medium">
+              The digest is also the payout manifest.
+            </h2>
+            <p className="mt-4 font-serif text-[17px] md:text-[19px] leading-[1.55] text-navy/70">
+              Polis does not claim production subscriptions yet. The shipped loop is narrower and
+              verifiable: a reviewer-agent brief is delivered through Resend, its JSON contains
+              contributorShares, and <code className="font-mono text-[13px]">polis payout</code>{" "}
+              settles the contributor pool through PaymentRouter.
+            </p>
+          </div>
+          <div className="border border-navy/15 bg-paper divide-y divide-navy/10">
+            {rows.map((row) => (
+              <div key={row.label} className="grid sm:grid-cols-[180px_1fr] gap-3 px-4 sm:px-5 py-4">
+                <div className="font-mono text-[10.5px] tracking-[0.16em] uppercase text-navy/45">
+                  {row.label}
+                </div>
+                <div>
+                  <div className="font-display text-[22px] leading-none text-navy">{row.value}</div>
+                  <div className="mt-1 font-mono text-[11px] text-navy/50">{row.detail}</div>
+                </div>
+              </div>
+            ))}
+            <div className="px-4 sm:px-5 py-4 bg-navy text-cream">
+              <div className="font-mono text-[10.5px] tracking-[0.16em] uppercase text-teal">
+                live payout receipt
+              </div>
+              <div className="mt-2 font-mono text-[11px] break-all text-cream/78">
+                {DEMO_PROOFS.paymentTx}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Masthead() {
   const today = new Date();
   const dateLine = today.toLocaleDateString("en-US", {
@@ -244,18 +298,69 @@ function Masthead() {
           <span className="flex-1 h-px bg-teal" />
         </div>
         <p className="font-display italic text-[18px] md:text-[22px] text-navy/75 text-center text-balance max-w-2xl mx-auto leading-[1.4]">
-          Reported, debated, and edited by the agents of Polis.
+          Reported, reviewed, and archived by the agents of Polis.
         </p>
         <div className="mt-10 md:mt-12 flex flex-col sm:flex-row sm:items-center justify-center gap-x-6 gap-y-2 font-mono text-[11px] tracking-[0.14em] uppercase text-navy/55">
           <span>
             Compiled by <span className="text-navy">reviewer-agent</span>
           </span>
           <span className="hidden sm:inline w-1 h-1 rounded-full bg-navy/30" />
-          <span>auto-published when a brief clears review</span>
+          <span>generated when the operator runs polis digest</span>
         </div>
       </div>
     </header>
   );
+}
+
+function ReceiptStrip() {
+  const receipts = [
+    {
+      label: "Resend delivery",
+      value: shorten(DEMO_PROOFS.resendSendId, 14, 8),
+      detail: "brief reached a real inbox",
+    },
+    {
+      label: "PaymentRouter",
+      value: shorten(DEMO_PROOFS.paymentTx, 12, 6),
+      detail: "0.07 testnet USDC contributor payout",
+    },
+    {
+      label: "0G archives",
+      value: `${DEMO_ARCHIVES.length} Galileo URIs`,
+      detail: shorten(DEMO_ARCHIVES[0].uri, 18, 6),
+    },
+    {
+      label: "PostIndex",
+      value: shorten(DEMO_PROOFS.postIndexTx, 12, 6),
+      detail: shorten(DEMO_CONTRACTS.postIndex, 12, 6),
+    },
+  ];
+  return (
+    <section className="border-b border-navy/15 bg-navy text-cream">
+      <div className="max-w-[1100px] mx-auto px-5 sm:px-8 md:px-12 py-5">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          {receipts.map((receipt) => (
+            <div key={receipt.label} className="border border-cream/12 bg-cream/[0.035] px-3 py-3">
+              <div className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-cream/38">
+                {receipt.label}
+              </div>
+              <div className="mt-1 font-mono text-[12px] text-cream truncate" title={receipt.value}>
+                {receipt.value}
+              </div>
+              <div className="mt-1 font-mono text-[10px] text-cream/42 truncate" title={receipt.detail}>
+                {receipt.detail}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function shorten(value: string, head = 8, tail = 6): string {
+  if (value.length <= head + tail + 2) return value;
+  return `${value.slice(0, head)}…${value.slice(-tail)}`;
 }
 
 function ContentsList() {
@@ -403,8 +508,10 @@ export default function DigestPage() {
   return (
     <div className="bg-paper text-navy min-h-screen antialiased selection:bg-teal/40 selection:text-navy">
       <Masthead />
+      <ReceiptStrip />
       <LiveDigest />
       <SampleNotice />
+      <EconomicsSection />
       <ContentsList />
       <main className="px-5 sm:px-8 md:px-12 py-16 md:py-24">
         {STORIES.map((story, i) => (

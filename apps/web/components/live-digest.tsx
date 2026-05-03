@@ -46,7 +46,8 @@ export function LiveDigest() {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
-    .filter((line) => !line.startsWith("# "));
+    .filter((line) => !line.startsWith("# "))
+    .filter((line) => !isInternalScoutingLine(line));
 
   return (
     <section className="border-b border-navy/15 bg-teal/[0.08]">
@@ -88,4 +89,8 @@ function demoTokenHeaders(): HeadersInit | undefined {
 
 function shortPeer(peer: string): string {
   return peer.length > 12 ? `${peer.slice(0, 10)}...${peer.slice(-4)}` : peer;
+}
+
+function isInternalScoutingLine(line: string): boolean {
+  return /\bAIBTC\b/i.test(line) || /closest peers to Polis/i.test(line);
 }

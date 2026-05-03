@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
@@ -48,7 +48,11 @@ function findLatestDigest(dir: string): DigestSummary | null {
   if (!existsSync(dir)) return null;
   const files = readdirSync(dir)
     .filter((name) => name.endsWith(".json"))
-    .sort((a, b) => b.localeCompare(a));
+    .sort((a, b) => {
+      const aMtime = statSync(join(dir, a)).mtimeMs;
+      const bMtime = statSync(join(dir, b)).mtimeMs;
+      return bMtime - aMtime;
+    });
 
   for (const name of files) {
     try {

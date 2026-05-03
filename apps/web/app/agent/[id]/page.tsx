@@ -3,7 +3,11 @@ import { headers } from "next/headers";
 import { Amphitheater } from "@/components/amphitheater";
 import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 import {
+  DEMO_ARCHIVES,
+  DEMO_CONTRACTS,
+  DEMO_ENS,
   DEMO_WALLET,
+  DEMO_PROOFS,
   demoAgentRecord,
   demoSignalsFor,
   isDemoPeer,
@@ -54,6 +58,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
   ]);
   const record = registryRecord ?? (isDemoPeer(peer) ? demoAgentRecord : null);
   const signals = loadedSignals;
+  const zeroGSignals = signals.filter((s) => s.archiveUri?.startsWith("0g://")).length;
 
   let claimSummary: AgentClaimSummary | null = null;
   if (claim && isKvConfigured()) {
@@ -73,7 +78,6 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
     };
   }
 
-  const score = signals.length * 5; // brief inclusions count requires a digest scan; surfaced on /operators
   const peerShort = `${peer.slice(0, 8)}…${peer.slice(-6)}`;
 
   return (
@@ -85,7 +89,8 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
         record={record}
         claim={claimSummary}
         signals={signals}
-        score={score}
+        zeroGSignals={zeroGSignals}
+        isDemo={isDemoPeer(peer)}
       />
       <SiteFooter />
     </div>
@@ -127,14 +132,16 @@ function ProfileBody({
   record,
   claim,
   signals,
-  score,
+  zeroGSignals,
+  isDemo,
 }: {
   peer: string;
   peerShort: string;
   record: AgentRecord | null;
   claim: AgentClaimSummary | null;
   signals: ParsedSignal[];
-  score: number;
+  zeroGSignals: number;
+  isDemo: boolean;
 }) {
   const displayName = claim?.handle
     ? `@${claim.handle}`
@@ -143,7 +150,24 @@ function ProfileBody({
       : peerShort;
 
   return (
-    <section className="px-5 sm:px-8 md:px-12 py-12 md:py-16 max-w-6xl mx-auto w-full">
+    <section className="px-5 sm:px-8 md:px-12 py-10 md:py-14 max-w-6xl mx-auto w-full">
+      <div className="mb-8 md:mb-10 border border-teal/25 bg-teal/[0.045] px-4 sm:px-5 py-4 flex flex-col lg:flex-row gap-4 lg:items-center">
+        <div>
+          <div className="font-mono text-[10.5px] tracking-[0.22em] uppercase text-teal">
+            agent passport
+          </div>
+          <p className="mt-1 text-[13.5px] leading-[1.55] text-cream/65 max-w-2xl">
+            This page is the judge-facing proof chain for one operator: ENS identity, AXL peer,
+            Gensyn registry owner, 0G archives, digest inclusion, and payout receipt.
+          </p>
+        </div>
+        <div className="lg:ml-auto grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-0">
+          <PassportPill label="ENS" value={isDemo ? DEMO_ENS : claim?.handle ? `@${claim.handle}` : "configured"} />
+          <PassportPill label="AXL peer" value={peerShort} />
+          <PassportPill label="0G proofs" value={String(Math.max(zeroGSignals, isDemo ? DEMO_ARCHIVES.length : 0))} />
+          <PassportPill label="payout" value={isDemo ? "0.07 USDC" : "digest based"} />
+        </div>
+      </div>
       <div className="grid md:grid-cols-12 gap-12 mb-12 md:mb-16">
         <div className="md:col-span-7">
           <div className="flex items-start gap-5">
@@ -196,12 +220,12 @@ function ProfileBody({
 
           <div className="mt-9 grid grid-cols-2 sm:grid-cols-4 gap-x-6 sm:gap-x-8 gap-y-5">
             <StatTile label="Signals" value={String(signals.length)} sub="archived" />
+            <StatTile label="0G uploads" value={String(zeroGSignals || (isDemo ? DEMO_ARCHIVES.length : 0))} sub="Galileo" />
             <StatTile
               label="Reputation"
               value={record ? String(record.reputation) : "—"}
               sub="on-chain"
             />
-            <StatTile label="Score" value={String(score)} sub="signals × 5" />
             <StatTile
               label="Registered"
               value={record ? formatDate(record.registeredAt * 1000).abs : "—"}
@@ -212,13 +236,113 @@ function ProfileBody({
 
         <div className="md:col-span-5">
           <EnsIdentityPanel variant="navy" />
+          {!isDemo && (
+            <p className="mt-3 font-mono text-[10.5px] leading-[1.55] text-amber/75">
+              Identity panel displays the configured operator proof bundle. Use `polis ens-export`
+              from this peer to replace it with a peer-specific proof.
+            </p>
+          )}
         </div>
       </div>
+
+      <ProofPassport record={record} signals={signals} zeroGSignals={zeroGSignals} isDemo={isDemo} />
 
       <RegistryCard peer={peer} record={record} claim={claim} />
 
       <SignalsList signals={signals} />
     </section>
+  );
+}
+
+function PassportPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-cream/10 bg-navy/45 px-3 py-2 min-w-0">
+      <div className="font-mono text-[9px] tracking-[0.16em] uppercase text-cream/35">{label}</div>
+      <div className="mt-1 font-mono text-[10.5px] text-cream/85 truncate" title={value}>{value}</div>
+    </div>
+  );
+}
+
+function ProofPassport({
+  record,
+  signals,
+  zeroGSignals,
+  isDemo,
+}: {
+  record: AgentRecord | null;
+  signals: ParsedSignal[];
+  zeroGSignals: number;
+  isDemo: boolean;
+}) {
+  const latest0g = signals.find((signal) => signal.archiveUri?.startsWith("0g://"));
+  const archiveUri = latest0g?.archiveUri ?? (isDemo ? DEMO_ARCHIVES[0].uri : undefined);
+  const archiveTx = latest0g?.archiveTxHash ?? (isDemo ? DEMO_ARCHIVES[0].tx : undefined);
+  const rows = [
+    {
+      label: "ENS route",
+      value: isDemo ? DEMO_ENS : record?.metadataURI?.startsWith("ens://") ? record.metadataURI.replace("ens://", "") : "not exported",
+      status: isDemo || record?.metadataURI?.startsWith("ens://") ? "ok" : "pending",
+    },
+    {
+      label: "Gensyn registry",
+      value: record ? `owner ${shorten(record.owner, 10, 6)}` : "no AgentRegistry record",
+      status: record ? "ok" : "pending",
+    },
+    {
+      label: "0G archive",
+      value: archiveUri ? shorten(archiveUri, 22, 8) : "no 0g:// archive on this peer",
+      status: archiveUri ? "ok" : "pending",
+    },
+    {
+      label: "paid brief receipt",
+      value: isDemo ? `PaymentRouter ${shorten(DEMO_PROOFS.paymentTx, 10, 6)}` : "run polis payout after digest",
+      status: isDemo ? "ok" : "pending",
+    },
+  ];
+
+  return (
+    <section className="mb-12 md:mb-16">
+      <div className="flex items-baseline justify-between mb-5">
+        <Eyebrow>Proof passport</Eyebrow>
+        <span className="font-mono text-[10.5px] text-cream/40">
+          {zeroGSignals || (isDemo ? DEMO_ARCHIVES.length : 0)} 0G archive references
+        </span>
+      </div>
+      <div className="grid lg:grid-cols-[1.25fr_0.75fr] gap-4">
+        <div className="border border-cream/10 bg-[#0E1B30] divide-y divide-cream/8">
+          {rows.map((row) => (
+            <div key={row.label} className="grid sm:grid-cols-[180px_1fr_auto] gap-3 px-4 sm:px-5 py-4 items-baseline">
+              <div className="font-mono text-[10.5px] tracking-[0.18em] uppercase text-cream/45">{row.label}</div>
+              <div className="font-mono text-[12px] text-cream/85 break-all">{row.value}</div>
+              <div className={`font-mono text-[10px] tracking-[0.16em] uppercase ${row.status === "ok" ? "text-teal" : "text-amber"}`}>
+                {row.status}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="border border-teal/25 bg-teal/[0.045] px-4 sm:px-5 py-4">
+          <div className="font-mono text-[10.5px] tracking-[0.18em] uppercase text-teal">
+            demo receipts
+          </div>
+          <div className="mt-4 space-y-3 font-mono text-[11px] text-cream/70">
+            <ReceiptLine label="PostIndex" value={shorten(DEMO_CONTRACTS.postIndex, 10, 6)} />
+            <ReceiptLine label="latest post tx" value={shorten(DEMO_PROOFS.postIndexTx, 10, 6)} />
+            <ReceiptLine label="0G upload tx" value={archiveTx ? shorten(archiveTx, 10, 6) : "pending"} />
+            <ReceiptLine label="Resend send id" value={shorten(DEMO_PROOFS.resendSendId, 12, 8)} />
+            <ReceiptLine label="PaymentRouter" value={shorten(DEMO_CONTRACTS.paymentRouter, 10, 6)} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReceiptLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-cream/10 pb-2">
+      <span className="text-cream/40 uppercase tracking-[0.14em]">{label}</span>
+      <span className="text-cream/85 truncate" title={value}>{value}</span>
+    </div>
   );
 }
 
@@ -426,9 +550,7 @@ function SignalsList({ signals }: { signals: ParsedSignal[] }) {
                 </div>
                 <div className="sm:col-span-2 font-mono text-[10.5px] text-cream/55 break-all sm:text-right">
                   {s.archiveUri ? (
-                    <span title={s.archiveUri}>
-                      {shorten(s.archiveUri, 14, 4)}
-                    </span>
+                    <AgentArchiveProof signal={s} />
                   ) : (
                     <span className="text-cream/30">no archive</span>
                   )}
@@ -440,6 +562,36 @@ function SignalsList({ signals }: { signals: ParsedSignal[] }) {
       )}
     </section>
   );
+}
+
+function AgentArchiveProof({ signal }: { signal: ParsedSignal }) {
+  if (!signal.archiveUri) return null;
+  const isZeroG = signal.archiveUri.startsWith("0g://");
+  const body = (
+    <>
+      <span className={isZeroG ? "text-teal" : "text-cream/60"}>
+        {isZeroG ? "0G archive" : "archive"}
+      </span>
+      <span className="block mt-1 text-cream/55">{shorten(signal.archiveUri, 16, 5)}</span>
+      {signal.archiveTxHash && (
+        <span className="block mt-1 text-cream/35">tx {shorten(signal.archiveTxHash, 8, 4)}</span>
+      )}
+    </>
+  );
+  if (isZeroG && signal.archiveTxHash) {
+    return (
+      <a
+        href={`https://chainscan-galileo.0g.ai/tx/${signal.archiveTxHash}`}
+        target="_blank"
+        rel="noreferrer"
+        title={`${signal.archiveUri}\n${signal.archiveTxHash}`}
+        className="inline-block border border-teal/30 bg-teal/5 px-2 py-1.5 text-left hover:border-teal/70"
+      >
+        {body}
+      </a>
+    );
+  }
+  return <span title={signal.archiveUri}>{body}</span>;
 }
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
