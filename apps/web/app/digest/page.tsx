@@ -3,7 +3,14 @@
 import { Fragment, useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
 import { LiveDigest } from "@/components/live-digest";
-import { DEMO_ARCHIVES, DEMO_CONTRACTS, DEMO_PROOFS } from "@/lib/demo-snapshot";
+import {
+  DEMO_ARCHIVES,
+  DEMO_CONTRACTS,
+  DEMO_PROOFS,
+  DEMO_REPLAY_EVENTS,
+  DEMO_REPLAY_NOTICE,
+  DEMO_REPLAY_SOURCE,
+} from "@/lib/demo-snapshot";
 
 interface Byline {
   role: string;
@@ -253,8 +260,8 @@ function EconomicsSection() {
               </div>
             ))}
             <div className="px-4 sm:px-5 py-4 bg-navy text-cream">
-              <div className="font-mono text-[10.5px] tracking-[0.16em] uppercase text-teal">
-                live payout receipt
+            <div className="font-mono text-[10.5px] tracking-[0.16em] uppercase text-teal">
+                existing payout receipt
               </div>
               <div className="mt-2 font-mono text-[11px] break-all text-cream/78">
                 {DEMO_PROOFS.paymentTx}
@@ -268,13 +275,7 @@ function EconomicsSection() {
 }
 
 function Masthead() {
-  const today = new Date();
-  const dateLine = today.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
+  const dateLine = "Proof replay · May 1, 2026";
   return (
     <header className="border-b border-navy/15">
       <div className="max-w-[1100px] mx-auto px-5 sm:px-8 md:px-12 pt-10 md:pt-14 pb-8 md:pb-10">
@@ -298,14 +299,14 @@ function Masthead() {
           <span className="flex-1 h-px bg-teal" />
         </div>
         <p className="font-display italic text-[18px] md:text-[22px] text-navy/75 text-center text-balance max-w-2xl mx-auto leading-[1.4]">
-          Reported, reviewed, and archived by the agents of Polis.
+          Reported, reviewed, and archived in the public testnet replay.
         </p>
         <div className="mt-10 md:mt-12 flex flex-col sm:flex-row sm:items-center justify-center gap-x-6 gap-y-2 font-mono text-[11px] tracking-[0.14em] uppercase text-navy/55">
           <span>
             Compiled by <span className="text-navy">reviewer-agent</span>
           </span>
           <span className="hidden sm:inline w-1 h-1 rounded-full bg-navy/30" />
-          <span>generated when the operator runs polis digest</span>
+          <span>{DEMO_REPLAY_SOURCE}</span>
         </div>
       </div>
     </header>
@@ -338,6 +339,14 @@ function ReceiptStrip() {
   return (
     <section className="border-b border-navy/15 bg-navy text-cream">
       <div className="max-w-[1100px] mx-auto px-5 sm:px-8 md:px-12 py-5">
+        <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono">
+          <span className="text-[10.5px] tracking-[0.2em] uppercase text-teal">
+            existing proof receipts
+          </span>
+          <span className="text-[10.5px] text-cream/45">
+            replay data is deterministic; hashes are shipped proof constants
+          </span>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {receipts.map((receipt) => (
             <div key={receipt.label} className="border border-cream/12 bg-cream/[0.035] px-3 py-3">
@@ -352,6 +361,50 @@ function ReceiptStrip() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReplayWire() {
+  return (
+    <section className="border-b border-navy/15 bg-paper">
+      <div className="max-w-[1100px] mx-auto px-5 sm:px-8 md:px-12 py-8 md:py-10">
+        <div className="grid lg:grid-cols-[0.75fr_1.25fr] gap-7 lg:gap-10 items-start">
+          <div>
+            <div className="font-mono text-[10.5px] tracking-[0.22em] uppercase text-teal mb-3">
+              AXL replay wire
+            </div>
+            <h2 className="font-display text-[28px] md:text-[38px] leading-[1.04] tracking-[-0.02em] text-navy font-medium">
+              Activity tape for the proof run.
+            </h2>
+            <p className="mt-4 font-serif text-[16.5px] md:text-[18px] leading-[1.55] text-navy/68">
+              {DEMO_REPLAY_NOTICE}
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {DEMO_REPLAY_EVENTS.map((event) => (
+              <div key={event.id} className="border border-navy/12 bg-navy/[0.025] px-3.5 py-3 min-w-0">
+                <div className="flex items-baseline justify-between gap-3 font-mono text-[9.5px] tracking-[0.16em] uppercase">
+                  <span className="text-teal">{event.channel}</span>
+                  <span className="text-navy/38">{event.ts.slice(11, 16)} UTC</span>
+                </div>
+                <div className="mt-2 font-display text-[17px] leading-[1.2] text-navy">
+                  {event.actor}
+                </div>
+                <p className="mt-1 text-[13px] leading-[1.45] text-navy/66">
+                  {event.action}
+                </p>
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-[10px] text-navy/48">
+                  <span className="uppercase tracking-[0.14em]">{event.status}</span>
+                  <span className="truncate" title={event.proof ?? event.artifact}>
+                    · {event.proof ? shorten(event.proof, 12, 5) : event.artifact}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -509,6 +562,7 @@ export default function DigestPage() {
     <div className="bg-paper text-navy min-h-screen antialiased selection:bg-teal/40 selection:text-navy">
       <Masthead />
       <ReceiptStrip />
+      <ReplayWire />
       <LiveDigest />
       <SampleNotice />
       <EconomicsSection />

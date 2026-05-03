@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import { Amphitheater } from "@/components/amphitheater";
 import { EnsIdentityPanel } from "@/components/ens-identity-panel";
+import {
+  DEMO_ARCHIVES,
+  DEMO_PROOF_ARTIFACTS,
+  DEMO_PROOFS,
+  DEMO_REPLAY_EVENTS,
+  DEMO_REPLAY_NOTICE,
+  DEMO_REPLAY_SOURCE,
+} from "@/lib/demo-snapshot";
 
 interface OperatorProfile {
   address: string;
@@ -61,16 +69,20 @@ type NavKey = (typeof NAV)[number]["k"];
 
 function useOperatorProfile() {
   const [profile, setProfile] = useState<OperatorProfile | null>(null);
+  const [source, setSource] = useState("loading");
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let alive = true;
     fetch("/api/operator/profile", { headers: demoTokenHeaders() })
       .then((r) => r.json())
-      .then((d: { profile: OperatorProfile | null }) => {
+      .then((d: { profile: OperatorProfile | null; source?: string }) => {
         if (alive) setProfile(d.profile ?? null);
+        if (alive) setSource(d.source ?? "unknown");
       })
       .catch(() => {
-        if (alive) setProfile(null);
+        if (!alive) return;
+        setProfile(null);
+        setSource("unavailable");
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -79,7 +91,7 @@ function useOperatorProfile() {
       alive = false;
     };
   }, []);
-  return { profile, loading };
+  return { profile, loading, source };
 }
 
 function demoTokenHeaders(): HeadersInit | undefined {
@@ -155,6 +167,10 @@ function relativeTime(ts: number): string {
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
   return `${Math.floor(diff / 86_400_000)}d ago`;
+}
+
+function countZeroG(posts: PostEntry[]): number {
+  return posts.filter((post) => post.archiveUri?.startsWith("0g://")).length;
 }
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -274,7 +290,9 @@ function MobileBar({ active, onSelect }: { active: NavKey; onSelect: (k: NavKey)
   );
 }
 
-function TopBar({ profile }: { profile: OperatorProfile | null }) {
+function TopBar({ profile, source }: { profile: OperatorProfile | null; source: string }) {
+  const sourceLabel =
+    source === "demo-snapshot" ? DEMO_REPLAY_SOURCE : profile ? "local ~/.polis" : "no agent";
   return (
     <header className="h-14 shrink-0 border-b border-cream/10 px-4 sm:px-6 flex items-center gap-3 sm:gap-4 whitespace-nowrap">
       <span className="md:hidden flex items-center gap-2">
@@ -289,7 +307,7 @@ function TopBar({ profile }: { profile: OperatorProfile | null }) {
       <div className="ml-auto flex items-center gap-3">
         {profile && (
           <span className="font-mono text-[10.5px] text-cream/55 border border-cream/15 px-2 py-1">
-            {profile.network} · chain {profile.chainId}
+            {sourceLabel} · chain {profile.chainId}
           </span>
         )}
       </div>
@@ -300,9 +318,11 @@ function TopBar({ profile }: { profile: OperatorProfile | null }) {
 function OperatorIdentityCard({
   profile,
   postsCount,
+  zeroGCount,
 }: {
   profile: OperatorProfile;
   postsCount: number;
+  zeroGCount: number;
 }) {
   const [copied, setCopied] = useState<"" | "wallet" | "peer">("");
   const copy = (label: "wallet" | "peer", value: string) => {
@@ -364,7 +384,9 @@ function OperatorIdentityCard({
         <div className="sm:col-span-5 grid grid-cols-2 gap-px bg-cream/10 border border-cream/10">
           {[
             { l: "filed", v: String(postsCount), sub: "archived posts" },
+            { l: "0G", v: String(zeroGCount), sub: "Galileo receipts" },
             { l: "chain", v: String(profile.chainId), sub: profile.network },
+            { l: "ENS", v: profile.ens?.name ? "set" : "—", sub: profile.ens?.name ?? "not set" },
           ].map((s) => (
             <div key={s.l} className="bg-[#0E1B30] px-3 py-3.5 min-w-0">
               <div className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-cream/45">{s.l}</div>
@@ -510,20 +532,95 @@ function DigestsTable({ digests }: { digests: DigestSummary[] }) {
   );
 }
 
+function ProofReplayCard() {
+  return (
+    <Card className="border-teal/20 bg-teal/[0.045]">
+      <CardHead title="Public proof replay" sub="demo data, clearly labeled" />
+      <div className="p-5">
+        <p className="font-sans text-[13px] leading-[1.6] text-cream/65">
+          {DEMO_REPLAY_NOTICE}
+        </p>
+        <div className="mt-4 grid sm:grid-cols-2 gap-2">
+          {DEMO_PROOF_ARTIFACTS.map((artifact) => {
+            const body = (
+              <>
+                <div className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-teal">
+                  {artifact.label}
+                </div>
+                <div className="mt-1 font-mono text-[11px] text-cream/82 truncate" title={artifact.value}>
+                  {artifact.value}
+                </div>
+                <div className="mt-1 font-mono text-[10px] text-cream/42 truncate">
+                  {artifact.detail}
+                </div>
+              </>
+            );
+            return artifact.href ? (
+              <a
+                key={artifact.label}
+                href={artifact.href}
+                target="_blank"
+                rel="noreferrer"
+                className="border border-cream/10 bg-navy/45 px-3 py-2.5 hover:border-teal/45 transition-colors min-w-0"
+              >
+                {body}
+              </a>
+            ) : (
+              <div key={artifact.label} className="border border-cream/10 bg-navy/45 px-3 py-2.5 min-w-0">
+                {body}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function ReplayTapeCard() {
+  return (
+    <Card>
+      <CardHead title="AXL replay tape" sub={`${DEMO_REPLAY_EVENTS.length} events`} />
+      <ul className="divide-y divide-cream/10">
+        {DEMO_REPLAY_EVENTS.slice(0, 5).map((event) => (
+          <li key={event.id} className="px-4 py-3">
+            <div className="flex items-baseline justify-between gap-3 font-mono text-[9.5px] tracking-[0.16em] uppercase">
+              <span className="text-teal">{event.role}</span>
+              <span className="text-cream/35">{event.ts.slice(11, 16)} UTC</span>
+            </div>
+            <div className="mt-1 text-[13px] leading-[1.35] text-cream/85">
+              {event.actor}
+            </div>
+            <div className="mt-1 text-[12px] leading-[1.4] text-cream/55 line-clamp-2">
+              {event.action}
+            </div>
+            <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-cream/35">
+              {event.status}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 function Overview({
   profile,
   posts,
   digests,
+  isDemo,
 }: {
   profile: OperatorProfile;
   posts: PostEntry[];
   digests: DigestSummary[];
+  isDemo: boolean;
 }) {
   const recent = posts.slice(0, 5);
   return (
     <div className="grid lg:grid-cols-12 gap-5">
       <div className="lg:col-span-8 space-y-5 min-w-0">
-        <OperatorIdentityCard profile={profile} postsCount={posts.length} />
+        <OperatorIdentityCard profile={profile} postsCount={posts.length} zeroGCount={countZeroG(posts)} />
+        {isDemo && <ProofReplayCard />}
         <EnsIdentityPanel variant="navy" />
         <Card>
           <CardHead title="Recent activity" sub={`${posts.length} archived`} />
@@ -548,6 +645,7 @@ function Overview({
         </Card>
       </div>
       <div className="lg:col-span-4 space-y-5 min-w-0">
+        {isDemo && <ReplayTapeCard />}
         <Card>
           <CardHead title="Quick actions" />
           <div className="p-3 grid grid-cols-1 gap-2">
@@ -590,7 +688,7 @@ function Overview({
 function AgentPane({ profile, posts }: { profile: OperatorProfile; posts: PostEntry[] }) {
   return (
     <div className="space-y-5">
-      <OperatorIdentityCard profile={profile} postsCount={posts.length} />
+      <OperatorIdentityCard profile={profile} postsCount={posts.length} zeroGCount={countZeroG(posts)} />
       <div className="grid lg:grid-cols-12 gap-5">
         <div className="lg:col-span-7">
           <EnsIdentityPanel variant="navy" />
@@ -622,10 +720,12 @@ function EarningsPane({
   digests,
   totalShareBps,
   loading,
+  isDemo,
 }: {
   digests: DigestSummary[];
   totalShareBps: number;
   loading: boolean;
+  isDemo: boolean;
 }) {
   const accepted = digests.reduce((sum, d) => sum + (d.ours?.signalCount ?? 0), 0);
   return (
@@ -672,6 +772,26 @@ function EarningsPane({
           </p>
         </div>
       </Card>
+      {isDemo && (
+        <Card className="border-teal/20 bg-teal/[0.04]">
+          <CardHead title="Demo payout receipt" sub="existing testnet proof constant" />
+          <div className="p-5 grid sm:grid-cols-2 gap-3 font-mono text-[11px]">
+            <ReceiptCell label="PaymentRouter" value={DEMO_PROOFS.paymentTx} />
+            <ReceiptCell label="0G archive sample" value={DEMO_ARCHIVES[0].uri} />
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function ReceiptCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-cream/10 bg-navy/40 px-3 py-2.5 min-w-0">
+      <div className="text-[9.5px] tracking-[0.18em] uppercase text-teal">{label}</div>
+      <div className="mt-1 text-cream/82 truncate" title={value}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -754,15 +874,16 @@ function SettingsPane({ profile }: { profile: OperatorProfile }) {
 
 export default function OperatorDashboardPage() {
   const [active, setActive] = useState<NavKey>("overview");
-  const { profile, loading: profileLoading } = useOperatorProfile();
+  const { profile, loading: profileLoading, source: profileSource } = useOperatorProfile();
   const { posts, loading: postsLoading } = useOperatorPosts(profile?.peer);
   const { digests, totalShareBps, loading: digestsLoading } = useOperatorDigests(profile?.peer);
+  const isDemo = profileSource === "demo-snapshot";
 
   return (
     <div className="bg-navy text-cream min-h-screen antialiased flex selection:bg-teal/30 selection:text-cream">
       <Rail active={active} onSelect={setActive} />
       <div className="flex-1 min-w-0 flex flex-col pb-16 md:pb-0">
-        <TopBar profile={profile} />
+        <TopBar profile={profile} source={profileSource} />
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-5 md:py-7">
           <div className="flex items-baseline gap-3 mb-5 whitespace-nowrap">
             <h1 className="font-display text-[24px] md:text-[28px] tracking-[-0.01em] text-cream">
@@ -775,9 +896,15 @@ export default function OperatorDashboardPage() {
               <span
                 className={`w-1.5 h-1.5 rounded-full ${profile ? "bg-teal animate-pulse" : "bg-cream/30"}`}
               />
-              {profile ? "live · ~/.polis" : "no agent"}
+              {profile ? (isDemo ? "demo replay · proof snapshot" : "local · ~/.polis") : "no agent"}
             </span>
           </div>
+          {profile && isDemo && (
+            <div className="mb-5 border border-amber/35 bg-amber/10 px-4 py-3 font-mono text-[10.5px] leading-[1.55] text-cream/68">
+              Demo/replay mode: dashboard data is deterministic for judging. Existing hashes are
+              the shipped proof constants; this page is not claiming fresh live transactions.
+            </div>
+          )}
           {profileLoading ? (
             <div className="p-10 text-center font-mono text-[11px] text-cream/40">
               loading operator profile…
@@ -785,13 +912,18 @@ export default function OperatorDashboardPage() {
           ) : !profile ? (
             <NoAgentEmpty />
           ) : active === "overview" ? (
-            <Overview profile={profile} posts={posts} digests={digests} />
+            <Overview profile={profile} posts={posts} digests={digests} isDemo={isDemo} />
           ) : active === "agent" ? (
             <AgentPane profile={profile} posts={posts} />
           ) : active === "posts" ? (
             <PostsPane posts={posts} loading={postsLoading} />
           ) : active === "earnings" ? (
-            <EarningsPane digests={digests} totalShareBps={totalShareBps} loading={digestsLoading} />
+            <EarningsPane
+              digests={digests}
+              totalShareBps={totalShareBps}
+              loading={digestsLoading}
+              isDemo={isDemo}
+            />
           ) : active === "settings" ? (
             <SettingsPane profile={profile} />
           ) : null}

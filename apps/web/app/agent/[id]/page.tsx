@@ -5,7 +5,11 @@ import { EnsIdentityPanel } from "@/components/ens-identity-panel";
 import {
   DEMO_CONTRACTS,
   DEMO_ENS,
+  DEMO_PROOF_ARTIFACTS,
   DEMO_PROOFS,
+  DEMO_REPLAY_EVENTS,
+  DEMO_REPLAY_NOTICE,
+  DEMO_REPLAY_SOURCE,
   DEMO_WALLET,
   demoAgentRecord,
   demoSignalsFor,
@@ -99,7 +103,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
         routeEns={routeEns}
       />
 
-      <StatsStrip signals={signals} record={record} zeroGSignals={zeroGSignals} />
+      <StatsStrip signals={signals} record={record} zeroGSignals={zeroGSignals} isDemo={isDemo} />
 
       <section className="px-5 sm:px-8 md:px-12 py-12 md:py-16 max-w-6xl mx-auto w-full grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] gap-10 lg:gap-12">
         <div className="min-w-0">
@@ -112,6 +116,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
 
         <aside className="min-w-0 space-y-5">
           {routeEns && <EnsRoutingCard route={routeEns} />}
+          {isDemo && <DemoActivityCard />}
           <SectionHeading title="Identity proof" />
           <EnsIdentityPanel variant="navy" />
           {!isDemo && (
@@ -238,6 +243,38 @@ function splitRecord(value?: string): string[] {
     : [];
 }
 
+function DemoActivityCard() {
+  return (
+    <div className="border border-amber/35 bg-amber/10 p-5">
+      <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-amber">
+        demo replay activity
+      </div>
+      <p className="mt-3 text-[12.5px] leading-[1.6] text-cream/62">
+        {DEMO_REPLAY_NOTICE}
+      </p>
+      <ul className="mt-4 divide-y divide-cream/10 border-y border-cream/10">
+        {DEMO_REPLAY_EVENTS.slice(0, 5).map((event) => (
+          <li key={event.id} className="py-3">
+            <div className="flex items-baseline justify-between gap-3 font-mono text-[9.5px] tracking-[0.16em] uppercase">
+              <span className="text-teal">{event.channel}</span>
+              <span className="text-cream/35">{event.ts.slice(11, 16)} UTC</span>
+            </div>
+            <div className="mt-1 font-display text-[17px] leading-[1.15] text-cream">
+              {event.actor}
+            </div>
+            <div className="mt-1 text-[12.5px] leading-[1.45] text-cream/58">
+              {event.action}
+            </div>
+            <div className="mt-1 font-mono text-[10px] tracking-[0.12em] uppercase text-cream/38">
+              {event.status}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function TopBar() {
   return (
     <header className="border-b border-cream/10 px-5 sm:px-8 md:px-12 py-4 flex items-center gap-4 whitespace-nowrap">
@@ -262,7 +299,7 @@ function TopBar() {
           href="/digest"
           className="group inline-flex items-center gap-2 px-4 py-2 border border-teal/60 text-teal hover:bg-teal hover:text-navy transition-colors text-[10.5px]"
         >
-          Today&apos;s Digest
+          Proof Digest
           <span className="transition-transform group-hover:translate-x-0.5">→</span>
         </a>
       </div>
@@ -307,7 +344,7 @@ function Hero({
           </a>
         )}
         {isDemo && (
-          <span className="text-amber/85">demo agent · public proof snapshot</span>
+          <span className="text-amber/85">{DEMO_REPLAY_SOURCE}</span>
         )}
         {routeEns ? (
           <a
@@ -414,30 +451,55 @@ function StatsStrip({
   signals,
   record,
   zeroGSignals,
+  isDemo,
 }: {
   signals: ParsedSignal[];
   record: AgentRecord | null;
   zeroGSignals: number;
+  isDemo: boolean;
 }) {
+  const stats = [
+    { n: String(signals.length), label: "signals", sub: "archived" },
+    {
+      n: String(zeroGSignals),
+      label: "0G uploads",
+      sub: zeroGSignals > 0 ? "Galileo testnet" : "none yet",
+    },
+    ...(isDemo
+      ? [
+          {
+            n: String(DEMO_REPLAY_EVENTS.length),
+            label: "AXL replay",
+            sub: "not live telemetry",
+          },
+          {
+            n: "1",
+            label: "payout proof",
+            sub: "existing tx",
+          },
+        ]
+      : []),
+    {
+      n: record ? String(record.reputation) : "—",
+      label: "reputation",
+      sub: record ? "on-chain" : "no record",
+    },
+    {
+      n: record ? formatDate(record.registeredAt * 1000).abs : "—",
+      label: "registered",
+      sub: record ? formatDate(record.registeredAt * 1000).rel : "—",
+    },
+  ];
   return (
     <section className="border-y border-cream/10 bg-[#0E1B30]/55">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 md:px-12 grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-cream/10">
-        <Stat n={String(signals.length)} label="signals" sub="archived" />
-        <Stat
-          n={String(zeroGSignals)}
-          label="0G uploads"
-          sub={zeroGSignals > 0 ? "Galileo testnet" : "none yet"}
-        />
-        <Stat
-          n={record ? String(record.reputation) : "—"}
-          label="reputation"
-          sub={record ? "on-chain" : "no record"}
-        />
-        <Stat
-          n={record ? formatDate(record.registeredAt * 1000).abs : "—"}
-          label="registered"
-          sub={record ? formatDate(record.registeredAt * 1000).rel : "—"}
-        />
+      <div
+        className={`max-w-6xl mx-auto px-5 sm:px-8 md:px-12 grid grid-cols-2 md:grid-cols-3 ${
+          isDemo ? "lg:grid-cols-6" : "lg:grid-cols-4"
+        } divide-x divide-y lg:divide-y-0 divide-cream/10`}
+      >
+        {stats.map((stat) => (
+          <Stat key={stat.label} n={stat.n} label={stat.label} sub={stat.sub} />
+        ))}
       </div>
     </section>
   );
@@ -695,7 +757,11 @@ function DemoReceipts({ signals }: { signals: ParsedSignal[] }) {
   const latest0g = signals.find((s) => s.archiveUri?.startsWith("0g://"));
   return (
     <section className="px-5 sm:px-8 md:px-12 pb-12 md:pb-16 max-w-6xl mx-auto w-full">
-      <SectionHeading title="Demo receipts" right="public testnet snapshot" />
+      <SectionHeading title="Demo receipts" right="existing proof constants" />
+      <p className="mb-4 max-w-3xl font-mono text-[10.5px] leading-[1.55] text-cream/50">
+        This section lists the proof artifacts bundled with the public replay. It does not claim
+        new transactions were produced by viewing this page.
+      </p>
       <div className="border border-teal/25 bg-teal/[0.04] grid sm:grid-cols-2 gap-x-6 gap-y-2 px-5 sm:px-6 py-5 font-mono text-[11px] text-cream/75">
         <Receipt label="PostIndex" value={shorten(DEMO_CONTRACTS.postIndex, 8, 6)} />
         <Receipt label="latest post tx" value={shorten(DEMO_PROOFS.postIndexTx, 8, 6)} />
@@ -703,6 +769,36 @@ function DemoReceipts({ signals }: { signals: ParsedSignal[] }) {
         <Receipt label="Resend send id" value={shorten(DEMO_PROOFS.resendSendId, 12, 8)} />
         <Receipt label="PaymentRouter" value={shorten(DEMO_CONTRACTS.paymentRouter, 8, 6)} />
         <Receipt label="payout tx" value={shorten(DEMO_PROOFS.paymentTx, 8, 6)} />
+      </div>
+      <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {DEMO_PROOF_ARTIFACTS.map((artifact) => {
+          const body = (
+            <>
+              <div className="font-mono text-[9.5px] tracking-[0.18em] uppercase text-teal">
+                {artifact.label}
+              </div>
+              <div className="mt-1 font-mono text-[11px] text-cream/82 truncate" title={artifact.value}>
+                {artifact.value}
+              </div>
+              <div className="mt-1 font-mono text-[10px] text-cream/42 truncate">{artifact.detail}</div>
+            </>
+          );
+          return artifact.href ? (
+            <a
+              key={artifact.label}
+              href={artifact.href}
+              target="_blank"
+              rel="noreferrer"
+              className="border border-cream/10 bg-[#0E1B30] px-3 py-2.5 hover:border-teal/45 transition-colors min-w-0"
+            >
+              {body}
+            </a>
+          ) : (
+            <div key={artifact.label} className="border border-cream/10 bg-[#0E1B30] px-3 py-2.5 min-w-0">
+              {body}
+            </div>
+          );
+        })}
       </div>
     </section>
   );

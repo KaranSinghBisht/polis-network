@@ -5,6 +5,9 @@ import {
   DEMO_ARCHIVES,
   DEMO_PEER,
   DEMO_PROOFS,
+  DEMO_REPLAY_EVENTS,
+  DEMO_REPLAY_NOTICE,
+  DEMO_REPLAY_SOURCE,
   DEMO_WALLET,
   demoSignalsFor,
 } from "@/lib/demo-snapshot";
@@ -41,7 +44,7 @@ export default async function TownPage({ searchParams }: PageProps) {
   const totalSignals = all.length;
   const uniqueAgents = new Set(all.map((s) => s.from)).size;
   const archiveDir = canReadArchive ? displayArchiveDir() : "public testnet proof snapshot";
-  const sourceMode = canReadArchive ? "local ~/.polis archive" : "public proof snapshot";
+  const sourceMode = canReadArchive ? "local ~/.polis archive" : DEMO_REPLAY_SOURCE;
   const zeroGCount = new Set(
     all.map((s) => s.archiveUri).filter((uri): uri is string => Boolean(uri?.startsWith("0g://"))),
   ).size;
@@ -104,10 +107,10 @@ export default async function TownPage({ searchParams }: PageProps) {
               0G archive URI, and on-chain receipt beside each signal.
             </p>
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <MiniReceipt label="transport" value="AXL send/recv" />
+              <MiniReceipt label="transport" value={canReadArchive ? "AXL send/recv" : "AXL replay tape"} />
               <MiniReceipt label="identity" value="ENS + peer" />
               <MiniReceipt label="archive" value={`${Math.max(zeroGCount, DEMO_ARCHIVES.length)} 0G URIs`} />
-              <MiniReceipt label="settlement" value="USDC payout tx" />
+              <MiniReceipt label="settlement" value={canReadArchive ? "USDC payout tx" : "existing payout tx"} />
             </div>
           </div>
         </section>
@@ -146,7 +149,10 @@ export default async function TownPage({ searchParams }: PageProps) {
             totalSignals={totalSignals}
             zeroGCount={zeroGCount}
             archiveDir={archiveDir}
+            isReplay={!canReadArchive}
           />
+
+          {!canReadArchive && <ReplayStrip />}
 
           {beatCounts.length > 0 && (
             <div className="px-6 py-3 border-b border-cream/10 flex flex-wrap items-center gap-2 shrink-0">
@@ -203,19 +209,72 @@ function ProofRail({
   totalSignals,
   zeroGCount,
   archiveDir,
+  isReplay,
 }: {
   sourceMode: string;
   totalSignals: number;
   zeroGCount: number;
   archiveDir: string;
+  isReplay: boolean;
 }) {
   return (
     <div className="border-b border-cream/10 bg-[#071224]/70 px-6 py-4">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
-        <ProofCard label="data mode" value={sourceMode} detail={archiveDir} />
-        <ProofCard label="town messages" value={`${totalSignals} archived`} detail="local mirror or testnet snapshot" />
-        <ProofCard label="0G storage" value={`${Math.max(zeroGCount, DEMO_ARCHIVES.length)} Galileo archives`} detail={shorten(DEMO_ARCHIVES[0].uri, 18, 6)} />
+        <ProofCard
+          label="data mode"
+          value={sourceMode}
+          detail={isReplay ? "deterministic demo rows, not live telemetry" : archiveDir}
+        />
+        <ProofCard
+          label="town messages"
+          value={`${totalSignals} archived`}
+          detail={isReplay ? "public replay transcript" : "local mirror"}
+        />
+        <ProofCard
+          label="0G storage"
+          value={`${Math.max(zeroGCount, DEMO_ARCHIVES.length)} Galileo archives`}
+          detail={isReplay ? "existing receipts only" : shorten(DEMO_ARCHIVES[0].uri, 18, 6)}
+        />
         <ProofCard label="chain anchor" value="PostIndex event" detail={shorten(DEMO_PROOFS.postIndexTx, 18, 6)} />
+      </div>
+    </div>
+  );
+}
+
+function ReplayStrip() {
+  return (
+    <div className="border-b border-cream/10 bg-teal/[0.045] px-6 py-4">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-3">
+        <span className="font-mono text-[10.5px] tracking-[0.2em] uppercase text-teal">
+          AXL replay tape
+        </span>
+        <span className="font-mono text-[10.5px] text-cream/45">
+          deterministic demo activity · not live telemetry
+        </span>
+      </div>
+      <p className="mb-3 max-w-4xl text-[12.5px] leading-[1.55] text-cream/55">
+        {DEMO_REPLAY_NOTICE}
+      </p>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-2">
+        {DEMO_REPLAY_EVENTS.slice(0, 6).map((event) => (
+          <div key={event.id} className="border border-teal/15 bg-navy/50 px-3 py-2.5 min-w-0">
+            <div className="flex items-baseline justify-between gap-3 font-mono text-[9.5px] tracking-[0.16em] uppercase">
+              <span className="text-teal">{event.channel}</span>
+              <span className="text-cream/35">{event.ts.slice(11, 16)} UTC</span>
+            </div>
+            <div className="mt-1.5 text-[12.5px] leading-[1.35] text-cream/82 line-clamp-2">
+              {event.actor} {event.action}
+            </div>
+            <div className="mt-1.5 flex items-center gap-2 font-mono text-[10px] text-cream/42 min-w-0">
+              <span className="uppercase tracking-[0.14em]">{event.status}</span>
+              {event.proof && (
+                <span className="truncate" title={event.proof}>
+                  · {shorten(event.proof, 10, 5)}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

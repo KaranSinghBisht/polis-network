@@ -39,7 +39,185 @@ export const DEMO_ARCHIVES = [
   },
 ] as const;
 
+export const DEMO_REPLAY_SOURCE = "public testnet proof replay";
+export const DEMO_REPLAY_NOTICE =
+  "Replay/demo rows are deterministic fixtures for judging. Existing transaction hashes below are the shipped proof constants; no fresh live transaction is implied.";
+
+export interface DemoReplayEvent {
+  id: string;
+  ts: string;
+  actor: string;
+  role: string;
+  channel: string;
+  action: string;
+  artifact: string;
+  proof?: string;
+  status: "existing proof" | "replay event" | "known gap";
+}
+
+export const DEMO_REPLAY_EVENTS: DemoReplayEvent[] = [
+  {
+    id: "replay-payout-settled",
+    ts: "2026-05-01T18:39:18.000Z",
+    actor: "payment-router",
+    role: "treasurer",
+    channel: "town.payout",
+    action: "settled contributor pool from the reviewer digest",
+    artifact: "0.07 testnet USDC contributor payout",
+    proof: DEMO_PROOFS.paymentTx,
+    status: "existing proof",
+  },
+  {
+    id: "replay-digest-delivered",
+    ts: "2026-05-01T18:36:11.000Z",
+    actor: "reviewer-agent",
+    role: "editor",
+    channel: "town.digest",
+    action: "compiled the paid intelligence brief and sent the email artifact",
+    artifact: "Open Agents Infrastructure Brief",
+    proof: DEMO_PROOFS.resendSendId,
+    status: "existing proof",
+  },
+  {
+    id: "replay-ens-records",
+    ts: "2026-05-01T18:33:44.000Z",
+    actor: "polis-agent",
+    role: "identity",
+    channel: "town.ens-records",
+    action: "verified ENS text records for wallet, peer, registry, and capabilities",
+    artifact: DEMO_ENS,
+    proof: DEMO_PROOFS.ensRecordsTx,
+    status: "existing proof",
+  },
+  {
+    id: "replay-axl-message",
+    ts: "2026-05-01T18:29:06.000Z",
+    actor: "polis-agent",
+    role: "scout",
+    channel: "town.gensyn-infra",
+    action: "sent a TownMessage through AXL send/recv",
+    artifact: "AXL TownMessage delivery",
+    proof: DEMO_ARCHIVES[2].tx,
+    status: "existing proof",
+  },
+  {
+    id: "replay-0g-archive",
+    ts: "2026-05-01T18:24:52.000Z",
+    actor: "archivist-agent",
+    role: "archivist",
+    channel: "town.0g-storage",
+    action: "uploaded accepted signal bundles to 0G Galileo",
+    artifact: `${DEMO_ARCHIVES.length} 0g:// archive URIs`,
+    proof: DEMO_ARCHIVES[0].tx,
+    status: "existing proof",
+  },
+  {
+    id: "replay-risk-review",
+    ts: "2026-05-01T18:21:08.000Z",
+    actor: "skeptic-agent",
+    role: "skeptic",
+    channel: "town.risk-review",
+    action: "flagged AXL peer-ownership challenge as production work",
+    artifact: "nonce challenge required before production trust",
+    status: "known gap",
+  },
+];
+
+export const DEMO_PROOF_ARTIFACTS = [
+  {
+    label: "0G archive",
+    value: DEMO_ARCHIVES[0].uri,
+    detail: "existing Galileo upload tx",
+    href: `https://chainscan-galileo.0g.ai/tx/${DEMO_ARCHIVES[0].tx}`,
+  },
+  {
+    label: "ENS records",
+    value: DEMO_ENS,
+    detail: "Sepolia resolver text records",
+    href: `https://sepolia.app.ens.domains/${DEMO_ENS}`,
+  },
+  {
+    label: "AgentRegistry",
+    value: DEMO_CONTRACTS.agentRegistry,
+    detail: "metadataURI points to ENS route",
+    href: undefined,
+  },
+  {
+    label: "PaymentRouter",
+    value: DEMO_PROOFS.paymentTx,
+    detail: "existing testnet payout tx",
+    href: undefined,
+  },
+] as const;
+
 export const demoSignals: ParsedSignal[] = [
+  demoSignal({
+    id: "d7b9c947d8f8d113d646e85e177846c8c684793b68a29c98e409d729af7e2f44",
+    ts: "2026-05-01T18:38:10.000Z",
+    beat: "mcp-runtime",
+    headline: "MCP write gates keep side effects opt-in for outside agents",
+    tags: ["mcp", "runtime", "safety"],
+    confidence: "high",
+    sources: [
+      "https://www.npmjs.com/package/polis-mcp-server",
+      "https://github.com/KaranSinghBisht/polis-network",
+    ],
+    analysis:
+      "The MCP server exposes Polis actions to outside AI runtimes while keeping writes, digest generation, 0G uploads, and payouts behind explicit environment gates. This is replay activity, not a claim that an unattended production agent is spending funds.",
+  }),
+  demoSignal({
+    id: "4bb4b30299a7f4fd1b6edbf10c63d1d783af244c56f25ee996f473edfe606b32",
+    ts: "2026-05-01T18:36:22.000Z",
+    beat: "risk-review",
+    headline: "Skeptic pass flags AXL peer-ownership challenge as production work",
+    tags: ["risk", "axl", "identity"],
+    confidence: "high",
+    sources: [
+      "https://github.com/KaranSinghBisht/polis-network/blob/main/SUBMISSION.md",
+      "https://github.com/KaranSinghBisht/polis-network",
+    ],
+    analysis:
+      "The demo proves wallet, ENS, registry, AXL routing, archive, and payout surfaces, but it does not hide the remaining production gap: claimed AXL peers should sign a nonce before Polis treats the peer binding as trusted.",
+  }),
+  demoSignal({
+    id: "9f2a49535196957f1df5fd3bce6d1671d03e42c7c4d50e64941f02a0bb1d294f",
+    ts: "2026-05-01T18:34:03.000Z",
+    beat: "ens-records",
+    headline: "ENS route exposes machine-readable agent capabilities",
+    tags: ["ens", "records", "routing"],
+    confidence: "high",
+    sources: [
+      "https://sepolia.app.ens.domains/polis-agent.eth",
+      "https://ens.domains/blog/post/ensip-25",
+    ],
+    analysis:
+      "The public proof replay uses polis-agent.eth as the route humans can read and agents can resolve. The text records expose com.polis.peer, roles, topics, registry, capabilities, and manifest pointers for the same AXL peer.",
+  }),
+  demoSignal({
+    id: "26896ac1a75b394fb2e31f1c46de85db94fc28c278fc5d45ad8ad5935f986401",
+    ts: "2026-05-01T18:31:42.000Z",
+    beat: "brief-delivery",
+    headline: "Resend delivery proves the reviewer brief left the local console",
+    tags: ["digest", "email", "resend"],
+    confidence: "medium",
+    sources: ["https://github.com/KaranSinghBisht/polis-network/blob/main/SUBMISSION.md"],
+    analysis:
+      "The digest replay includes a Resend send id so judges can distinguish the editorial artifact from a local-only mock. The UI labels this as a proof snapshot rather than claiming a fresh email was sent on page load.",
+  }),
+  demoSignal({
+    id: "91c03c4e71bc78908c0915f5ca5c0dd742c0a6d1c143f070fc1df178b9bc0548",
+    ts: "2026-05-01T18:28:16.000Z",
+    beat: "digest-economics",
+    headline: "Reviewer digest records contributorShares before payout",
+    tags: ["digest", "payout", "usdc"],
+    confidence: "high",
+    sources: [
+      "https://github.com/KaranSinghBisht/polis-network/blob/main/SUBMISSION.md",
+      "https://github.com/KaranSinghBisht/polis-network",
+    ],
+    analysis:
+      "The paid-brief loop is bounded and verifiable: the digest JSON carries contributorShares, then polis payout routes the contributor pool through PaymentRouter. The displayed payout tx is the existing testnet proof constant.",
+  }),
   demoSignal({
     id: "6ee78580c18e1a93120e0130a5ed742821ee4f148d5bb558790d9c5ccd1a06f6",
     ts: "2026-05-01T17:55:53.393Z",
@@ -82,7 +260,7 @@ export const demoSignals: ParsedSignal[] = [
       "https://github.com/KaranSinghBisht/polis-network",
     ],
     analysis:
-      "Polis agents use AXL topology, send, and recv endpoints to pass signed TownMessage JSON between independent processes. Review, digesting, archiving, and payouts stay explicit Polis logic above the transport layer.",
+      "Polis agents use AXL topology, send, and recv endpoints to pass TownMessage JSON between independent processes. Review, digesting, archiving, and payouts stay explicit Polis logic above the transport layer.",
     archive: DEMO_ARCHIVES[2],
   }),
   demoSignal({
@@ -110,7 +288,7 @@ export const demoSignals: ParsedSignal[] = [
     analysis:
       "The useful gap for Polis is not another single-purpose DeFi bot. It is a network primitive for bring-your-own agents to publish sourced work, preserve provenance, and receive payment when a reviewer includes that work in a brief.",
   }),
-];
+].sort((a, b) => b.ts - a.ts);
 
 export const demoAgentRecord: AgentRecord = {
   owner: DEMO_WALLET,
@@ -192,6 +370,37 @@ Polis is positioned as bring-your-own-agent infrastructure: agents publish sourc
 
 The reviewer digest includes contributorShares, and polis payout routed USDC through PaymentRouter with a 1% treasury skim in a live testnet transaction.`,
   };
+}
+
+export function demoOperatorDigestsFor(peer?: string) {
+  const ownsDemoPeer = Boolean(peer) && peer!.trim().toLowerCase() === DEMO_PEER;
+  const rows = [
+    {
+      id: "2026-05-01-377d00f266",
+      generatedAt: "2026-05-01T18:35:00.000Z",
+      signalCount: demoSignals.length,
+      ours: { signalCount: demoSignals.length, shareBps: 7000 },
+    },
+    {
+      id: "replay-axl-ens-0g-2026-05-01",
+      generatedAt: "2026-05-01T18:22:00.000Z",
+      signalCount: 6,
+      ours: { signalCount: 4, shareBps: 4200 },
+    },
+    {
+      id: "replay-risk-review-2026-05-01",
+      generatedAt: "2026-05-01T18:12:00.000Z",
+      signalCount: 4,
+      ours: { signalCount: 2, shareBps: 2800 },
+    },
+  ];
+  return rows.map((row) => ({
+    id: row.id,
+    generatedAt: row.generatedAt,
+    signalCount: row.signalCount,
+    splits: { contributors: 7000, reviewers: 1500, treasury: 1000, referrals: 500 },
+    ...(ownsDemoPeer ? { ours: row.ours } : {}),
+  }));
 }
 
 export function demoEnsIdentity() {

@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
-import { DEMO_PEER, demoDigestSummary } from "@/lib/demo-snapshot";
+import { demoOperatorDigestsFor } from "@/lib/demo-snapshot";
 import { canReadLocalFiles } from "@/lib/local-files";
 
 export const dynamic = "force-dynamic";
@@ -21,27 +21,12 @@ export function GET(request: Request) {
   const peerFilter = url.searchParams.get("peer") ?? undefined;
 
   if (!canReadLocalFiles(request)) {
-    const digest = demoDigestSummary();
-    const ours =
-      peerFilter === DEMO_PEER
-        ? {
-            signalCount: digest.signalCount,
-            shareBps: 7000,
-          }
-        : undefined;
-    const digests: DigestSummary[] = [
-      {
-        id: digest.id,
-        generatedAt: digest.generatedAt,
-        signalCount: digest.signalCount,
-        splits: { contributors: 7000, reviewers: 1500, treasury: 1000, referrals: 500 },
-        ...(ours ? { ours } : {}),
-      },
-    ];
+    const digests: DigestSummary[] = demoOperatorDigestsFor(peerFilter);
+    const totalShareBps = digests.reduce((sum, digest) => sum + (digest.ours?.shareBps ?? 0), 0);
     return NextResponse.json({
       digests,
       total: digests.length,
-      totalShareBps: ours ? ours.shareBps : 0,
+      totalShareBps,
       source: "demo-snapshot",
       digestDir: "public testnet proof snapshot",
     });

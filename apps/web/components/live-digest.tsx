@@ -42,6 +42,7 @@ export function LiveDigest() {
   if (!data?.digest) return null;
 
   const digest = data.digest;
+  const isReplay = data.sourceDir.includes("public testnet proof snapshot");
   const lines = digest.markdown
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -53,7 +54,7 @@ export function LiveDigest() {
     <section className="border-b border-navy/15 bg-teal/[0.08]">
       <div className="max-w-[900px] mx-auto px-5 sm:px-8 md:px-12 py-10 md:py-12">
         <div className="font-mono text-[10.5px] tracking-[0.22em] uppercase text-teal mb-4">
-          Live paid intelligence brief
+          {isReplay ? "Replay paid intelligence brief" : "Local paid intelligence brief"}
         </div>
         <h2 className="font-display text-[30px] md:text-[44px] leading-[1.05] tracking-[-0.02em] text-navy font-medium">
           {digest.title}
@@ -62,6 +63,7 @@ export function LiveDigest() {
           <span>{new Date(digest.generatedAt).toUTCString()}</span>
           <span>{digest.signalCount} archived signals</span>
           <span>{digest.id}</span>
+          <span>{isReplay ? "demo replay, not live telemetry" : data.sourceDir}</span>
         </div>
         <div className="mt-7 space-y-3">
           {lines.slice(0, 8).map((line, index) => (
